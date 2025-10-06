@@ -23623,8 +23623,12 @@ public:
 // 0x0028 (0x0028 - 0x0000)
 struct alignas(0x08) FMMRSpawningInfo final
 {
-public:
-	uint8                                         Pad_0[0x28];                                       // 0x0000(0x0028)(Fixing Struct Size After Last Property [ Dumper-7 ])
+    public:
+    float BotSpawningDataInfoTargetELO;
+    float BotSpawningDataInfoWeight;
+    int NumBotsToSpawn;
+    class TSubclassOf<class UFortAthenaAISpawnerData> AISpawnerData;
+    uint8_t SpawnedCallbacks[0x10];
 };
 
 // ScriptStruct FortniteGame.MMRSpawningPlayerBotsRuntimeInfo

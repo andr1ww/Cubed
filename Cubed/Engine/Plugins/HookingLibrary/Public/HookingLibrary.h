@@ -8,6 +8,7 @@ enum EHook
     VFT,
     Address,
     Modify,
+    ModifyCustom,
     RTrue,
     RFalse,
     FTrue,
@@ -22,6 +23,7 @@ public:
     uintptr_t Swap;
     std::string Path;
     uint32 Byte;
+    int Offset;
     void** Original = nullptr;
     void* Detour;
     UClass* Class;

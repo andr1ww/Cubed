@@ -14,8 +14,9 @@ void FortPoiVolume::PostInitializeComponents(AFortPoiVolume* Volume)
     
     ((void (*)(UObject* Component, UObject* World))(ImageBase + 0xED7958))(Volume->BrushComponent, UWorld::GetWorld());
     SetCollisonProfileName(Volume->BrushComponent, reinterpret_cast<__int64*>(ImageBase + 0x9D00AE8), (__int64*)1);
-    Volume->BrushComponent->SetGenerateOverlapEvents(false);
-
+    Volume->BrushComponent->bGenerateOverlapEvents = true;
+    Volume->BrushComponent->SetGenerateOverlapEvents(true);
+    
     UBodySetup* BodySetup = (UBodySetup*)UGameplayStatics::SpawnObject(UBodySetup::StaticClass(), Volume->BrushComponent);
     BodySetup->CollisionTraceFlag = ECollisionTraceFlag::CTF_UseComplexAsSimple;
     BodySetup->bGenerateMirroredCollision = false;

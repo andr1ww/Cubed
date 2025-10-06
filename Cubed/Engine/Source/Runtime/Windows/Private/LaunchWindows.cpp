@@ -10,6 +10,7 @@
 #include "Engine/Source/Runtime/Engine/Classes/Engine/World.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/FortGameModeAthena.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/FortPoiVolume.h"
+#include "Engine/Source/Runtime/FortniteGame/Public/Athena/AI/Systems/AthenaAIServicePlayerBots.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/Player/FortPlayerControllerAthena.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Inventory/FortInventory.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Player/FortPlayerController.h"
@@ -61,6 +62,7 @@ DWORD WINAPI Startup(LPVOID)
     AbilitySystemComponent::Setup();
     FortPlayerControllerAthena::Setup();
     FortPoiVolume::Setup();
+    AthenaAIServicePlayerBots::Setup();
     
     UHook* Hook = new UHook();
     

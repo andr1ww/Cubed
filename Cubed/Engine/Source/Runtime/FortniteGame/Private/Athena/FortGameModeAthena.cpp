@@ -5,6 +5,7 @@
 #include "Offsets.h"
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"
 #include "Engine/Source/Runtime/CoreUObject/Public/Templates/Casts.h"
+#include "Engine/Source/Runtime/CoreUObject/Public/UObject/UObjectGlobals.h"
 #include "Engine/Source/Runtime/Engine/Classes/Engine/World.h"
 
 bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
@@ -15,7 +16,7 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
     if (GameMode->CurrentPlaylistId == -1)
     {
         auto Playlist = UObject::FindObject<UFortPlaylistAthena>(
-            "FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
+            "FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
         if (!Playlist) return false;
 
      //   GameMode->SpawningPolicyManager = GetWorld()->SpawnActor<AFortAthenaSpawningPolicyManager>(AFortAthenaSpawningPolicyManager::StaticClass(), { 0, 0, -99999 }, {});
@@ -42,6 +43,32 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
 
         GameState->OnRep_CurrentPlaylistId();
         GameState->OnRep_CurrentPlaylistInfo();
+
+        UAthenaAISettings* AISettingsInstance = nullptr;
+        for (int i = 0; i < UObject::GObjects->Num(); i++)
+        {
+            auto Object = UObject::GObjects->GetByIndex(i);
+            if (Object && Object->Class == UAthenaAISettings::StaticClass())
+            {
+                AISettingsInstance = (UAthenaAISettings*)Object;
+                break;
+            }
+        }
+
+        if (AISettingsInstance) {
+            GameMode->AISettings = AISettingsInstance;
+    
+            GameMode->AISettings->AIServices.Free();
+            GameMode->AISettings->AIServices.Add(StaticLoadObject<UClass>("/Game/Athena/AI/Phoebe/AIServices/BP_Phoebe_AIService_Loot.BP_Phoebe_AIService_Loot_C"));
+            GameMode->AISettings->AIServices.Add(UAthenaAIServicePlayerBots::StaticClass());
+            GameMode->AISettings->AIServices.Add(UAthenaAIServiceVehicle::StaticClass());
+    
+            GameMode->AISettings->bAllowAIGoalManager = true;
+            GameMode->AISettings->MaxFootstepHearingRange = 3000.0f;
+            GameMode->AISettings->ReducedDeAggroRange = 3500.0f;
+        } else {
+            GameMode->AISettings = Playlist->AISettings;
+        }
         
         for (auto& AdditionalLevel : Playlist->AdditionalLevels)
         {

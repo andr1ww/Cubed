@@ -47,6 +47,24 @@ void UKismetHookingLibrary::Hook(UHook* Hook, EHook Type)
             }
             break;
         }
+    case ModifyCustom:
+        {
+            int64_t delta = static_cast<int64_t>(Hook->Swap) - 
+                static_cast<int64_t>(Hook->Address + Hook->Offset + 4);
+
+            auto patchLocation = reinterpret_cast<int32_t*>(Hook->Address + Hook->Offset);
+
+            DWORD oldProtect;
+            VirtualProtect(patchLocation, sizeof(int32_t), PAGE_EXECUTE_READWRITE, &oldProtect);
+
+            *patchLocation = static_cast<int32_t>(delta);
+
+            DWORD temp;
+            VirtualProtect(patchLocation, sizeof(int32_t), oldProtect, &temp);
+            MH_CreateHook((LPVOID)Hook->Swap, Hook->Detour, Hook->Original);
+            MH_EnableHook((LPVOID)Hook->Swap);
+            break;
+        }
     case Modify:
         {
             uint8_t *DetourAddr = (uint8_t *)Hook->Swap;
