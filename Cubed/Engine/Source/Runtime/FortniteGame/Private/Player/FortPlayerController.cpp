@@ -4,6 +4,7 @@
 #include "Logging.h"
 #include "Offsets.h"
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"
+#include "Engine/Source/Runtime/CoreUObject/Public/UObject/UObjectGlobals.h"
 #include "Engine/Source/Runtime/GameplayAbilities/Public/AbilitySystemComponent.h"
 
 void FortPlayerController::ServerAcknowledgePossession(AFortPlayerControllerAthena* Controller, APawn* Pawn)
@@ -54,6 +55,138 @@ void FortPlayerController::ServerExecuteInventoryItem(AFortPlayerController* Con
     }
 }
 
+void FortPlayerController::ServerCreateBuildingActor(AFortPlayerControllerAthena* Controller, FCreateBuildingActorData& CreateBuildingData)
+{
+    AFortGameStateAthena* GameState = Cast<AFortGameStateAthena>(UWorld::GetWorld()->GameState);
+    TArray<ABuildingActor*> BuildingActors;
+
+    for (auto &BuildableClass : GameState->AllPlayerBuildableClassesIndexLookup)
+    {
+        if (BuildableClass.Value() == CreateBuildingData.BuildingClassHandle)
+            CreateBuildingData.BuildingClassData.BuildingClass = BuildableClass.Key();
+    }
+    
+    if (auto BuildingClass = CreateBuildingData.BuildingClassData.BuildingClass)
+    {
+        EFortBuildPreviewMarkerOptionalAdjustment Adjustment;
+
+        EFortStructuralGridQueryResults QueryResult = GameState->StructuralSupportSystem->CanAddBuildingActorClassToGrid(
+            UWorld::GetWorld(),
+            BuildingClass,
+            CreateBuildingData.BuildLoc,
+            CreateBuildingData.BuildRot,
+            CreateBuildingData.bMirrored,
+            &BuildingActors,
+            &Adjustment,
+            false);
+
+        if (QueryResult == EFortStructuralGridQueryResults::CanAdd)
+        {
+            for (int32 i = 0; i < BuildingActors.Num(); i++)
+            {
+                ABuildingActor *ExistingBuilding = BuildingActors[i];
+                if (!ExistingBuilding)
+                    continue;
+
+                ExistingBuilding->K2_DestroyActor();
+            }
+
+            static void *(*CanAffordToPlaceBuildableClass)(AFortPlayerController *, FBuildingClassData *) = decltype(CanAffordToPlaceBuildableClass)(
+              ImageBase + 0x520C100);
+            if (!CanAffordToPlaceBuildableClass(Controller, &CreateBuildingData.BuildingClassData))
+                return;
+
+            static void* (*PayBuildableClassPlacementCost)(AFortPlayerController*, FBuildingClassData*) = decltype(PayBuildableClassPlacementCost)(
+                ImageBase + 0x52315DC);
+            PayBuildableClassPlacementCost(Controller, &CreateBuildingData.BuildingClassData);
+            
+            ABuildingSMActor* BuildingSMActor = UWorld::GetWorld()->SpawnActor<ABuildingSMActor>(BuildingClass, CreateBuildingData.BuildLoc, CreateBuildingData.BuildRot);
+            if (BuildingSMActor)
+            {
+                BuildingSMActor->CurrentBuildingLevel = CreateBuildingData.BuildingClassData.UpgradeLevel = 0;
+
+                BuildingSMActor->InitializeKismetSpawnedBuildingActor(BuildingSMActor, Controller, true, nullptr);
+                BuildingSMActor->bPlayerPlaced = true;
+
+                AFortPlayerStateAthena *PlayerState = Cast<AFortPlayerStateAthena>(Controller->PlayerState);
+                if (PlayerState)
+                {
+                    BuildingSMActor->Team = EFortTeam(PlayerState->TeamIndex);
+                    BuildingSMActor->OnRep_Team();
+                    BuildingSMActor->SetTeam(PlayerState->TeamIndex);
+                }
+            } 
+        }
+    }
+}
+
+void FortPlayerController::ServerBeginEditingBuildingActor(AFortPlayerController* PlayerController, ABuildingSMActor* BuildingActorToEdit)
+{
+    AFortPlayerStateZone* PlayerStateZone = Cast<AFortPlayerStateZone>(PlayerController->PlayerState);
+    if (!PlayerStateZone || !BuildingActorToEdit || !PlayerController->MyFortPawn)
+        return;
+
+    static void* (*SetEditingPlayer)(ABuildingSMActor*, AFortPlayerController*) = decltype(SetEditingPlayer)(ImageBase + 0x4CA0FA8);
+    SetEditingPlayer(BuildingActorToEdit, PlayerController);
+
+    auto AssetManager = GetAssetManager();
+    static UFortEditToolItemDefinition* EditToolItemDefinition = AssetManager->GameDataCommon->EditToolItem.Get();
+    if (!EditToolItemDefinition)
+    {
+        const FString& AssetPathName = UKismetStringLibrary::Conv_NameToString(AssetManager->GameDataCommon->EditToolItem.ObjectID.AssetPathName);
+        EditToolItemDefinition = StaticLoadObject<UFortEditToolItemDefinition>(AssetPathName.ToString());
+    }
+
+    auto ItemEntry = PlayerController->WorldInventory->Inventory.ReplicatedEntries.Search([](FFortItemEntry &entry)
+                                                                            { return entry.ItemDefinition == EditToolItemDefinition; });
+    if (ItemEntry && 
+        EditToolItemDefinition && 
+        PlayerController->MyFortPawn->EquipWeaponDefinition(EditToolItemDefinition, ItemEntry->ItemGuid, ItemEntry->TrackerGuid, false))
+    {
+        AFortWeap_EditingTool* EditingTool = Cast<AFortWeap_EditingTool>(PlayerController->MyFortPawn->CurrentWeapon);
+
+        if (EditingTool)
+        {
+            EditingTool->EditActor = BuildingActorToEdit;
+            EditingTool->OnRep_EditActor();
+        }
+    }
+}
+
+void FortPlayerController::ServerEditBuildingActor(AFortPlayerController* PlayerController, ABuildingSMActor* BuildingActorToEdit, TSubclassOf<ABuildingSMActor> BuildingClass, uint8 Rot, bool Mirrored)
+{
+    if (!PlayerController || !BuildingActorToEdit || !BuildingActorToEdit->IsA(ABuildingSMActor::StaticClass()) || !PlayerController->MyFortPawn)
+        return;
+    
+    static void* (*SetEditingPlayer)(ABuildingSMActor*, AFortPlayerController*) = decltype(SetEditingPlayer)(ImageBase + 0x4CA0FA8);
+    SetEditingPlayer(BuildingActorToEdit, nullptr);
+
+    static auto ReplaceBuildingActor = (ABuildingSMActor * (*)(ABuildingSMActor*, unsigned int, UObject*, unsigned int, int, bool, AFortPlayerController*))(
+        ImageBase + 0x4c9f210);
+    
+    int32 CurrentBuildingLevel = BuildingActorToEdit->CurrentBuildingLevel;
+    ABuildingSMActor* NewBuild = ReplaceBuildingActor(BuildingActorToEdit, 1, BuildingClass, CurrentBuildingLevel, Rot, Mirrored, PlayerController);
+    if (NewBuild) NewBuild->bPlayerPlaced = true;
+}
+
+void FortPlayerController::ServerEndEditingBuildingActor(AFortPlayerController* PlayerController, ABuildingSMActor* BuildingActorToEdit)
+{
+    if (!BuildingActorToEdit ||
+        BuildingActorToEdit->EditingPlayer != PlayerController->PlayerState ||
+        BuildingActorToEdit->bDestroyed || !PlayerController->MyFortPawn)
+        return;
+
+    static void* (*SetEditingPlayer)(ABuildingSMActor*, AFortPlayerController*) = decltype(SetEditingPlayer)(ImageBase + 0x4CA0FA8);
+    SetEditingPlayer(BuildingActorToEdit, nullptr);
+
+    AFortWeap_EditingTool* EditingTool = Cast<AFortWeap_EditingTool>(PlayerController->MyFortPawn->CurrentWeapon);
+    if (EditingTool)
+    {
+        EditingTool->EditActor = BuildingActorToEdit;
+        EditingTool->OnRep_EditActor();
+    }
+}
+
 void FortPlayerController::Setup()
 {
     UHook* Hook = new UHook();
@@ -66,5 +199,25 @@ void FortPlayerController::Setup()
     Hook->Address = Runtime::Vfts::ServerExecuteInventoryItem;
     Hook->Class = AFortPlayerController::StaticClass();
     Hook->Detour = ServerExecuteInventoryItem;
+    UKismetHookingLibrary::Hook(Hook, EHook::EveryVFT);
+
+    Hook->Address = 0x241;
+    Hook->Class = AFortPlayerController::StaticClass();
+    Hook->Detour = ServerCreateBuildingActor;
+    UKismetHookingLibrary::Hook(Hook, EHook::EveryVFT);
+    
+    Hook->Address = 0x248;
+    Hook->Class = AFortPlayerController::StaticClass();
+    Hook->Detour = ServerBeginEditingBuildingActor;
+    UKismetHookingLibrary::Hook(Hook, EHook::EveryVFT);
+
+    Hook->Address = 0x243;
+    Hook->Class = AFortPlayerController::StaticClass();
+    Hook->Detour = ServerEditBuildingActor;
+    UKismetHookingLibrary::Hook(Hook, EHook::EveryVFT);
+
+    Hook->Address = 0x246;
+    Hook->Class = AFortPlayerController::StaticClass();
+    Hook->Detour = ServerEndEditingBuildingActor;
     UKismetHookingLibrary::Hook(Hook, EHook::EveryVFT);
 }

@@ -190,12 +190,12 @@ void FortInventory::Setup()
 
         if (SetOwningInventoryIdx)
         {
-            Hook->Address = SetOwningInventoryIdx - 2;
+            Hook->Address = SetOwningInventoryIdx - 3;
             Hook->Class = UFortWorldItem::StaticClass();
             Hook->Detour = SetLoadedAmmo;
             UKismetHookingLibrary::Hook(Hook, EHook::EveryVFT);
             
-            Hook->Address = SetOwningInventoryIdx - 1;
+            Hook->Address = SetOwningInventoryIdx - 2;
             Hook->Class = UFortWorldItem::StaticClass();
             Hook->Detour = SetPhantomReserveAmmo;
             UKismetHookingLibrary::Hook(Hook, EHook::EveryVFT);
