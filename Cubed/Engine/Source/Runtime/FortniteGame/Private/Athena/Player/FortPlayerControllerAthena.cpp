@@ -21,19 +21,14 @@ void FortPlayerControllerAthena::ServerAttemptAircraftJump(UFortControllerCompon
             [&](AFortAthenaMutator_InventoryOverride* Mutator)
             {
                 const auto& Loadout = Mutator->InventoryLoadouts[std::rand() % Mutator->InventoryLoadouts.Num()];
-                static const FName ExcludedRow = UKismetStringLibrary::Conv_StringToName(L"BlueCheese.Evergreen.Solo.AllLoadouts.NutsBolts");
-                
                 for (auto& ItemAndCount : Loadout.LoadoutList)
                 {
-                    if (ItemAndCount.Item && ItemAndCount.Count.Curve.RowName != ExcludedRow)
-                    {
-                        int32 Ammo = 0;
-                        if (auto* WeaponDef = Cast<UFortWeaponItemDefinition>(ItemAndCount.Item))
-                            if (WeaponDef->GetStats())
-                                Ammo = WeaponDef->GetStats()->ClipSize;
+                    int32 Ammo = 0;
+                    if (auto* WeaponDef = Cast<UFortWeaponItemDefinition>(ItemAndCount.Item))
+                        if (WeaponDef->GetStats())
+                            Ammo = WeaponDef->GetStats()->ClipSize;
                         
-                        Controller->WorldInventory->AddItem(ItemAndCount.Item, ItemAndCount.Count.Evaluate(), Ammo);
-                    }
+                    Controller->WorldInventory->AddItem(ItemAndCount.Item, ItemAndCount.Count.Evaluate(), Ammo);
                 }
                 
                 auto AddResource = [&](EFortResourceType Type) {
