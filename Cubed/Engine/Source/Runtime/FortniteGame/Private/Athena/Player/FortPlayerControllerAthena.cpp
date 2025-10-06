@@ -14,6 +14,38 @@ void FortPlayerControllerAthena::ServerAttemptAircraftJump(UFortControllerCompon
     {
         Controller->ClientSetRotation(ClientRot, false);
         Controller->MyFortPawn->BeginSkydiving(true);
+
+        ForEachMutator<AFortAthenaMutator_InventoryOverride>(
+            GetWorld(), 
+            AFortAthenaMutator_InventoryOverride::StaticClass(),
+            [&](AFortAthenaMutator_InventoryOverride* Mutator)
+            {
+                if (Mutator->InventoryLoadouts.Num() == 0) return;
+                
+                const auto& Loadout = Mutator->InventoryLoadouts[std::rand() % Mutator->InventoryLoadouts.Num()];
+                static const FName ExcludedRow = UKismetStringLibrary::Conv_StringToName(L"BlueCheese.Evergreen.Solo.AllLoadouts.NutsBolts");
+                
+                for (auto& ItemAndCount : Loadout.LoadoutList)
+                {
+                    if (ItemAndCount.Item && ItemAndCount.Count.Curve.RowName != ExcludedRow)
+                    {
+                        int32 Ammo = 0;
+                        if (auto* WeaponDef = Cast<UFortWeaponItemDefinition>(ItemAndCount.Item))
+                            if (WeaponDef->GetStats())
+                                Ammo = WeaponDef->GetStats()->ClipSize;
+                        
+                        Controller->WorldInventory->AddItem(ItemAndCount.Item, ItemAndCount.Count.Evaluate(), Ammo);
+                    }
+                }
+                
+                auto AddResource = [&](EFortResourceType Type) {
+                    Controller->WorldInventory->AddItem(UFortKismetLibrary::K2_GetResourceItemDefinition(Type), 500, 0);
+                };
+                AddResource(EFortResourceType::Wood);
+                AddResource(EFortResourceType::Stone);
+                AddResource(EFortResourceType::Metal);
+            }
+        );
     }
 }
 

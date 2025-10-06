@@ -147,7 +147,6 @@
   <ItemGroup>
     <ClInclude Include="Engine\Plugins\HookingLibrary\Public\HookingLibrary.h" />
     <ClInclude Include="Engine\Source\Runtime\CoreUObject\Public\UObject\UObjectGlobals.h" />
-    <ClInclude Include="Engine\Source\Runtime\CoreUObject\Public\Templates\Casts.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Engine\NetDriver.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Engine\World.h" />
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Athena\AI\Systems\AthenaAIServicePlayerBots.h" />

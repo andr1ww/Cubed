@@ -4,7 +4,6 @@
 #include "Logging.h"
 #include "Offsets.h"
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"
-#include "Engine/Source/Runtime/CoreUObject/Public/Templates/Casts.h"
 #include "Engine/Source/Runtime/CoreUObject/Public/UObject/UObjectGlobals.h"
 #include "Engine/Source/Runtime/Engine/Classes/Engine/World.h"
 

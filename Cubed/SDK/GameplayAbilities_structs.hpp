@@ -656,6 +656,15 @@ public:
 	struct FCurveTableRowHandle                   Curve;                                             // 0x0008(0x0010)(Edit, BlueprintVisible, NoDestructor, HasGetValueTypeHash, NativeAccessSpecifierPublic)
 	struct FDataRegistryType                      RegistryType;                                      // 0x0018(0x0008)(Edit, BlueprintVisible, ZeroConstructor, NoDestructor, HasGetValueTypeHash, NativeAccessSpecifierPublic)
 	uint8                                         Pad_20[0x8];                                       // 0x0020(0x0008)(Fixing Struct Size After Last Property [ Dumper-7 ])
+	inline float Evaluate()
+	{
+		if (!Curve.CurveTable)
+			return Value;
+
+		float Out;
+		UDataTableFunctionLibrary::EvaluateCurveTableRow(Curve.CurveTable, Curve.RowName, (float)0, nullptr, &Out, FString());
+		return Out;
+	}
 };
 
 // ScriptStruct GameplayAbilities.GameplayAbilitySpecDef

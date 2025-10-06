@@ -3,7 +3,6 @@
 
 #include "Offsets.h"
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"
-#include "Engine/Source/Runtime/CoreUObject/Public/Templates/Casts.h"
 
 void AbilitySystemComponent::InternalServerTryActivateAbility(UAbilitySystemComponent* Component, FGameplayAbilitySpecHandle Handle, bool, FPredictionKey& PredictionKey, FGameplayEventData* TriggerEventData)
 {

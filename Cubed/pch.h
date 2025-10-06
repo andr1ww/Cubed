@@ -20,6 +20,7 @@
 #include <intrin.h>
 #include <sstream>
 #include <array>
+
 using namespace std;
 #pragma warning(disable : 4099)
 #pragma warning(disable : 4309)
@@ -39,6 +40,12 @@ using namespace SDK;
 using namespace UC;
 #include "MinHook.h"
 inline uint64_t ImageBase = *(uint64_t*)(__readgsqword(0x60) + 0x10);
+
+template<class T>
+inline T* Cast(UObject* Object)
+{
+        return Object && (Object->IsA(T::StaticClass())) ? (T*)Object : nullptr;
+}
 
 // credits to NotTacs for this below
 namespace SDK
@@ -289,6 +296,24 @@ inline UFortAssetManager* GetAssetManager()
         }
         
         return FortAssetManager;
+}
+
+template<typename T, typename Func>
+inline void ForEachMutator(UWorld* World, TSubclassOf<AActor> MutatorClass, Func&& Callback)
+{
+        if (!World || !MutatorClass)
+                return;
+    
+        TArray<AActor*> FoundActors;
+        UGameplayStatics::GetAllActorsOfClass(World, MutatorClass, &FoundActors);
+    
+        for (AActor* Actor : FoundActors)
+        {
+                if (T* Mutator = Cast<T>(Actor))
+                {
+                        Callback(Mutator);
+                }
+        }
 }
 
 #endif //PCH_H

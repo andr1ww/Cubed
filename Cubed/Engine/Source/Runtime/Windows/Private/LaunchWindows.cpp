@@ -65,6 +65,8 @@ DWORD WINAPI Startup(LPVOID)
     freopen_s(&OutPtr, "CONOUT$", "w", stderr);
     SetConsoleTitleA("Cubed | Loading...");
 
+    std::srand(std::time(nullptr));
+
     MH_Initialize();
     Sleep(2500);
     
