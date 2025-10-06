@@ -299,21 +299,16 @@ inline UFortAssetManager* GetAssetManager()
 }
 
 template<typename T, typename Func>
-inline void ForEachMutator(UWorld* World, TSubclassOf<AActor> MutatorClass, Func&& Callback)
+inline void ForEachMutator(UWorld* World, UClass* MutatorClass, Func&& Callback)
 {
         if (!World || !MutatorClass)
                 return;
     
         TArray<AActor*> FoundActors;
         UGameplayStatics::GetAllActorsOfClass(World, MutatorClass, &FoundActors);
-    
+
         for (AActor* Actor : FoundActors)
-        {
-                if (T* Mutator = Cast<T>(Actor))
-                {
-                        Callback(Mutator);
-                }
-        }
+                if (T* Mutator = Cast<T>(Actor)) Callback(Mutator);
 }
 
 #endif //PCH_H

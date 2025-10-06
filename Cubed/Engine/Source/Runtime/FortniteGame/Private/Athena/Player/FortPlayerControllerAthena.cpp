@@ -20,8 +20,6 @@ void FortPlayerControllerAthena::ServerAttemptAircraftJump(UFortControllerCompon
             AFortAthenaMutator_InventoryOverride::StaticClass(),
             [&](AFortAthenaMutator_InventoryOverride* Mutator)
             {
-                if (Mutator->InventoryLoadouts.Num() == 0) return;
-                
                 const auto& Loadout = Mutator->InventoryLoadouts[std::rand() % Mutator->InventoryLoadouts.Num()];
                 static const FName ExcludedRow = UKismetStringLibrary::Conv_StringToName(L"BlueCheese.Evergreen.Solo.AllLoadouts.NutsBolts");
                 
