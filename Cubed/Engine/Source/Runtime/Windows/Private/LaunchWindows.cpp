@@ -9,6 +9,7 @@
 #include "Engine/Source/Runtime/Engine/Classes/Engine/NetDriver.h"
 #include "Engine/Source/Runtime/Engine/Classes/Engine/World.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/FortGameModeAthena.h"
+#include "Engine/Source/Runtime/FortniteGame/Public/Athena/Player/FortPlayerControllerAthena.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Inventory/FortInventory.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Player/FortPlayerController.h"
 #include "Engine/Source/Runtime/GameplayAbilities/Public/AbilitySystemComponent.h"
@@ -57,22 +58,21 @@ DWORD WINAPI Startup(LPVOID)
     FortInventory::Setup();
     FortPlayerController::Setup();
     AbilitySystemComponent::Setup();
+    FortPlayerControllerAthena::Setup();
     
     UHook* Hook = new UHook();
+    
+    auto RequestExit = Memcury::Scanner::FindPattern("40 53 48 83 EC ? 80 3D ? ? ? ? ? 0F B6 D9 72 ? 48 8D 05 ? ? ? ? 89 5C 24 ? 41 B9 ? ? ? ? 48 89 44 24 ? 4C 8D 05 ? ? ? ? 33 D2 33 C9 E8 ? ? ? ? 48 8D 0D").Get();
+    if (!RequestExit)
+        RequestExit = Memcury::Scanner::FindPattern("88 4C 24 ? 53 48 83 EC ? 80 3D ? ? ? ? ? 8A D9").Get();
+    if (!RequestExit)
+        RequestExit = Memcury::Scanner::FindPattern("40 53 48 83 EC ? 41 B9 ? ? ? ? 0F B6 D9").Get();
 
+    if (RequestExit)
     {
-        auto RequestExit = Memcury::Scanner::FindPattern("40 53 48 83 EC ? 80 3D ? ? ? ? ? 0F B6 D9 72 ? 48 8D 05 ? ? ? ? 89 5C 24 ? 41 B9 ? ? ? ? 48 89 44 24 ? 4C 8D 05 ? ? ? ? 33 D2 33 C9 E8 ? ? ? ? 48 8D 0D").Get();
-        if (!RequestExit)
-            RequestExit = Memcury::Scanner::FindPattern("88 4C 24 ? 53 48 83 EC ? 80 3D ? ? ? ? ? 8A D9").Get();
-        if (!RequestExit)
-            RequestExit = Memcury::Scanner::FindPattern("40 53 48 83 EC ? 41 B9 ? ? ? ? 0F B6 D9").Get();
-
-        if (RequestExit)
-        {
-            Hook->Address = RequestExit;
-            Hook->Byte = 0xC3;
-            UKismetHookingLibrary::Hook(Hook, Byte);
-        }
+        Hook->Address = RequestExit;
+        Hook->Byte = 0xC3;
+        UKismetHookingLibrary::Hook(Hook, Byte);
     }
     
     for (auto& Addr : Runtime::Offsets::NullFuncs)

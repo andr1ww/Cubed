@@ -15,7 +15,7 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
     if (GameMode->CurrentPlaylistId == -1)
     {
         auto Playlist = UObject::FindObject<UFortPlaylistAthena>(
-            "FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
+            "FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
         if (!Playlist) return false;
 
      //   GameMode->SpawningPolicyManager = GetWorld()->SpawnActor<AFortAthenaSpawningPolicyManager>(AFortAthenaSpawningPolicyManager::StaticClass(), { 0, 0, -99999 }, {});
@@ -150,6 +150,32 @@ void FortGameModeAthena::HandleStartingNewPlayer(AFortGameModeAthena* GameMode, 
     PlayerState->OnRep_SeasonLevelUIDisplay();
 }
 
+void FortGameModeAthena::StartNewSafeZonePhase(AFortGameModeAthena* GameMode, int NewSafeZonePhase)
+{
+    auto GameState = (AFortGameStateAthena*)GameMode->GameState;
+    if (!GameState) return;
+
+    FFortSafeZoneDefinition* SafeZoneDefinition = &GameState->MapInfo->SafeZoneDefinition;
+    TArray<float>& Durations = *(TArray<float>*)(__int64(SafeZoneDefinition) + 0x248);
+    TArray<float>& HoldDurations = *(TArray<float>*)(__int64(SafeZoneDefinition) + 0x238);
+
+    int SafeZonePhase = GameMode->SafeZonePhase + 1;
+
+    float ZoneDuration = 0.f;
+    float ZoneHoldDuration = 0.f;
+
+    if (SafeZonePhase >= 0 && SafeZonePhase < Durations.Num())
+        ZoneDuration = Durations[SafeZonePhase];
+    if (SafeZonePhase >= 0 && SafeZonePhase < HoldDurations.Num())
+        ZoneHoldDuration = HoldDurations[SafeZonePhase];
+
+    float CurrentTime = UGameplayStatics::GetTimeSeconds(GetWorld());
+    GameMode->SafeZoneIndicator->SafeZoneStartShrinkTime  = CurrentTime + ZoneHoldDuration;
+    GameMode->SafeZoneIndicator->SafeZoneFinishShrinkTime = GameMode->SafeZoneIndicator->SafeZoneStartShrinkTime + ZoneDuration;
+
+    StartNewSafeZonePhaseOG(GameMode, NewSafeZonePhase);
+}
+
 void FortGameModeAthena::Setup()
 {
     UHook* Hook = new UHook();
@@ -168,4 +194,9 @@ void FortGameModeAthena::Setup()
     Hook->Class = AGameModeBase::StaticClass();
     Hook->Detour = HandleStartingNewPlayer;
     UKismetHookingLibrary::Hook(Hook, EHook::EveryVFT);
+
+    Hook->Address = ImageBase + 0x4a90298;
+    Hook->Original = (void**)&StartNewSafeZonePhaseOG;
+    Hook->Detour = StartNewSafeZonePhase;
+    UKismetHookingLibrary::Hook(Hook, EHook::Address);
 }
