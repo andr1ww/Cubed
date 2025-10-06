@@ -11,6 +11,12 @@
 #include "Engine/Source/Runtime/FortniteGame/Public/Inventory/FortInventory.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Player/FortPlayerController.h"
 
+static void (*SendRequestNowOG)(void* Arg1, void* MCPData, int);
+static void SendRequestNow(void* Arg1, void* MCPData, int)
+{
+    return SendRequestNowOG(Arg1, MCPData, 3);
+}
+
 DWORD WINAPI Startup(LPVOID)
 {
     AllocConsole();
@@ -59,6 +65,11 @@ DWORD WINAPI Startup(LPVOID)
         UKismetHookingLibrary::Hook(Hook, RTrue);
     }
 
+    Hook->Address = ImageBase + 0x1023D3C;
+    Hook->Original = (void**)&SendRequestNowOG;
+    Hook->Detour = SendRequestNow;
+    UKismetHookingLibrary::Hook(Hook, Address);
+    
     *(bool *)(ImageBase + Runtime::Offsets::GIsClient) = false;
     *(bool *)(ImageBase + Runtime::Offsets::GIsClient + 1) = true;
 

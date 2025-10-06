@@ -7,8 +7,11 @@
 
 void FortPlayerController::ServerAcknowledgePossession(AFortPlayerControllerAthena* Controller, APawn* Pawn)
 {
+    auto PlayerState = (AFortPlayerState*)Controller->PlayerState;
     Controller->AcknowledgedPawn = Pawn;
-    UFortKismetLibrary::UpdatePlayerCustomCharacterPartsVisualization((AFortPlayerState*)Controller->PlayerState);
+
+    PlayerState->HeroType = Controller->CosmeticLoadoutPC.Character->HeroDefinition;
+    UFortKismetLibrary::UpdatePlayerCustomCharacterPartsVisualization(PlayerState);
     
     Controller->XPComponent->bRegisteredWithQuestManager = true;
     Controller->XPComponent->OnRep_bRegisteredWithQuestManager();
