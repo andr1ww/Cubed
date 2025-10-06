@@ -1,17 +1,26 @@
 ﻿#include "pch.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Player/FortPlayerController.h"
 
+#include "Logging.h"
 #include "Offsets.h"
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"
 #include "Engine/Source/Runtime/CoreUObject/Public/Templates/Casts.h"
+#include "Engine/Source/Runtime/GameplayAbilities/Public/AbilitySystemComponent.h"
 
 void FortPlayerController::ServerAcknowledgePossession(AFortPlayerControllerAthena* Controller, APawn* Pawn)
 {
-    auto PlayerState = (AFortPlayerState*)Controller->PlayerState;
+    auto PlayerState = (AFortPlayerStateZone*)Controller->PlayerState;
     Controller->AcknowledgedPawn = Pawn;
 
     PlayerState->HeroType = Controller->CosmeticLoadoutPC.Character->HeroDefinition;
     UFortKismetLibrary::UpdatePlayerCustomCharacterPartsVisualization(PlayerState);
+    
+    TScriptInterface<IAbilitySystemInterface> AbilitySystemInterfaceActor{};
+    AbilitySystemInterfaceActor.ObjectPointer = PlayerState;
+    AbilitySystemInterfaceActor.InterfacePointer = PlayerState->GetInterfaceAddress<IAbilitySystemInterface>();
+    
+    static auto AbilitySet = GetAssetManager()->GameDataBR->PlayerAbilitySetBR.Get();
+    UFortKismetLibrary::EquipFortAbilitySet(AbilitySystemInterfaceActor, AbilitySet, nullptr);
     
     Controller->XPComponent->bRegisteredWithQuestManager = true;
     Controller->XPComponent->OnRep_bRegisteredWithQuestManager();

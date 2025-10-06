@@ -76,23 +76,3 @@ inline UObject* StaticLoadObjectNoType(const std::string& name, UClass* ClassToL
 inline UObject* StaticLoadObjectNoType(const char* name, UClass* ClassToLoad) {
     return StaticLoadObjectNoType(std::string(name), ClassToLoad);
 }
-
-namespace SDK
-{
-    inline UObject *InternalObjectGet(FSoftObjectPtr *Ptr, UClass *Class)
-    {
-        if (!Ptr)
-            return nullptr;
-        auto Ret = Ptr->Get();
-        if (!Ret && Ptr->ObjectID.AssetPathName.ComparisonIndex > 0) [[unlikely]]
-        {
-            Ret = StaticLoadObjectNoType(Ptr->ObjectID.AssetPathName.GetRawString().c_str(), Class);
-            if (Ret)
-            {
-                Ptr->WeakPtr.ObjectIndex = Ret->Index;
-                Ptr->WeakPtr.ObjectSerialNumber = UObject::GObjects->GetItemByIndex(Ret->Index)->SerialNumber;
-            }
-        }
-        return Ret;
-    }
-}

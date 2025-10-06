@@ -32,6 +32,11 @@ public:
 	static class UObject* FindObjectFastImpl(const std::string& Name, EClassCastFlags RequiredType = EClassCastFlags::None);
 	static class UObject* FindObjectImpl(const std::string& FullName, EClassCastFlags RequiredType = EClassCastFlags::None);
 
+	template <typename T>
+	inline T* GetInterfaceAddress() {
+		return ((T * (*)(UObject*, UClass*)) (*(uint64_t*)(__readgsqword(0x60) + 0x10) + 0xCF9EA0))(this, T::StaticClass());
+	}
+	
 	std::string GetFullName() const;
 	std::string GetName() const;
 	bool HasTypeFlag(EClassCastFlags TypeFlags) const;

@@ -5,16 +5,38 @@
 
 #include "Offsets.h"
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"
+#include "Engine/Source/Runtime/CoreUObject/Public/UObject/UObjectGlobals.h"
 #include "Engine/Source/Runtime/Engine/Classes/Engine/NetDriver.h"
 #include "Engine/Source/Runtime/Engine/Classes/Engine/World.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/FortGameModeAthena.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Inventory/FortInventory.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Player/FortPlayerController.h"
+#include "Engine/Source/Runtime/GameplayAbilities/Public/AbilitySystemComponent.h"
 
 static void (*SendRequestNowOG)(void* Arg1, void* MCPData, int);
 static void SendRequestNow(void* Arg1, void* MCPData, int)
 {
     return SendRequestNowOG(Arg1, MCPData, 3);
+}
+
+namespace SDK
+{
+    UObject *InternalObjectGet(FSoftObjectPtr *Ptr, UClass *Class)
+    {
+        if (!Ptr)
+            return nullptr;
+        auto Ret = Ptr->Get();
+        if (!Ret && Ptr->ObjectID.AssetPathName.ComparisonIndex > 0) [[unlikely]]
+        {
+            Ret = StaticLoadObjectNoType(Ptr->ObjectID.AssetPathName.GetRawString().c_str(), Class);
+            if (Ret)
+            {
+                Ptr->WeakPtr.ObjectIndex = Ret->Index;
+                Ptr->WeakPtr.ObjectSerialNumber = UObject::GObjects->GetItemByIndex(Ret->Index)->SerialNumber;
+            }
+        }
+        return Ret;
+    }
 }
 
 DWORD WINAPI Startup(LPVOID)
@@ -34,6 +56,7 @@ DWORD WINAPI Startup(LPVOID)
     NetDriver::Setup();
     FortInventory::Setup();
     FortPlayerController::Setup();
+    AbilitySystemComponent::Setup();
     
     UHook* Hook = new UHook();
 

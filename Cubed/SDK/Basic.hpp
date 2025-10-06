@@ -541,37 +541,48 @@ public:
 
 }
 
-class FSoftObjectPtr : public TPersistentObjectPtr<FakeSoftObjectPtr::FSoftObjectPath>
+	class FSoftObjectPtr : public TPersistentObjectPtr<FakeSoftObjectPtr::FSoftObjectPath>
 {
 };
 
-template<typename UEType>
-class TSoftObjectPtr : public FSoftObjectPtr
-{
-public:
-	UEType* Get() const
-	{
-		return static_cast<UEType*>(TPersistentObjectPtr::Get());
-	}
-	UEType* operator->() const
-	{
-		return static_cast<UEType*>(TPersistentObjectPtr::Get());
-	}
-};
+	UObject* InternalObjectGet(FSoftObjectPtr* Ptr, UClass* Class);
 
-template<typename UEType>
-class TSoftClassPtr : public FSoftObjectPtr
-{
-public:
-	UEType* Get() const
+
+	template<typename UEType>
+	class TSoftObjectPtr : public FSoftObjectPtr
 	{
-		return static_cast<UEType*>(TPersistentObjectPtr::Get());
-	}
-	UEType* operator->() const
+	public:
+		UEType* Get() const
+		{
+			return static_cast<UEType*>(InternalObjectGet((FSoftObjectPtr *) this, UEType::StaticClass()));
+		}
+		UEType* operator->() const
+		{
+			return Get();
+		}
+		operator UEType* () const
+		{
+			return Get();
+		}
+	};
+
+	template <typename UEType>
+	class TSoftClassPtr : public FSoftObjectPtr
 	{
-		return static_cast<UEType*>(TPersistentObjectPtr::Get());
-	}
-};
+	public:
+		UClass *Get() const
+		{
+			return static_cast<UClass*>(InternalObjectGet((FSoftObjectPtr *) this, UClass::StaticClass()));
+		}
+		UClass* operator->() const
+		{
+			return Get();
+		}
+		operator UClass* () const
+		{
+			return Get();
+		}
+	};
 
 // Predefined struct FScriptInterface
 // 0x0010 (0x0010 - 0x0000)

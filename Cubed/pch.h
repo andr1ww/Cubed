@@ -279,4 +279,16 @@ inline AFortGameStateAthena* GetGameState()
         return nullptr;
 }
 
+inline UFortAssetManager* GetAssetManager()
+{
+        static UFortAssetManager* FortAssetManager = nullptr;
+        if (!FortAssetManager)
+        {
+                UFortAssetManager* AssetManager = (UFortAssetManager*)UFortEngine::GetEngine()->AssetManager;
+                FortAssetManager = AssetManager;
+        }
+        
+        return FortAssetManager;
+}
+
 #endif //PCH_H
