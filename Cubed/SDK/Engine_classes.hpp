@@ -2909,6 +2909,9 @@ public:
 	uint8                                         Pad_98[0x18];                                      // 0x0098(0x0018)(Fixing Struct Size After Last Property [ Dumper-7 ])
 
 public:
+	uint8_t** Search(function<bool(FName&, uint8 *&)> check) {
+		return RowMap.Search(check);
+	}
 	static class UClass* StaticClass()
 	{
 		return StaticClassImpl<"DataTable">();

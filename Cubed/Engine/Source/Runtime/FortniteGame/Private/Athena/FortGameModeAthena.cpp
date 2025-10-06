@@ -9,7 +9,6 @@
 
 bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
 {
-    UE_LOG(LogServer, Log, "FortGameModeAthena::ReadyToStartMatch called!");
     auto GameState = Cast<AFortGameStateAthena>(GameMode->GameState);
     if (!GameState || !GameState->MapInfo) return false;
 
@@ -94,10 +93,40 @@ APawn* FortGameModeAthena::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AF
         auto Item = GameMode->StartingItems[i];
         if (Item.Count <= 0) continue;
         
-     //   Inventory->AddItem(Item.Item, Item.Count, 0);
+        Inventory->AddItem(Item.Item, Item.Count, 0);
     }
 
-   // Inventory->AddItem(NewPlayer->CosmeticLoadoutPC.Pickaxe->WeaponDefinition, 1, 0);
+    Inventory->AddItem(NewPlayer->CosmeticLoadoutPC.Pickaxe->WeaponDefinition, 1, 0);
+
+    static bool bFirst = false;
+    if (!bFirst)
+    {
+        bFirst = true;
+        auto GameState = Cast<AFortGameStateAthena>(GameMode->GameState);
+        if (UCurveTable* AthenaGameDataTable = GameState->AthenaGameDataTable)
+        {
+            static FName DefaultSafeZoneDamageName = UKismetStringLibrary::Conv_StringToName(FString(L"Default.SafeZone.Damage"));
+
+            for (const auto& [RowName, RowPtr] : ((UDataTable*)AthenaGameDataTable)->RowMap) 
+            {
+                if (RowName != DefaultSafeZoneDamageName)
+                    continue;
+
+                FSimpleCurve* Row = (FSimpleCurve*)RowPtr;
+
+                if (!Row)
+                    continue;
+
+                for (auto& Key : Row->Keys)
+                {
+                    FSimpleCurveKey* KeyPtr = &Key;
+
+                    if (KeyPtr->Time == 0.f)
+                        KeyPtr->Value = 0.f;
+                }
+            } 
+        }
+    }
     
     return Pawn;
 }

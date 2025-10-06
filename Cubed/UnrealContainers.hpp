@@ -315,6 +315,11 @@ namespace UC
 		{
 		}
 
+		inline TArray(int32 Size)
+			: NumElements(0), MaxElements(Size), Data(FMemory::MallocForType<ArrayElementType>(Size))
+		{
+		}
+
 		TArray(const TArray&) = default;
 
 		TArray(TArray&&) = default;
@@ -326,33 +331,31 @@ namespace UC
 	private:
 		inline int32 GetSlack() const { return MaxElements - NumElements; }
 
-		inline void VerifyIndex(int32 Index) const { if (!IsValidIndex(Index)) throw std::out_of_range("Index was out of range!"); }
+		inline void VerifyIndex(int32 Index) const { if (!IsValidIndex(Index)) throw out_of_range("Index was out of range!"); }
 
 		inline       ArrayElementType& GetUnsafe(int32 Index)       { return Data[Index]; }
 		inline const ArrayElementType& GetUnsafe(int32 Index) const { return Data[Index]; }
 
 	public:
-		inline void ResizeTo(int32_t NewMax)
-		{
-			Data = (ArrayElementType*)realloc(Data, (MaxElements = NewMax) * sizeof(ArrayElementType));
-		}
-
-				
 		inline void Reserve(const int Num)
 		{
 			if (Num + NumElements > MaxElements) Data = FMemory::ReallocForType<ArrayElementType>(Data, MaxElements = Num + NumElements);
 		}
 
-		/* Adds to the array if there is still space for one more element */
-		inline bool Add(const ArrayElementType& Element)
+		ArrayElementType* GetData() const
 		{
-
-			Reserve(1);
-			Data[NumElements] = Element;
-			NumElements++;
-
-			return true;
+			return Data;
 		}
+
+		/* Adds to the array if there is still space for one more element */
+		inline ArrayElementType& Add(const ArrayElementType& Element)
+		{
+			Reserve(1);
+
+			Data[NumElements++] = Element;
+			return Data[NumElements];
+		}
+
 		inline bool Remove(int32 Index)
 		{
 			if (!IsValidIndex(Index))
@@ -369,31 +372,65 @@ namespace UC
 			return true;
 		}
 
-		inline void Clear()
+		template <typename ComparisonType>
+		bool Contains(ComparisonType Item) const
 		{
-			NumElements = 0;
+			for (int Idx = 0; Idx < NumElements; Idx++)
+			{
+				if (Data[Idx] == Item)
+				{
+					return true;
+				}
+			}
 
-			if (Data)
-				memset(Data, 0, NumElements * ElementSize);
+			return false;
 		}
 
 		inline void Free()
 		{
 			if (Data)
-				free(Data);
+				FMemory::Free(Data);
+
 			MaxElements = 0;
 			NumElements = 0;
+			Data = nullptr;
+		}
+
+		inline void ResetNum() {
+			NumElements = 0;
+		}
+
+		inline void Clear()
+		{
+			NumElements = 0;
+
+			//if (Data)
+			//	memset(Data, 0, NumElements * ElementSize);
 		}
 
 	public:
 		inline int32 Num() const { return NumElements; }
 		inline int32 Max() const { return MaxElements; }
 
-		inline const ArrayElementType* GetDataPtr() const { return Data; }
-
 		inline bool IsValidIndex(int32 Index) const { return Data && Index >= 0 && Index < NumElements; }
 
 		inline bool IsValid() const { return Data && NumElements > 0 && MaxElements >= NumElements; }
+
+		template <class PT>
+		ArrayElementType* Search(PT Predicate) {
+			for (auto& v : *this) {
+				if (Predicate(v)) return &v;
+			}
+			return nullptr;
+		}
+
+		template <class PT>
+		int32_t SearchIndex(PT Predicate) {
+			for (int32_t i = 0; i < Num(); i++) {
+				if (Predicate(Data[i])) return i;
+			}
+			return -1;
+		}
 
 	public:
 		inline       ArrayElementType& operator[](int32 Index)       { VerifyIndex(Index); return Data[Index]; }
@@ -402,13 +439,20 @@ namespace UC
 		inline bool operator==(const TArray<ArrayElementType>& Other) const { return Data == Other.Data; }
 		inline bool operator!=(const TArray<ArrayElementType>& Other) const { return Data != Other.Data; }
 
+		template <typename NT>
+		operator TArray<NT*>() {
+			return *(TArray<NT*>*)this;
+		}
+
 		inline explicit operator bool() const { return IsValid(); };
 
 	public:
-		template<typename T> friend Iterators::TArrayIterator<T> begin(const TArray& Array);
-		template<typename T> friend Iterators::TArrayIterator<T> end  (const TArray& Array);
+		inline Iterators::TArrayIterator<ArrayElementType> begin() { return Iterators::TArrayIterator<ArrayElementType>(*this, 0); }
+		inline Iterators::TArrayIterator<ArrayElementType> begin() const { return Iterators::TArrayIterator<ArrayElementType>(*this, 0); }
+		inline Iterators::TArrayIterator<ArrayElementType> end() { return Iterators::TArrayIterator<ArrayElementType>(*this, Num()); }
+		inline Iterators::TArrayIterator<ArrayElementType> end() const { return Iterators::TArrayIterator<ArrayElementType>(*this, Num()); }
 	};
-
+	
 	class FString : public TArray<wchar_t>
 	{
 	public:
@@ -670,7 +714,13 @@ namespace UC
 		
 			return end(*this);
 		}
-
+		template <class PT>
+				ValueElementType* Search(PT Predicate) {
+			for (auto& [k, v] : *this) {
+				if (Predicate(k, v)) return &v;
+			}
+			return nullptr;
+		}
 	public:
 		inline       ElementType& operator[] (int32 Index)       { return Elements[Index]; }
 		inline const ElementType& operator[] (int32 Index) const { return Elements[Index]; }

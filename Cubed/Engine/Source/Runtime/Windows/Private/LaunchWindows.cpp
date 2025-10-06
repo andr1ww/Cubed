@@ -8,6 +8,7 @@
 #include "Engine/Source/Runtime/Engine/Classes/Engine/NetDriver.h"
 #include "Engine/Source/Runtime/Engine/Classes/Engine/World.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/FortGameModeAthena.h"
+#include "Engine/Source/Runtime/FortniteGame/Public/Inventory/FortInventory.h"
 
 DWORD WINAPI Startup(LPVOID)
 {
@@ -24,6 +25,7 @@ DWORD WINAPI Startup(LPVOID)
     FortGameModeAthena::Setup();
     World::Setup();
     NetDriver::Setup();
+    FortInventory::Setup();
 
     UHook* Hook = new UHook();
 
