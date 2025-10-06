@@ -19,6 +19,24 @@ void AthenaAIServicePlayerBots::InitializeMMRInfos()
     AIServicePlayerBots->CachedMMRSpawningInfo.SpawningInfos.Add(NewSpawningInfo);
     AIServicePlayerBots->GamePhaseToStartSpawning = EAthenaGamePhase::Warmup;
     AIServicePlayerBots->bWaitForNavmeshToBeLoaded = false;
+
+    static bool bSet = false;
+    if (!bSet)
+    {
+        bSet = true;
+        TArray<AActor*> AllActors;
+        UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFortPoiVolume::StaticClass(), &AllActors);
+        for (auto& Actor : AllActors)
+        {
+            AFortPoiVolume* POIVolume = static_cast<AFortPoiVolume*>(Actor);
+            if (POIVolume)
+            {
+                FCachedPOIVolumeLocations Ok{};
+                Ok.POIVolume = POIVolume;
+                AIServicePlayerBots->CachedValidPOIVolumeLocations.Add(Ok);
+            }
+        }
+    }
 }
 
 void AthenaAIServicePlayerBots::Setup()
@@ -29,4 +47,9 @@ void AthenaAIServicePlayerBots::Setup()
     Hook->Offset = 3;
     Hook->Detour = InitializeMMRInfos;
     UKismetHookingLibrary::Hook(Hook, EHook::ModifyCustom);
+
+    UKismetHookingLibrary::PatchBytes(ImageBase + 0x49DE47B, { 
+        0xE9, 0xA4, 0x00, 0x00, 0x00,  // jmp
+        0x90                            // nop
+    });
 }

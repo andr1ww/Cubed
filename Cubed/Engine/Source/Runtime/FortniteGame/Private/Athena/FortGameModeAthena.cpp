@@ -16,12 +16,18 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
     if (GameMode->CurrentPlaylistId == -1)
     {
         auto Playlist = UObject::FindObject<UFortPlaylistAthena>(
-            "FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
+            "FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
         if (!Playlist) return false;
 
-     //   GameMode->SpawningPolicyManager = GetWorld()->SpawnActor<AFortAthenaSpawningPolicyManager>(AFortAthenaSpawningPolicyManager::StaticClass(), { 0, 0, -99999 }, {});
-       // GameMode->SpawningPolicyManager->GameModeAthena = GameMode;
-       // GameMode->SpawningPolicyManager->GameStateAthena = GameState;
+        GameMode->AIDirector = GetWorld()->SpawnActor<AAthenaAIDirector>(AAthenaAIDirector::StaticClass(), { 0, 0, -99999 }, {});
+        if (!GameMode->AIDirector) return false;
+        GameMode->AIDirector->Activate();
+        if (!GameMode->AIGoalManager)
+            GameMode->AIGoalManager = GetWorld()->SpawnActor<AFortAIGoalManager>(AFortAIGoalManager::StaticClass(), { 0, 0, -99999 }, {});
+        
+        GameMode->SpawningPolicyManager = GetWorld()->SpawnActor<AFortAthenaSpawningPolicyManager>(AFortAthenaSpawningPolicyManager::StaticClass(), { 0, 0, -99999 }, {});
+        GameMode->SpawningPolicyManager->GameModeAthena = GameMode;
+        GameMode->SpawningPolicyManager->GameStateAthena = GameState;
 
         Playlist->GarbageCollectionFrequency = 99999999999999.f;
         GameState->CurrentPlaylistInfo.BasePlaylist = Playlist;
@@ -203,6 +209,23 @@ void FortGameModeAthena::StartNewSafeZonePhase(AFortGameModeAthena* GameMode, in
     StartNewSafeZonePhaseOG(GameMode, NewSafeZonePhase);
 }
 
+void FortGameModeAthena::StartAircraftPhase(AFortGameModeAthena* GameMode, char a2)
+{
+    StartAircraftPhaseOG(GameMode, a2);
+
+    std::thread([GameMode]()
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(7000));
+        for (auto& Player : GameMode->AliveBots)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(250));
+            Player->PlayerBotPawn->K2_TeleportTo(GameMode->Aircrafts[0]->K2_GetActorLocation(), GameMode->Aircrafts[0]->K2_GetActorRotation());
+            Player->ThankBusDriver();
+            Player->PlayerBotPawn->BeginSkydiving(true);
+        }
+    }).detach();
+}
+
 void FortGameModeAthena::Setup()
 {
     UHook* Hook = new UHook();
@@ -225,5 +248,10 @@ void FortGameModeAthena::Setup()
     Hook->Address = ImageBase + 0x4a90298;
     Hook->Original = (void**)&StartNewSafeZonePhaseOG;
     Hook->Detour = StartNewSafeZonePhase;
+    UKismetHookingLibrary::Hook(Hook, EHook::Address);
+
+    Hook->Address = ImageBase + 0x4A8D71C;
+    Hook->Original = (void**)&StartAircraftPhaseOG;
+    Hook->Detour = StartAircraftPhase;
     UKismetHookingLibrary::Hook(Hook, EHook::Address);
 }

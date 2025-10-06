@@ -16,6 +16,20 @@
 #include "Engine/Source/Runtime/FortniteGame/Public/Player/FortPlayerController.h"
 #include "Engine/Source/Runtime/GameplayAbilities/Public/AbilitySystemComponent.h"
 
+// move these funcs later
+static void (*CreateAndConfigureNavigationSystemOG)(UAthenaNavSystemConfig* This, UWorld* World);
+void CreateAndConfigureNavigationSystem(UAthenaNavSystemConfig* This, UWorld* World)
+{
+    UE_LOG(LogTemp, Log, __FUNCTION__);
+    This->bPrioritizeNavigationAroundSpawners = true;
+    This->bAutoSpawnMissingNavData = true;
+    This->bAllowAutoRebuild = true;
+    This->bSupportRuntimeNavmeshDisabling = false; // main fixes for nav
+    This->bUsesStreamedInNavLevel = true;
+    
+    return CreateAndConfigureNavigationSystemOG(This, World);
+}
+
 static void (*SendRequestNowOG)(void* Arg1, void* MCPData, int);
 static void SendRequestNow(void* Arg1, void* MCPData, int)
 {
@@ -96,6 +110,16 @@ DWORD WINAPI Startup(LPVOID)
     Hook->Original = (void**)&SendRequestNowOG;
     Hook->Detour = SendRequestNow;
     UKismetHookingLibrary::Hook(Hook, Address);
+
+    Hook->Address = 0x1B;
+    Hook->Class = AActor::StaticClass();
+    Hook->Detour = RetTrue;
+    UKismetHookingLibrary::Hook(Hook, EveryVFT);
+
+    Hook->Address = ImageBase + 0x11B6DAC;
+    Hook->Original = (void**)&CreateAndConfigureNavigationSystemOG;
+    Hook->Detour = CreateAndConfigureNavigationSystem;
+    UKismetHookingLibrary::Hook(Hook, Address);
     
     *(bool *)(ImageBase + Runtime::Offsets::GIsClient) = false;
     *(bool *)(ImageBase + Runtime::Offsets::GIsClient + 1) = true;
@@ -122,6 +146,7 @@ DWORD WINAPI Startup(LPVOID)
         L"LogMatchmakingServiceDedicatedServer",
         L"LogGameplayTags",
         L"LogJson",
+        L"LogNavigationBuild",
         L"LogFortDayNight",
         L"LogLivingWorldManager",
         L"LogFortAI",
