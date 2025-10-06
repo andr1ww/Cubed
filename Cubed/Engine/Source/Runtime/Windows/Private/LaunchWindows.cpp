@@ -9,6 +9,7 @@
 #include "Engine/Source/Runtime/Engine/Classes/Engine/NetDriver.h"
 #include "Engine/Source/Runtime/Engine/Classes/Engine/World.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/FortGameModeAthena.h"
+#include "Engine/Source/Runtime/FortniteGame/Public/Athena/FortPoiVolume.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/Player/FortPlayerControllerAthena.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Inventory/FortInventory.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Player/FortPlayerController.h"
@@ -59,6 +60,7 @@ DWORD WINAPI Startup(LPVOID)
     FortPlayerController::Setup();
     AbilitySystemComponent::Setup();
     FortPlayerControllerAthena::Setup();
+    FortPoiVolume::Setup();
     
     UHook* Hook = new UHook();
     
@@ -99,6 +101,50 @@ DWORD WINAPI Startup(LPVOID)
     MH_EnableHook(MH_ALL_HOOKS);
     UWorld::GetWorld()->OwningGameInstance->LocalPlayers.Remove(0);
     UGameplayStatics::OpenLevel(UWorld::GetWorld(), UKismetStringLibrary::Conv_StringToName(L"Apollo_Terrain"), true, FString());
+
+    std::vector<std::wstring> Logs = {
+        L"LogFortUIDirector",
+        L"LogQos",
+        L"LogFortInventory",
+        L"LogFortWorld",
+        L"LogFortMutatorInventoryOverride",
+        L"LogFort",
+        L"LogFortInvServiceComp",
+        L"LogFortPlayerRegistration",
+        L"LogOnlineGame",
+        L"LogAthenaAIServiceBots",
+        L"LogStats",
+        L"LogHotfixManager",
+        L"LogAISpawnerData",
+        L"LogOnlineSession",
+        L"LogMatchmakingServiceDedicatedServer",
+        L"LogGameplayTags",
+        L"LogJson",
+        L"LogFortDayNight",
+        L"LogLivingWorldManager",
+        L"LogFortAI",
+        L"LogFortAbility",
+        //L"LogAthenaBots",
+        L"LogCharacter",
+        L"LogBehaviorTree",
+        L"LogPathFollowing",
+        L"LogPawnAction",
+        L"LogFortAIDirector",
+        L"LogFortQuest",
+        L"LogOnline",
+        L"LogAthenaBots",
+        L"LogEQS",
+        L"LogBrushComponent",
+        L"LogPlayerQuestProgress",
+        L"LogFortQuestObjective",
+        L"LogAISpawner"
+    };
+
+    for (const std::wstring& Log : Logs)
+    {
+        auto LogCMD = std::format(L"log {} all", Log);
+        UKismetSystemLibrary::ExecuteConsoleCommand(UWorld::GetWorld(), FString(std::format(L"log {} VeryVerbose", Log).c_str()), nullptr);
+    }
     
     return 0;
 }
