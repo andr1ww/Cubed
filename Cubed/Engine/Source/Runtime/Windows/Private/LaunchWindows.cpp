@@ -17,6 +17,21 @@
 #include "Engine/Source/Runtime/FortniteGame/Public/Player/FortPlayerController.h"
 #include "Engine/Source/Runtime/GameplayAbilities/Public/AbilitySystemComponent.h"
 
+static AFortPoiVolume* (*FindNextBestPOIOG)(UFortAthenaAIBotEvaluator_SelectNextPOI*);
+AFortPoiVolume* FindNextBestPOI(UFortAthenaAIBotEvaluator_SelectNextPOI* This)
+{
+    auto Poi = FindNextBestPOIOG(This);
+    if (!Poi)
+    {
+        TArray<AActor*> AllActors;
+        UGameplayStatics::GetAllActorsOfClass(UWorld::GetWorld(), AFortPoiVolume::StaticClass(), &AllActors);
+        if (AllActors.Num() > 0)
+            Poi = (AFortPoiVolume*)AllActors[std::rand() % AllActors.Num()];
+    }
+    UE_LOG(LogTemp, Log, Poi->GetFullName().c_str());
+    return Poi;
+}
+
 // move these funcs later
 static void (*CreateAndConfigureNavigationSystemOG)(UAthenaNavSystemConfig* This, UWorld* World);
 void CreateAndConfigureNavigationSystem(UAthenaNavSystemConfig* This, UWorld* World)
@@ -79,7 +94,7 @@ DWORD WINAPI Startup(LPVOID)
     AbilitySystemComponent::Setup();
     FortPlayerControllerAthena::Setup();
     FortPoiVolume::Setup();
-    AthenaAIServicePlayerBots::Setup();
+  //  AthenaAIServicePlayerBots::Setup();
     BuildingSMActor::Setup();
     
     UHook* Hook = new UHook();
@@ -103,12 +118,17 @@ DWORD WINAPI Startup(LPVOID)
         Hook->Byte = 0xC3;
         UKismetHookingLibrary::Hook(Hook, Byte);
     }
-
+    
     for (auto& Addr : Runtime::Offsets::RetTrueFuncs)
     {
         Hook->Address = ImageBase + Addr;
         UKismetHookingLibrary::Hook(Hook, RTrue);
     }
+
+    Hook->Address = ImageBase + 0x47E286C;
+    Hook->Original = (void**)&FindNextBestPOIOG;
+    Hook->Detour = FindNextBestPOI;
+    UKismetHookingLibrary::Hook(Hook, Address);
 
     Hook->Address = ImageBase + 0x1023D3C;
     Hook->Original = (void**)&SendRequestNowOG;
