@@ -95,10 +95,9 @@ DWORD WINAPI Startup(LPVOID)
     AbilitySystemComponent::Setup();
     FortPlayerControllerAthena::Setup();
     FortPoiVolume::Setup();
-  //  AthenaAIServicePlayerBots::Setup();
     BuildingSMActor::Setup();
     AthenaAIServicePlayerBots::Setup();
-    //BuildingContainer::Setup();
+    BuildingContainer::Setup();
     
     UHook* Hook = new UHook();
     

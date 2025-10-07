@@ -172,6 +172,8 @@
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Athena\FortGameModeAthena.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Athena\FortPoiVolume.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Athena\Player\FortPlayerControllerAthena.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Building\BuildingContainer.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Building\BuildingSMActor.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Inventory\FortInventory.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Kismet\FortKismetLibrary.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Player\FortPlayerController.cpp" />
