@@ -9,6 +9,7 @@
 #include "Engine/Source/Runtime/Engine/Classes/Engine/NetDriver.h"
 #include "Engine/Source/Runtime/Engine/Classes/Engine/World.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/FortGameModeAthena.h"
+#include "Engine/Source/Runtime/FortniteGame/Public/Building/BuildingContainer.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/FortPoiVolume.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/AI/Systems/AthenaAIServicePlayerBots.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/Player/FortPlayerControllerAthena.h"
@@ -79,6 +80,7 @@ DWORD WINAPI Startup(LPVOID)
     FortPlayerControllerAthena::Setup();
     FortPoiVolume::Setup();
     AthenaAIServicePlayerBots::Setup();
+    //BuildingContainer::Setup();
     
     UHook* Hook = new UHook();
     

@@ -78,6 +78,11 @@ struct FGameplayTag
 {
 public:
 	class FName                                   TagName;                                           // 0x0000(0x0008)(Edit, ZeroConstructor, EditConst, SaveGame, IsPlainOldData, NoDestructor, Protected, HasGetValueTypeHash, NativeAccessSpecifierProtected)
+	
+	inline bool operator==(const FGameplayTag& Other) const
+	{
+		return TagName == Other.TagName;
+	}
 };
 
 // ScriptStruct GameplayTags.GameplayTagSource

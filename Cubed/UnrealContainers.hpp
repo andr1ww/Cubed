@@ -715,8 +715,10 @@ namespace UC
 			return end(*this);
 		}
 		template <class PT>
-				ValueElementType* Search(PT Predicate) {
-			for (auto& [k, v] : *this) {
+		ValueElementType* Search(PT Predicate) 
+		{
+			for (auto& [k, v] : *this) 
+			{
 				if (Predicate(k, v)) return &v;
 			}
 			return nullptr;
