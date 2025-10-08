@@ -162,6 +162,13 @@ void FortPlayerPawn::OnAboutToEnterBackpack(AFortPickup* Pickup)
     OnAboutToEnterBackpackOG(Pickup);
 }
 
+void FortPlayerPawn::MovingEmoteStopped(AFortPawn* Pawn, FFrame& Stack)
+{
+    Pawn->bMovingEmote = false;
+    Pawn->bMovingEmoteForwardOnly = false;
+    return MovingEmoteStoppedOG(Pawn, Stack);
+}
+
 void FortPlayerPawn::Setup()
 {
     UHook* Hook = new UHook();
@@ -176,4 +183,9 @@ void FortPlayerPawn::Setup()
     Hook->Detour = OnAboutToEnterBackpack;
     Hook->Original = (void**)&OnAboutToEnterBackpackOG;
     UKismetHookingLibrary::Hook(Hook, EHook::Address);
+
+    Hook->Path = "/Script/FortniteGame.FortPawn.MovingEmoteStopped";
+    Hook->Original = reinterpret_cast<void**>(&MovingEmoteStoppedOG);
+    Hook->Detour = (void*)MovingEmoteStopped;
+    UKismetHookingLibrary::Hook(Hook, EHook::Exec);
 }
