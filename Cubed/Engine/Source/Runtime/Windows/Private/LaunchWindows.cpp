@@ -16,6 +16,7 @@
 #include "Engine/Source/Runtime/FortniteGame/Public/Building/BuildingSMActor.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Inventory/FortInventory.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Player/FortPlayerController.h"
+#include "Engine/Source/Runtime/FortniteGame/Public/Player/FortPlayerPawn.h"
 #include "Engine/Source/Runtime/GameplayAbilities/Public/AbilitySystemComponent.h"
 
 static AFortPoiVolume* (*FindNextBestPOIOG)(UFortAthenaAIBotEvaluator_SelectNextPOI*);
@@ -97,8 +98,9 @@ DWORD WINAPI Startup(LPVOID)
     AbilitySystemComponent::Setup();
     FortPlayerControllerAthena::Setup();
     FortPoiVolume::Setup();
+    FortPlayerPawn::Setup();
     BuildingSMActor::Setup();
-    AthenaAIServicePlayerBots::Setup();
+//    AthenaAIServicePlayerBots::Setup();
     BuildingContainer::Setup();
     
     UHook* Hook = new UHook();
