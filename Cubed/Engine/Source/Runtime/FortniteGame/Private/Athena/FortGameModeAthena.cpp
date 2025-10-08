@@ -15,7 +15,7 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
     if (GameMode->CurrentPlaylistId == -1)
     {
         auto Playlist = UObject::FindObject<UFortPlaylistAthena>(
-            "FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
+            "FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
         if (!Playlist) return false;
 
         GameMode->AIDirector = GetWorld()->SpawnActor<AAthenaAIDirector>(AAthenaAIDirector::StaticClass(), { 0, 0, -99999 }, {});
@@ -134,6 +134,26 @@ APawn* FortGameModeAthena::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AF
     if (!bFirst)
     {
         bFirst = true;
+        TArray<AActor*> WarmupActors;
+        std::vector<std::string> LootClasses = {
+            "/Game/Athena/Environments/Blueprints/Tiered_Athena_FloorLoot_Warmup.Tiered_Athena_FloorLoot_Warmup_C",
+            "/Game/Athena/Environments/Blueprints/Tiered_Athena_FloorLoot_01.Tiered_Athena_FloorLoot_01_C"
+        };
+
+        for (const auto& ClassPath : LootClasses)
+        {
+            UClass* WarmupClass = StaticLoadObject<UClass>(ClassPath);
+            UGameplayStatics::GetAllActorsOfClass(UWorld::GetWorld(), WarmupClass, &WarmupActors);
+
+            for (auto& WarmupActor : WarmupActors)
+            {
+                auto Container = (ABuildingContainer*)WarmupActor;
+                Container->BP_SpawnLoot(nullptr);
+                Container->K2_DestroyActor();
+            }
+            WarmupActors.Free();
+        }
+        
         auto GameState = Cast<AFortGameStateAthena>(GameMode->GameState);
         if (UCurveTable* AthenaGameDataTable = GameState->AthenaGameDataTable)
         {

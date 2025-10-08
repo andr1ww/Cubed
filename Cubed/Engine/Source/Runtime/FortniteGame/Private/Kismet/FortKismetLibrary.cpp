@@ -408,3 +408,25 @@ TArray<FFortItemEntry> FortKismetLibrary::PickLootDrops(FName TierGroupName, int
 	}
 	return Result;
 }
+
+AFortPickupAthena* FortKismetLibrary::SpawnPickup(FVector Loc, FFortItemEntry* Entry, EFortPickupSourceTypeFlag SourceTypeFlag, EFortPickupSpawnSource SpawnSource, AFortPlayerPawn* Pawn, int OverrideCount, bool Toss, bool RandomRotation, bool bCombine)
+{
+	if (!Entry) return nullptr;
+
+	static auto PickupClass = AFortPickupAthena::StaticClass();
+	AFortPickupAthena* NewPickup = UWorld::GetWorld()->SpawnActor<AFortPickupAthena>(PickupClass, Loc);
+    
+	NewPickup->bRandomRotation = RandomRotation;
+	NewPickup->PrimaryPickupItemEntry.ItemDefinition = Entry->ItemDefinition;
+	NewPickup->PrimaryPickupItemEntry.LoadedAmmo = Entry->LoadedAmmo;
+	NewPickup->PrimaryPickupItemEntry.Count = OverrideCount != -1 ? OverrideCount : Entry->Count;
+	NewPickup->PawnWhoDroppedPickup = Pawn;
+	NewPickup->OnRep_PrimaryPickupItemEntry();
+
+	if (Toss) NewPickup->TossPickup(Loc, Pawn, -1, Toss, true, SourceTypeFlag, SpawnSource);
+	NewPickup->MovementComponent = (UProjectileMovementComponent*)UGameplayStatics::SpawnObject(UProjectileMovementComponent::StaticClass(), NewPickup);
+	NewPickup->SetReplicateMovement(true);
+	NewPickup->OnRep_ReplicateMovement();
+    
+	return NewPickup;
+}

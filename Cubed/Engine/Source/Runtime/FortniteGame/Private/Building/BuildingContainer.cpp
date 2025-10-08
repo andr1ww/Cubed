@@ -20,7 +20,15 @@ bool BuildingContainer::SpawnLoot(ABuildingContainer* Container)
 		if (!Drop.ItemDefinition || Drop.Count <= 0)
 			continue;
 		FVector Loc = Container->K2_GetActorLocation() + (Container->GetActorForwardVector() * Container->LootSpawnLocation_Athena.X) + (Container->GetActorRightVector() * Container->LootSpawnLocation_Athena.Y) + (Container->GetActorUpVector() * Container->LootSpawnLocation_Athena.Z);
+		FortKismetLibrary::SpawnPickup(
+		Loc, 
+		&Drop, 
+		EFortPickupSourceTypeFlag::Container, 
+		EFortPickupSpawnSource::Unset, 
+		nullptr, 
+-1, true, true, true);
 	}
+	
 	Container->bAlreadySearched = true;
 	Container->OnRep_bAlreadySearched();
 	Container->SearchBounceData.SearchAnimationCount++;
