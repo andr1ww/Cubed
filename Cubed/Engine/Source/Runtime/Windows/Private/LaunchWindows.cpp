@@ -196,7 +196,7 @@ DWORD WINAPI Startup(LPVOID)
     for (const std::wstring& Log : Logs)
     {
         auto LogCMD = std::format(L"log {} all", Log);
-        UKismetSystemLibrary::ExecuteConsoleCommand(UWorld::GetWorld(), FString(std::format(L"log {} VeryVerbose", Log).c_str()), nullptr);
+        // UKismetSystemLibrary::ExecuteConsoleCommand(UWorld::GetWorld(), FString(std::format(L"log {} VeryVerbose", Log).c_str()), nullptr);
     }
     
     return 0;
