@@ -127,11 +127,11 @@ DWORD WINAPI Startup(LPVOID)
         UKismetHookingLibrary::Hook(Hook, RTrue);
     }
 
-    Hook->Address = ImageBase + 0x47E286C;
+    /*Hook->Address = ImageBase + 0x47E286C;
     Hook->Original = (void**)&FindNextBestPOIOG;
     Hook->Detour = FindNextBestPOI;
     UKismetHookingLibrary::Hook(Hook, Address);
-
+*/
     Hook->Address = ImageBase + 0x1023D3C;
     Hook->Original = (void**)&SendRequestNowOG;
     Hook->Detour = SendRequestNow;
