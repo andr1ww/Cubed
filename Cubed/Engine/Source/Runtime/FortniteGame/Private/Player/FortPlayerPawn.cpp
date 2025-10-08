@@ -169,6 +169,26 @@ void FortPlayerPawn::MovingEmoteStopped(AFortPawn* Pawn, FFrame& Stack)
     return MovingEmoteStoppedOG(Pawn, Stack);
 }
 
+void FortPlayerPawn::ServerSendZiplineState(AFortPlayerPawn* Pawn, FFrame& Stack)
+{
+    FZiplinePawnState State;
+    Stack.StepCompiledIn(&State);
+    Stack.IncrementCode();
+    Pawn->ZiplineState = State;
+    reinterpret_cast<void(*)(AFortPlayerPawn*)>(ImageBase + 0x51EEBEC)(Pawn); // OnRep_ZiplineState
+    
+    if (State.bJumped)
+    {
+        {
+            auto Velocity = Pawn->CharacterMovement->Velocity;
+            auto VelocityX = Velocity.X * -0.5f;
+            auto VelocityY = Velocity.Y * -0.5f;
+            Pawn->LaunchCharacterJump(FVector{ VelocityX >= -750 ? fminf(VelocityX, 750) : -750, VelocityY >= -750 ? fminf(VelocityY, 750) : -750, 1200 },
+                false, false, true, true);
+        }
+    }
+}
+
 void FortPlayerPawn::Setup()
 {
     UHook* Hook = new UHook();
@@ -187,5 +207,9 @@ void FortPlayerPawn::Setup()
     Hook->Path = "/Script/FortniteGame.FortPawn.MovingEmoteStopped";
     Hook->Original = reinterpret_cast<void**>(&MovingEmoteStoppedOG);
     Hook->Detour = MovingEmoteStopped;
+    UKismetHookingLibrary::Hook(Hook, EHook::Exec);
+
+    Hook->Path = "/Script/FortniteGame.FortPlayerPawn.ServerSendZiplineState";
+    Hook->Detour = ServerSendZiplineState;
     UKismetHookingLibrary::Hook(Hook, EHook::Exec);
 }

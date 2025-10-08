@@ -8,6 +8,7 @@ namespace FortPlayerPawn
     DefineOriginal(void, OnAboutToEnterBackpack, AFortPickup *Pickup);
     DefineOriginal(void, ServerHandlePickupInfo, AFortPlayerPawn* Pawn, AFortPickup* Pickup, FFortPickupRequestInfo& Params)
     DefineOriginal(void, MovingEmoteStopped, AFortPawn*, FFrame& Stack);
-    
+    DefineOriginal(void, ServerSendZiplineState, AFortPlayerPawn* Pawn, FFrame& Stack);
+
     void Setup();
 }
