@@ -146,12 +146,9 @@ APawn* FortGameModeAthena::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AF
             UGameplayStatics::GetAllActorsOfClass(UWorld::GetWorld(), WarmupClass, &WarmupActors);
 
             for (auto& WarmupActor : WarmupActors)
-            {
-                auto Container = (ABuildingContainer*)WarmupActor;
-                Container->BP_SpawnLoot(nullptr);
-                Container->K2_DestroyActor();
-            }
-            WarmupActors.Free();
+                WarmupActor->K2_DestroyActor();
+
+            WarmupActors.Free(); 
         }
         
         auto GameState = Cast<AFortGameStateAthena>(GameMode->GameState);
