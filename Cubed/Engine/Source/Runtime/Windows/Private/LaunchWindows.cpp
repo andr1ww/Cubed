@@ -73,6 +73,8 @@ namespace SDK
     }
 }
 
+uint32 RetNegativeOne() { return -1; }
+
 DWORD WINAPI Startup(LPVOID)
 {
     AllocConsole();
@@ -126,6 +128,10 @@ DWORD WINAPI Startup(LPVOID)
         Hook->Address = ImageBase + Addr;
         UKismetHookingLibrary::Hook(Hook, RTrue);
     }
+
+    Hook->Address = ImageBase + 0x3079B00;
+    Hook->Detour = RetNegativeOne;
+    UKismetHookingLibrary::Hook(Hook, Address);
 
     /*Hook->Address = ImageBase + 0x47E286C;
     Hook->Original = (void**)&FindNextBestPOIOG;
