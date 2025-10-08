@@ -45,7 +45,7 @@ void FortPlayerPawn::OnAboutToEnterBackpack(AFortPickup* Pickup)
     
     auto& PickupEntry = Pickup->PrimaryPickupItemEntry;
     auto Def = (UFortWorldItemDefinition*)PickupEntry.ItemDefinition;
-    auto MaxStack = Def->MaxStackSize.Value;
+    auto MaxStack = Def->MaxStackSize.Evaluate();
     auto& Items = Inv->Inventory.ItemInstances;
     
     int Ammo = 0;
@@ -186,6 +186,6 @@ void FortPlayerPawn::Setup()
 
     Hook->Path = "/Script/FortniteGame.FortPawn.MovingEmoteStopped";
     Hook->Original = reinterpret_cast<void**>(&MovingEmoteStoppedOG);
-    Hook->Detour = (void*)MovingEmoteStopped;
+    Hook->Detour = MovingEmoteStopped;
     UKismetHookingLibrary::Hook(Hook, EHook::Exec);
 }

@@ -5,6 +5,7 @@
 #include "Offsets.h"
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"
 #include "Engine/Source/Runtime/CoreUObject/Public/UObject/UObjectGlobals.h"
+#include "Engine/Source/Runtime/FortniteGame/Public/Kismet/FortKismetLibrary.h"
 #include "Engine/Source/Runtime/GameplayAbilities/Public/AbilitySystemComponent.h"
 
 void FortPlayerController::ServerAcknowledgePossession(AFortPlayerControllerAthena* Controller, APawn* Pawn)
@@ -187,6 +188,30 @@ void FortPlayerController::ServerEndEditingBuildingActor(AFortPlayerController* 
     }
 }
 
+void FortPlayerController::ServerAttemptInventoryDrop(AFortPlayerController* Controller, const struct FGuid& ItemGuid, int32 Count, bool bTrash)
+{
+    auto PlayerController = (AFortPlayerControllerAthena*)Controller;
+    if (!PlayerController || !PlayerController->Pawn)
+        return;
+    auto ItemEntry = PlayerController->WorldInventory->Inventory.ReplicatedEntries.Search([&](FFortItemEntry& entry)
+        { return entry.ItemGuid == ItemGuid; });
+
+    if (!ItemEntry || (ItemEntry->Count - Count) < 0)
+        return;
+
+    ItemEntry->Count -= Count;
+    FVector DropLocation = FVector(0, 0, 0);
+    if (PlayerController->Pawn)
+    {
+        DropLocation = PlayerController->Pawn->K2_GetActorLocation() + PlayerController->Pawn->GetActorForwardVector() * 70.f + FVector(0, 0, 50);
+    }
+    FortKismetLibrary::SpawnPickup(
+        DropLocation, ItemEntry, EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::Unset, PlayerController->MyFortPawn, Count, true,
+        true, false);
+    
+    PlayerController->WorldInventory->ReplaceEntry(*ItemEntry);
+}
+
 void FortPlayerController::Setup()
 {
     UHook* Hook = new UHook();
@@ -220,4 +245,9 @@ void FortPlayerController::Setup()
     Hook->Class = AFortPlayerController::StaticClass();
     Hook->Detour = ServerEndEditingBuildingActor;
     UKismetHookingLibrary::Hook(Hook, EHook::EveryVFT);
+
+    Hook->Address = 0x22D;
+    Hook->Class = AFortPlayerControllerAthena::StaticClass();
+    Hook->Detour = ServerAttemptInventoryDrop;
+    UKismetHookingLibrary::Hook(Hook, EHook::VFT);
 }
