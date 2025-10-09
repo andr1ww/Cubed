@@ -219,13 +219,18 @@ void FortGameModeAthena::StartNewSafeZonePhase(AFortGameModeAthena* GameMode, in
             auto& FlightInfo = GetGameState()->FlightPathMidLine;
             float TimeTilDropStart = FlightInfo.TimeTillDropStart;
 
+            float BackUPBuddy = FlightInfo.FlightSpeed * 7.0f;
+        
             FVector DropStartLocation = FlightInfo.FlightStartLocation
                 + (RotatorToVector(FlightInfo.FlightStartRotation) * FlightInfo.FlightSpeed * FlightInfo.TimeTillDropStart);
 
-            FlightInfo.FlightStartLocation = (FVector_NetQuantize100)DropStartLocation;
-            FlightInfo.TimeTillDropStart = 0;
-            FlightInfo.TimeTillDropEnd -= TimeTilDropStart;
-            FlightInfo.TimeTillFlightEnd -= TimeTilDropStart;
+            FVector NewStartLocation = DropStartLocation 
+                - (RotatorToVector(FlightInfo.FlightStartRotation) * BackUPBuddy);
+
+            FlightInfo.FlightStartLocation = (FVector_NetQuantize100)NewStartLocation;
+            FlightInfo.TimeTillDropStart = 7.0f;
+            FlightInfo.TimeTillDropEnd = FlightInfo.TimeTillDropEnd - TimeTilDropStart + 7.0f;
+            FlightInfo.TimeTillFlightEnd = FlightInfo.TimeTillFlightEnd - TimeTilDropStart + 7.0f;
 
             if (FlightInfo.TimeTillDropEnd < 0.0f) FlightInfo.TimeTillDropEnd = 0.0f;
             if (FlightInfo.TimeTillFlightEnd < 0.0f) FlightInfo.TimeTillFlightEnd = 0.0f;
@@ -233,10 +238,10 @@ void FortGameModeAthena::StartNewSafeZonePhase(AFortGameModeAthena* GameMode, in
             for (auto Aircraft : GameMode->Aircrafts) 
             {
                 Aircraft->FlightInfo = GameState->FlightPathMidLine;
-                Aircraft->DropStartTime -= TimeTilDropStart;
-                Aircraft->DropEndTime -= TimeTilDropStart;
-                Aircraft->FlightEndTime -= TimeTilDropStart;
-                Aircraft->K2_TeleportTo(DropStartLocation, FlightInfo.FlightStartRotation);
+                Aircraft->DropStartTime = Aircraft->DropStartTime - TimeTilDropStart + 7.0f;
+                Aircraft->DropEndTime = Aircraft->DropEndTime - TimeTilDropStart + 7.0f;
+                Aircraft->FlightEndTime = Aircraft->FlightEndTime - TimeTilDropStart + 7.0f;
+                Aircraft->K2_TeleportTo(NewStartLocation, FlightInfo.FlightStartRotation);
             }
             First = true;
         }
