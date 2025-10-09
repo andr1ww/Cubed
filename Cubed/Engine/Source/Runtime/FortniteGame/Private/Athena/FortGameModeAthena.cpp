@@ -209,6 +209,44 @@ void FortGameModeAthena::StartNewSafeZonePhase(AFortGameModeAthena* GameMode, in
     auto GameState = (AFortGameStateAthena*)GameMode->GameState;
     if (!GameState) return;
 
+    static auto PlaylistName = GameState->CurrentPlaylistInfo.BasePlaylist->PlaylistName.ToString();
+    if (PlaylistName.contains("BlueCheese"))
+    {
+        static bool bFirstZone = false;
+        if (!bFirstZone)
+        {
+            bFirstZone = true;
+            {
+                TArray<AActor*> FoundPOIActors;
+                UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABuildingSMActor::StaticClass(), &FoundPOIActors);
+                if (FoundPOIActors.Num() > 0)
+                {
+                    auto Location = FoundPOIActors[std::rand() % FoundPOIActors.Num() - 1]->K2_GetActorLocation();
+                    FVector BaseLocation = Location;
+
+                    for (int i = 0; i < GameMode->SafeZoneLocations.Num(); i++)
+                    {
+                        FVector Offset = GameMode->SafeZoneLocations[i] - GameMode->SafeZoneLocations[0];
+                        GameMode->SafeZoneLocations[i].X = BaseLocation.X + Offset.X;
+                        GameMode->SafeZoneLocations[i].Y = BaseLocation.Y + Offset.Y;
+                    }
+
+                    GameMode->SafeZoneIndicator->NextCenter.X = BaseLocation.X;
+                    GameMode->SafeZoneIndicator->NextCenter.Y = BaseLocation.Y;
+                    GameMode->SafeZoneIndicator->LastCenter = GameMode->SafeZoneIndicator->NextCenter;
+                    GameMode->SafeZoneIndicator->OnSafeZoneStateChange(EFortSafeZoneState::None, true);
+                    GameMode->SafeZoneIndicator->SetSafeZoneRadiusAndCenter(GameMode->SafeZoneIndicator->Radius, GameMode->SafeZoneIndicator->NextCenter);
+                    GameState->SafeZoneIndicator->NextCenter.X = BaseLocation.X;
+                    GameState->SafeZoneIndicator->NextCenter.Y = BaseLocation.Y;
+                    GameState->SafeZoneIndicator->LastCenter = GameMode->SafeZoneIndicator->NextCenter;
+                    GameState->SafeZoneIndicator->OnSafeZoneStateChange(EFortSafeZoneState::None, true);
+                    GameState->SafeZoneIndicator->SetSafeZoneRadiusAndCenter(GameMode->SafeZoneIndicator->Radius, GameMode->SafeZoneIndicator->NextCenter);
+                    GameMode->bSafeZoneLocationsInitialized = true;
+                }
+            }
+        }
+    }
+    
     FFortSafeZoneDefinition* SafeZoneDefinition = &GameState->MapInfo->SafeZoneDefinition;
     TArray<float>& Durations = *(TArray<float>*)(__int64(SafeZoneDefinition) + 0x248);
     TArray<float>& HoldDurations = *(TArray<float>*)(__int64(SafeZoneDefinition) + 0x238);
