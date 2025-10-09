@@ -274,7 +274,7 @@ true, false, true);
 			PlayerController->MatchReport->EndOfMatchResults = KResult;
 			PlayerController->ClientSendEndBattleRoyaleMatchForPlayer(true, PlayerController->MatchReport->EndOfMatchResults);
 
-			PlayerState->Place = GameState->PlayersLeft;
+			PlayerState->Place = GameState->PlayersLeft + 1;
 			PlayerState->OnRep_Place();
 
 			FAthenaMatchStats& Stats = PlayerController->MatchReport->MatchStats;

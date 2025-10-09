@@ -38,6 +38,7 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
         GameMode->bDisableGCOnServerDuringMatch = true;
         GameMode->bPlaylistHotfixChangedGCDisabling = true;
 
+        GameState->DefaultParachuteDeployTraceForGroundDistance = Playlist->PlaylistName.ToString().contains("BlueCheese") ? 100 : 10000; 
         GameMode->CurrentPlaylistId = GameState->CurrentPlaylistId = Playlist->PlaylistId;
         GameMode->CurrentPlaylistName = Playlist->PlaylistName;
         GameMode->bAllowSpectateAfterDeath = true;
@@ -232,7 +233,12 @@ void FortGameModeAthena::StartNewSafeZonePhase(AFortGameModeAthena* GameMode, in
 void FortGameModeAthena::StartAircraftPhase(AFortGameModeAthena* GameMode, char a2)
 {
     StartAircraftPhaseOG(GameMode, a2);
+    auto GameState = GetGameState();
 
+    GameState->GamePhase = EAthenaGamePhase::Aircraft;
+    GameState->GamePhaseStep = EAthenaGamePhaseStep::BusLocked;
+    GameState->OnRep_GamePhase(EAthenaGamePhase::Warmup);
+    
     std::thread([GameMode]()
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(7000));
@@ -273,5 +279,5 @@ void FortGameModeAthena::Setup()
     Hook->Address = ImageBase + 0x4A8D71C;
     Hook->Original = (void**)&StartAircraftPhaseOG;
     Hook->Detour = StartAircraftPhase;
-    UKismetHookingLibrary::Hook(Hook, EHook::Address);
+  //  UKismetHookingLibrary::Hook(Hook, EHook::Address);
 }

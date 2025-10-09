@@ -212,6 +212,22 @@ void FortPlayerController::ServerAttemptInventoryDrop(AFortPlayerController* Con
     PlayerController->WorldInventory->ReplaceEntry(*ItemEntry);
 }
 
+void FortPlayerController::GetPlayerViewPoint(AFortPlayerControllerAthena* Controller, FVector& Loc, FRotator& Rot)
+{
+    static auto SFName = UKismetStringLibrary::Conv_StringToName(FString(L"Spectating"));
+    if (Controller->StateName == SFName)
+    {
+        Loc = Controller->LastSpectatorSyncLocation;
+        Rot = Controller->LastSpectatorSyncRotation;
+    }
+    else if (Controller->GetViewTarget())
+    {
+        Loc = Controller->GetViewTarget()->K2_GetActorLocation();
+        Rot = Controller->GetControlRotation();
+    }
+    else return GetPlayerViewPointOG(Controller, Loc, Rot);
+}
+
 void FortPlayerController::Setup()
 {
     UHook* Hook = new UHook();
@@ -250,4 +266,9 @@ void FortPlayerController::Setup()
     Hook->Class = AFortPlayerControllerAthena::StaticClass();
     Hook->Detour = ServerAttemptInventoryDrop;
     UKismetHookingLibrary::Hook(Hook, EHook::VFT);
+
+    Hook->Address = ImageBase + 0xe1747c;
+    Hook->Original = (void**)&GetPlayerViewPointOG;
+    Hook->Detour = GetPlayerViewPoint;
+    UKismetHookingLibrary::Hook(Hook, EHook::Address);
 }
