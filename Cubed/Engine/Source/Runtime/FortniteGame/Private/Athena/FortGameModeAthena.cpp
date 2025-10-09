@@ -198,6 +198,9 @@ void FortGameModeAthena::HandleStartingNewPlayer(AFortGameModeAthena* GameMode, 
 
     PlayerState->SeasonLevelUIDisplay = NewPlayer->XPComponent->CurrentLevel;
     PlayerState->OnRep_SeasonLevelUIDisplay();
+
+    if (!NewPlayer->MatchReport)
+        NewPlayer->MatchReport = (UAthenaPlayerMatchReport*)UGameplayStatics::SpawnObject(UAthenaPlayerMatchReport::StaticClass(), NewPlayer);
 }
 
 void FortGameModeAthena::StartNewSafeZonePhase(AFortGameModeAthena* GameMode, int NewSafeZonePhase)
