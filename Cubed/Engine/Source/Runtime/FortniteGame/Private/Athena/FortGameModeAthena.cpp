@@ -15,8 +15,8 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
     if (GameMode->CurrentPlaylistId == -1)
     {
         auto Playlist = UObject::FindObject<UFortPlaylistAthena>(
-        //    "FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
-           "FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
+            "FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
+        //   "FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
         if (!Playlist) return false;
 
         GameMode->AIDirector = GetWorld()->SpawnActor<AAthenaAIDirector>(AAthenaAIDirector::StaticClass(), { 0, 0, -99999 }, {});

@@ -158,8 +158,11 @@ void FortPlayerControllerAthena::ClientOnPawnDied(AFortPlayerControllerAthena* P
 				}
 			}
 			
-			if (bAllowedType) {
-		//		FortKismetLibrary::SpawnPickup(Location, entry, EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, PlayerController->MyFortPawn);
+			if (bAllowedType)
+			{
+				FortKismetLibrary::SpawnPickup(Location, &entry, 
+	EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, PlayerController->MyFortPawn, -1,
+	true, false, true);
 			}
 		}
 		
@@ -167,10 +170,18 @@ void FortPlayerControllerAthena::ClientOnPawnDied(AFortPlayerControllerAthena* P
 			static auto Wood = StaticFindObject<UFortWorldItemDefinition>("/Game/Items/ResourcePickups/WoodItemData.WoodItemData");
 			static auto Stone = StaticFindObject<UFortWorldItemDefinition>("/Game/Items/ResourcePickups/StoneItemData.StoneItemData");
 			static auto Metal = StaticFindObject<UFortWorldItemDefinition>("/Game/Items/ResourcePickups/MetalItemData.MetalItemData");
-			
-		//	FortKismetLibrary::SpawnPickup(Location, FortInventory::MakeItemEntry(Wood, 50, 0), EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, PlayerController->MyFortPawn);
-		//	FortKismetLibrary::SpawnPickup(Location, FortInventory::MakeItemEntry(Stone, 50, 0), EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, PlayerController->MyFortPawn);
-		//	FortKismetLibrary::SpawnPickup(Location, FortInventory::MakeItemEntry(Metal, 50, 0), EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, PlayerController->MyFortPawn);
+
+			FortKismetLibrary::SpawnPickup(Location, FortKismetLibrary::ConstructItemEntry(Wood, 50, 0), 
+EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, PlayerController->MyFortPawn, -1,
+true, false, true);
+
+			FortKismetLibrary::SpawnPickup(Location, FortKismetLibrary::ConstructItemEntry(Stone, 50, 0), 
+EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, PlayerController->MyFortPawn, -1,
+true, false, true);
+
+			FortKismetLibrary::SpawnPickup(Location, FortKismetLibrary::ConstructItemEntry(Metal, 50, 0), 
+EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, PlayerController->MyFortPawn, -1,
+true, false, true);
 		}
 	}
 

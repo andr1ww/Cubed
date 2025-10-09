@@ -255,7 +255,7 @@ bool ValidateLootPackage(FFortLootPackageData* LootPackage, FName LootPackageNam
 	return true;
 }
 
-FFortItemEntry* ConstructItemEntry(UFortItemDefinition* ItemDefinition, int32 Count, int32 Level) {
+FFortItemEntry* FortKismetLibrary::ConstructItemEntry(UFortItemDefinition* ItemDefinition, int32 Count, int32 Level) {
 	FFortItemEntry* ItemEntry = new FFortItemEntry();
 
 	ItemEntry->MostRecentArrayReplicationKey = -1;
@@ -335,12 +335,12 @@ void PickLootFromLP(TArray<FFortItemEntry>& LootDrops, FName LootPackageName, in
 				CurrentCountForEntry = 0;
 
 			auto ActualItemLevel = PickLevel(WorldItemDefinition, FinalItemLevel);
-			LootDrops.Add(*ConstructItemEntry(ItemDefinition, CurrentCountForEntry, ActualItemLevel));
+			LootDrops.Add(*FortKismetLibrary::ConstructItemEntry(ItemDefinition, CurrentCountForEntry, ActualItemLevel));
 			bool IsWeapon = LootPackage->LootPackageID.ToString().contains(".Weapon.") && WeaponItemDefinition;
 
 			if (IsWeapon && WeaponItemDefinition->GetAmmoWorldItemDefinition_BP() && WeaponItemDefinition->GetAmmoWorldItemDefinition_BP() != WeaponItemDefinition)
 			{
-				LootDrops.Add(*ConstructItemEntry(WeaponItemDefinition->GetAmmoWorldItemDefinition_BP(), ((UFortAmmoItemDefinition*)WeaponItemDefinition->GetAmmoWorldItemDefinition_BP())->DropCount, 0));
+				LootDrops.Add(*FortKismetLibrary::ConstructItemEntry(WeaponItemDefinition->GetAmmoWorldItemDefinition_BP(), ((UFortAmmoItemDefinition*)WeaponItemDefinition->GetAmmoWorldItemDefinition_BP())->DropCount, 0));
 			}
 
 			Count -= CurrentCountForEntry;
