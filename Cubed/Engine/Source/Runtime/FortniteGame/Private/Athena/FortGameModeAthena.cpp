@@ -11,7 +11,7 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
 {
     auto GameState = GetGameState();
     if (!GameState || !GameState->MapInfo) return false;
-
+    
     if (GameMode->CurrentPlaylistId == -1)
     {
         auto Playlist = UObject::FindObject<UFortPlaylistAthena>(
@@ -103,7 +103,8 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
         GameState->OnRep_AdditionalPlaylistLevelsStreamed();
     }
 
-    if (!GameMode->bWorldIsReady) GameMode->bWorldIsReady = true;
+    if (!GameMode->bWorldIsReady)
+        GameMode->bWorldIsReady = true;
 
     if (!GetWorld()->NetDriver)
         World::Listen(GetWorld(), {});
@@ -207,51 +208,45 @@ void FortGameModeAthena::HandleStartingNewPlayer(AFortGameModeAthena* GameMode, 
 void FortGameModeAthena::StartNewSafeZonePhase(AFortGameModeAthena* GameMode, int NewSafeZonePhase)
 {
     auto GameState = (AFortGameStateAthena*)GameMode->GameState;
-    if (!GameState) return;
+    if (!GameState) return StartNewSafeZonePhaseOG(GameMode, NewSafeZonePhase);
 
-    static auto PlaylistName = GameState->CurrentPlaylistInfo.BasePlaylist->PlaylistName.ToString();
+    static auto PlaylistName = GetGameState()->CurrentPlaylistInfo.BasePlaylist->PlaylistName.ToString();
     if (PlaylistName.contains("BlueCheese"))
     {
-        static bool bFirstZone = false;
-        if (!bFirstZone)
+        static bool First = false;
+        if (!First) 
         {
-            bFirstZone = true;
+            auto& FlightInfo = GetGameState()->FlightPathMidLine;
+            float TimeTilDropStart = FlightInfo.TimeTillDropStart;
+
+            FVector DropStartLocation = FlightInfo.FlightStartLocation
+                + (RotatorToVector(FlightInfo.FlightStartRotation) * FlightInfo.FlightSpeed * FlightInfo.TimeTillDropStart);
+
+            FlightInfo.FlightStartLocation = (FVector_NetQuantize100)DropStartLocation;
+            FlightInfo.TimeTillDropStart = 0;
+            FlightInfo.TimeTillDropEnd -= TimeTilDropStart;
+            FlightInfo.TimeTillFlightEnd -= TimeTilDropStart;
+
+            if (FlightInfo.TimeTillDropEnd < 0.0f) FlightInfo.TimeTillDropEnd = 0.0f;
+            if (FlightInfo.TimeTillFlightEnd < 0.0f) FlightInfo.TimeTillFlightEnd = 0.0f;
+
+            for (auto Aircraft : GameMode->Aircrafts) 
             {
-                TArray<AActor*> FoundPOIActors;
-                UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABuildingSMActor::StaticClass(), &FoundPOIActors);
-                if (FoundPOIActors.Num() > 0)
-                {
-                    auto Location = FoundPOIActors[std::rand() % FoundPOIActors.Num() - 1]->K2_GetActorLocation();
-                    FVector BaseLocation = Location;
-
-                    for (int i = 0; i < GameMode->SafeZoneLocations.Num(); i++)
-                    {
-                        FVector Offset = GameMode->SafeZoneLocations[i] - GameMode->SafeZoneLocations[0];
-                        GameMode->SafeZoneLocations[i].X = BaseLocation.X + Offset.X;
-                        GameMode->SafeZoneLocations[i].Y = BaseLocation.Y + Offset.Y;
-                    }
-
-                    GameMode->SafeZoneIndicator->NextCenter.X = BaseLocation.X;
-                    GameMode->SafeZoneIndicator->NextCenter.Y = BaseLocation.Y;
-                    GameMode->SafeZoneIndicator->LastCenter = GameMode->SafeZoneIndicator->NextCenter;
-                    GameMode->SafeZoneIndicator->OnSafeZoneStateChange(EFortSafeZoneState::None, true);
-                    GameMode->SafeZoneIndicator->SetSafeZoneRadiusAndCenter(GameMode->SafeZoneIndicator->Radius, GameMode->SafeZoneIndicator->NextCenter);
-                    GameState->SafeZoneIndicator->NextCenter.X = BaseLocation.X;
-                    GameState->SafeZoneIndicator->NextCenter.Y = BaseLocation.Y;
-                    GameState->SafeZoneIndicator->LastCenter = GameMode->SafeZoneIndicator->NextCenter;
-                    GameState->SafeZoneIndicator->OnSafeZoneStateChange(EFortSafeZoneState::None, true);
-                    GameState->SafeZoneIndicator->SetSafeZoneRadiusAndCenter(GameMode->SafeZoneIndicator->Radius, GameMode->SafeZoneIndicator->NextCenter);
-                    GameMode->bSafeZoneLocationsInitialized = true;
-                }
+                Aircraft->FlightInfo = GameState->FlightPathMidLine;
+                Aircraft->DropStartTime -= TimeTilDropStart;
+                Aircraft->DropEndTime -= TimeTilDropStart;
+                Aircraft->FlightEndTime -= TimeTilDropStart;
+                Aircraft->K2_TeleportTo(DropStartLocation, FlightInfo.FlightStartRotation);
             }
+            First = true;
         }
     }
-    
+
     FFortSafeZoneDefinition* SafeZoneDefinition = &GameState->MapInfo->SafeZoneDefinition;
     TArray<float>& Durations = *(TArray<float>*)(__int64(SafeZoneDefinition) + 0x248);
     TArray<float>& HoldDurations = *(TArray<float>*)(__int64(SafeZoneDefinition) + 0x238);
-
-    int SafeZonePhase = GameMode->SafeZonePhase + 1;
+    
+    int SafeZonePhase = GameMode->SafeZonePhase;
 
     float ZoneDuration = 0.f;
     float ZoneHoldDuration = 0.f;
@@ -264,7 +259,6 @@ void FortGameModeAthena::StartNewSafeZonePhase(AFortGameModeAthena* GameMode, in
     float CurrentTime = UGameplayStatics::GetTimeSeconds(GetWorld());
     GameMode->SafeZoneIndicator->SafeZoneStartShrinkTime  = CurrentTime + ZoneHoldDuration;
     GameMode->SafeZoneIndicator->SafeZoneFinishShrinkTime = GameMode->SafeZoneIndicator->SafeZoneStartShrinkTime + ZoneDuration;
-
     StartNewSafeZonePhaseOG(GameMode, NewSafeZonePhase);
 }
 
@@ -290,6 +284,40 @@ void FortGameModeAthena::StartAircraftPhase(AFortGameModeAthena* GameMode, char 
     }).detach();
 }
 
+__int64 FortGameModeAthena::InitializeFlightPath(
+    __int64 a1,
+    __int64 a2,
+    __int64 a3,
+    unsigned __int64 a4,
+    unsigned __int64 a5,
+    __int64 a6,
+    float a7,
+    float* a8,
+    float* a9,
+    float a10,
+    float a11) 
+{
+    static auto PlaylistName = GetGameState()->CurrentPlaylistInfo.BasePlaylist->PlaylistName.ToString();
+    if (PlaylistName.contains("BlueCheese")) 
+    {
+        if (GetGameMode()->SafeZoneLocations.Num() > 0)
+        {
+            TArray<AActor*> FoundPOIActors;
+            UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABuildingSMActor::StaticClass(), &FoundPOIActors);
+            if (FoundPOIActors.Num() > 0)
+            {
+                auto Location = FoundPOIActors[std::rand() % FoundPOIActors.Num() - 1]->K2_GetActorLocation();
+                Location.Z = 0;
+                for (int i = 0; i < GetGameMode()->SafeZoneLocations.Num(); i++)
+                {
+                    GetGameMode()->SafeZoneLocations[i] = Location + GetGameMode()->SafeZoneLocations[i];
+                }
+            }
+        }
+    }
+    return InitializeFlightPathOG(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11);
+}
+
 void FortGameModeAthena::Setup()
 {
     UHook* Hook = new UHook();
@@ -312,6 +340,11 @@ void FortGameModeAthena::Setup()
     Hook->Address = ImageBase + 0x4a90298;
     Hook->Original = (void**)&StartNewSafeZonePhaseOG;
     Hook->Detour = StartNewSafeZonePhase;
+    UKismetHookingLibrary::Hook(Hook, EHook::Address);
+
+    Hook->Address = ImageBase + 0x4A30BC4;
+    Hook->Original = (void**)&InitializeFlightPathOG;
+    Hook->Detour = InitializeFlightPath;
     UKismetHookingLibrary::Hook(Hook, EHook::Address);
 
     Hook->Address = ImageBase + 0x4A8D71C;
