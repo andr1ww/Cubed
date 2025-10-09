@@ -9,7 +9,7 @@
 
 bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
 {
-    auto GameState = Cast<AFortGameStateAthena>(GameMode->GameState);
+    auto GameState = GetGameState();
     if (!GameState || !GameState->MapInfo) return false;
 
     if (GameMode->CurrentPlaylistId == -1)
@@ -152,7 +152,7 @@ APawn* FortGameModeAthena::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AF
             WarmupActors.Free(); 
         }
         
-        auto GameState = Cast<AFortGameStateAthena>(GameMode->GameState);
+        auto GameState = GetGameState();
         if (UCurveTable* AthenaGameDataTable = GameState->AthenaGameDataTable)
         {
             static FName DefaultSafeZoneDamageName = UKismetStringLibrary::Conv_StringToName(FString(L"Default.SafeZone.Damage"));
@@ -183,7 +183,7 @@ APawn* FortGameModeAthena::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AF
 
 void FortGameModeAthena::HandleStartingNewPlayer(AFortGameModeAthena* GameMode, AFortPlayerControllerAthena* NewPlayer) {
     auto PlayerState = Cast<AFortPlayerStateAthena>(NewPlayer->PlayerState);
-    auto GameState = Cast<AFortGameStateAthena>(GameMode->GameState);
+    auto GameState = GetGameState();
 
     FGameMemberInfo Member;
     Member.MostRecentArrayReplicationKey = -1;

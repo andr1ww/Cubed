@@ -309,7 +309,7 @@ true, false, true);
 				WinnerPlayerState->Place = 1;
 				WinnerPlayerState->OnRep_Place();
 
-				auto WinnerWeapon = DeathReport.DamageCauser->Index ? Cast<AFortWeapon>(DeathReport.DamageCauser)->WeaponData : nullptr;
+				auto WinnerWeapon = DeathReport.DamageCauser ? Cast<AFortWeapon>(DeathReport.DamageCauser) ? Cast<AFortWeapon>(DeathReport.DamageCauser)->WeaponData : nullptr : nullptr;
             
 				LastAliveController->PlayWinEffects(WinnerPawn, WinnerWeapon, CachedDeathCause, false);
 				LastAliveController->ClientNotifyWon(WinnerPawn, WinnerWeapon, CachedDeathCause);
