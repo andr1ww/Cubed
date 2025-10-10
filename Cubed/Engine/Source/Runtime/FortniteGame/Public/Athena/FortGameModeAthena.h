@@ -3,6 +3,9 @@
 
 namespace FortGameModeAthena
 {
+    static inline uint8_t CurrentTeam = 3;
+    static inline uint8_t PlayersOnCurTeam = 0;
+    
     DefineOriginal(bool, ReadyToStartMatch, AFortGameModeAthena* GameMode);
     DefineOriginal(APawn*, SpawnDefaultPawnFor, AFortGameModeAthena* GameMode, AFortPlayerControllerAthena* NewPlayer, AActor* StartSpot);
     DefineOriginal(void, HandleStartingNewPlayer, AFortGameModeAthena* GameMode, AFortPlayerControllerAthena* NewPlayer);

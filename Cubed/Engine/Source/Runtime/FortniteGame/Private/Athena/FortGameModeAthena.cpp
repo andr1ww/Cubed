@@ -187,6 +187,9 @@ void FortGameModeAthena::HandleStartingNewPlayer(AFortGameModeAthena* GameMode, 
     auto PlayerState = Cast<AFortPlayerStateAthena>(NewPlayer->PlayerState);
     auto GameState = GetGameState();
 
+    PlayerState->SquadId = PlayerState->TeamIndex - 3;
+    PlayerState->OnRep_SquadId();
+    
     FGameMemberInfo Member;
     Member.MostRecentArrayReplicationKey = -1;
     Member.ReplicationID = -1;
@@ -230,7 +233,7 @@ void FortGameModeAthena::StartNewSafeZonePhase(AFortGameModeAthena* GameMode, in
             FlightInfo.FlightStartLocation = (FVector_NetQuantize100)NewStartLocation;
             FlightInfo.TimeTillDropStart = 7.0f;
             FlightInfo.TimeTillDropEnd = FlightInfo.TimeTillDropEnd - TimeTilDropStart + 7.0f;
-            FlightInfo.TimeTillFlightEnd = FlightInfo.TimeTillFlightEnd - TimeTilDropStart + 7.0f;
+            FlightInfo.TimeTillFlightEnd = FlightInfo.TimeTillFlightEnd - TimeTilDropStart + 15.0f;
 
             if (FlightInfo.TimeTillDropEnd < 0.0f) FlightInfo.TimeTillDropEnd = 0.0f;
             if (FlightInfo.TimeTillFlightEnd < 0.0f) FlightInfo.TimeTillFlightEnd = 0.0f;
@@ -240,7 +243,7 @@ void FortGameModeAthena::StartNewSafeZonePhase(AFortGameModeAthena* GameMode, in
                 Aircraft->FlightInfo = GameState->FlightPathMidLine;
                 Aircraft->DropStartTime = Aircraft->DropStartTime - TimeTilDropStart + 7.0f;
                 Aircraft->DropEndTime = Aircraft->DropEndTime - TimeTilDropStart + 7.0f;
-                Aircraft->FlightEndTime = Aircraft->FlightEndTime - TimeTilDropStart + 7.0f;
+                Aircraft->FlightEndTime = Aircraft->FlightEndTime - TimeTilDropStart + 15.0f;
                 Aircraft->K2_TeleportTo(NewStartLocation, FlightInfo.FlightStartRotation);
             }
             First = true;
@@ -351,9 +354,9 @@ void FortGameModeAthena::Setup()
     Hook->Original = (void**)&InitializeFlightPathOG;
     Hook->Detour = InitializeFlightPath;
     UKismetHookingLibrary::Hook(Hook, EHook::Address);
-
+    
     Hook->Address = ImageBase + 0x4A8D71C;
     Hook->Original = (void**)&StartAircraftPhaseOG;
     Hook->Detour = StartAircraftPhase;
-  //  UKismetHookingLibrary::Hook(Hook, EHook::Address);
+    //  UKismetHookingLibrary::Hook(Hook, EHook::Address);
 }
