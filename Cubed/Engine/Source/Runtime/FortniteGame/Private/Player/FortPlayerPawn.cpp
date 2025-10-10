@@ -188,10 +188,20 @@ void FortPlayerPawn::ServerSendZiplineState(AFortPlayerPawn* Pawn, FFrame& Stack
         }
     }
 }
+void FortPlayerPawn::OnRep_IsInAnyStorm(AFortPlayerPawn* Pawn) {
+    Pawn->bIsInsideSafeZone = !Pawn->bIsInAnyStorm;
+    Pawn->OnRep_IsInsideSafeZone();
+    return OnRep_IsInAnyStormOG(Pawn);
+}
 
 void FortPlayerPawn::Setup()
 {
     UHook* Hook = new UHook();
+
+    Hook->Address = ImageBase + 0x202F5A0;
+    Hook->Original = (void**)&OnRep_IsInAnyStormOG;
+    Hook->Detour = OnRep_IsInAnyStorm;
+    UKismetHookingLibrary::Hook(Hook, EHook::Address);
 
     Hook->Address = 0x20F;
     Hook->Original = (void**)&ServerHandlePickupInfoOG;

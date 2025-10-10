@@ -24,6 +24,9 @@ void FortPlayerControllerAthena::ServerAttemptAircraftJump(UFortControllerCompon
     GameMode->RestartPlayer(Controller);
     if (Controller->MyFortPawn)
     {
+		Controller->MyFortPawn->bIsInAnyStorm = false; //Same for respawning!
+		Controller->MyFortPawn->OnRep_IsInAnyStorm();
+
         Controller->ClientSetRotation(ClientRot, false);
         Controller->MyFortPawn->BeginSkydiving(true);
         
