@@ -22,7 +22,7 @@ bool BuildingContainer::SpawnLoot(ABuildingContainer* Container)
 		FVector Loc = Container->K2_GetActorLocation() + (Container->GetActorForwardVector() * Container->LootSpawnLocation_Athena.X) + (Container->GetActorRightVector() * Container->LootSpawnLocation_Athena.Y) + (Container->GetActorUpVector() * Container->LootSpawnLocation_Athena.Z);
 		FortKismetLibrary::SpawnPickup(
 		Loc, 
-		&Drop, 
+		Drop, 
 		EFortPickupSourceTypeFlag::Container, 
 		EFortPickupSpawnSource::Unset, 
 		nullptr, 

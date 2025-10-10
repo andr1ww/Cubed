@@ -206,7 +206,7 @@ void FortPlayerController::ServerAttemptInventoryDrop(AFortPlayerController* Con
         DropLocation = PlayerController->Pawn->K2_GetActorLocation() + PlayerController->Pawn->GetActorForwardVector() * 70.f + FVector(0, 0, 50);
     }
     FortKismetLibrary::SpawnPickup(
-        DropLocation, ItemEntry, EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::Unset, PlayerController->MyFortPawn, Count, true,
+        DropLocation, *ItemEntry, EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::Unset, PlayerController->MyFortPawn, Count, true,
         true, false);
     
     PlayerController->WorldInventory->ReplaceEntry(*ItemEntry);

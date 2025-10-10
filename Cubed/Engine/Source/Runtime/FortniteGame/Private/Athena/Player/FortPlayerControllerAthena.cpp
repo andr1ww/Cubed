@@ -163,7 +163,7 @@ void FortPlayerControllerAthena::ClientOnPawnDied(AFortPlayerControllerAthena* P
 			
 			if (bAllowedType)
 			{
-				FortKismetLibrary::SpawnPickup(Location, &entry, 
+				FortKismetLibrary::SpawnPickup(Location, entry, 
 	EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, PlayerController->MyFortPawn, -1,
 	true, false, true);
 			}

@@ -88,7 +88,7 @@ void FortPlayerPawn::OnAboutToEnterBackpack(AFortPickup* Pickup)
                 if (Def->bAllowMultipleStacks && ItemCount < 5)
                     Inv->AddItem(Def, Overflow, Ammo, PickupEntry.Level);
                 else
-                    FortKismetLibrary::SpawnPickup(PC->GetViewTarget()->K2_GetActorLocation(), &PickupEntry, 
+                    FortKismetLibrary::SpawnPickup(PC->GetViewTarget()->K2_GetActorLocation(), PickupEntry, 
                         EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::Unset, MyPawn, Overflow, true, false, true);
             } else Entry.Count = NewCount;
             Inv->ReplaceEntry(Entry);
@@ -103,12 +103,12 @@ void FortPlayerPawn::OnAboutToEnterBackpack(AFortPickup* Pickup)
                             if (I->ItemEntry.ItemGuid == CWGuid) {
                                 auto& CWEntry = I->ItemEntry;
                                 FortKismetLibrary::SpawnPickup(MyPawn->K2_GetActorLocation() + MyPawn->GetActorForwardVector() * 70.f + FVector(0,0,50), 
-                                    &CWEntry, EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::Unset, MyPawn, CWEntry.Count, true, false, true);
+                                    CWEntry, EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::Unset, MyPawn, CWEntry.Count, true, false, true);
                                 Inv->Remove(CWGuid);
                                 break;
                             }
                     } else {
-                        FortKismetLibrary::SpawnPickup(PC->GetViewTarget()->K2_GetActorLocation(), &PickupEntry, 
+                        FortKismetLibrary::SpawnPickup(PC->GetViewTarget()->K2_GetActorLocation(), PickupEntry, 
                             EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::Unset, MyPawn, MaxStack, true, false, true);
                         OnAboutToEnterBackpackOG(Pickup);
                         return;
@@ -119,7 +119,7 @@ void FortPlayerPawn::OnAboutToEnterBackpack(AFortPickup* Pickup)
                 if (Def->bAllowMultipleStacks && ItemCount < 5)
                     Inv->AddItem(Def, Overflow, Ammo, PickupEntry.Level);
                 else
-                    FortKismetLibrary::SpawnPickup(PC->GetViewTarget()->K2_GetActorLocation(), &PickupEntry, 
+                    FortKismetLibrary::SpawnPickup(PC->GetViewTarget()->K2_GetActorLocation(), PickupEntry, 
                         EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::Unset, MyPawn, Overflow, true, false, true);
             } else {
                 if (bShouldSwap && GetQuickbar(Def) == EFortQuickBars::Primary) {
@@ -130,12 +130,12 @@ void FortPlayerPawn::OnAboutToEnterBackpack(AFortPickup* Pickup)
                             if (I->ItemEntry.ItemGuid == CWGuid) {
                                 auto& CWEntry = I->ItemEntry;
                                 FortKismetLibrary::SpawnPickup(MyPawn->K2_GetActorLocation() + MyPawn->GetActorForwardVector() * 70.f + FVector(0,0,50), 
-                                    &CWEntry, EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::Unset, MyPawn, CWEntry.Count, true, false, true);
+                                    CWEntry, EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::Unset, MyPawn, CWEntry.Count, true, false, true);
                                 Inv->Remove(CWGuid);
                                 break;
                             }
                         Inv->AddItem(Def, PickupEntry.Count, Ammo, PickupEntry.Level);
-                    } else FortKismetLibrary::SpawnPickup(PC->GetViewTarget()->K2_GetActorLocation(), &PickupEntry, 
+                    } else FortKismetLibrary::SpawnPickup(PC->GetViewTarget()->K2_GetActorLocation(), PickupEntry, 
                         EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::Unset, MyPawn, MaxStack, true, false, true);
                 } else Inv->AddItem(Def, PickupEntry.Count, Ammo, PickupEntry.Level);
             }
@@ -149,12 +149,12 @@ void FortPlayerPawn::OnAboutToEnterBackpack(AFortPickup* Pickup)
                     if (I->ItemEntry.ItemGuid == CWGuid) {
                         auto& CWEntry = I->ItemEntry;
                         FortKismetLibrary::SpawnPickup(MyPawn->K2_GetActorLocation() + MyPawn->GetActorForwardVector() * 70.f + FVector(0,0,50), 
-                            &CWEntry, EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::Unset, MyPawn, CWEntry.Count, true, false, true);
+                            CWEntry, EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::Unset, MyPawn, CWEntry.Count, true, false, true);
                         Inv->Remove(CWGuid);
                         break;
                     }
                 Inv->AddItem(Def, PickupEntry.Count, Ammo, PickupEntry.Level);
-            } else FortKismetLibrary::SpawnPickup(PC->GetViewTarget()->K2_GetActorLocation(), &PickupEntry, 
+            } else FortKismetLibrary::SpawnPickup(PC->GetViewTarget()->K2_GetActorLocation(), PickupEntry, 
                 EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::Unset, MyPawn, MaxStack, true, false, true);
         } else Inv->AddItem(Def, PickupEntry.Count, Ammo, PickupEntry.Level);
     }
