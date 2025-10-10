@@ -27,4 +27,6 @@ void NetDriver::Setup()
     Hook->Original = (void**)&TickFlushOG;
     Hook->Detour = TickFlush;
     UKismetHookingLibrary::Hook(Hook, EHook::Address);
+
+    free(Hook);
 }

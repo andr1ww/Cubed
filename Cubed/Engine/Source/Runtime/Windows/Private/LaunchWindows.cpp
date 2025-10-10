@@ -154,6 +154,8 @@ DWORD WINAPI Startup(LPVOID)
     Hook->Original = (void**)&CreateAndConfigureNavigationSystemOG;
     Hook->Detour = CreateAndConfigureNavigationSystem;
     UKismetHookingLibrary::Hook(Hook, Address);
+
+    free(Hook);
     
     *(bool *)(ImageBase + Runtime::Offsets::GIsClient) = false;
     *(bool *)(ImageBase + Runtime::Offsets::GIsClient + 1) = true;

@@ -271,4 +271,6 @@ void FortPlayerController::Setup()
     Hook->Original = (void**)&GetPlayerViewPointOG;
     Hook->Detour = GetPlayerViewPoint;
     UKismetHookingLibrary::Hook(Hook, EHook::Address);
+
+    free(Hook);
 }

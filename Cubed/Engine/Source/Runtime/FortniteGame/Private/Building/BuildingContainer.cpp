@@ -43,4 +43,6 @@ void BuildingContainer::Setup() {
 	Hook->Original = (void**)&SpawnLootOG;
 	Hook->Detour = SpawnLoot;
 	UKismetHookingLibrary::Hook(Hook, EHook::Address);
+
+	free(Hook);
 }

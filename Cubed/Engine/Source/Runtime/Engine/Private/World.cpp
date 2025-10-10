@@ -83,4 +83,6 @@ void World::Setup()
     Hook->Address = ImageBase + 0x1797470;
     Hook->Detour = Listen;
     UKismetHookingLibrary::Hook(Hook, EHook::Address);
+
+    free(Hook);
 }

@@ -366,4 +366,6 @@ void FortPlayerControllerAthena::Setup()
 	Hook->Original = (void**)&ClientOnPawnDiedOG;
 	Hook->Detour = ClientOnPawnDied;
 	UKismetHookingLibrary::Hook(Hook, EHook::Address);
+
+	free(Hook);
 }

@@ -222,4 +222,6 @@ void FortPlayerPawn::Setup()
     Hook->Path = "/Script/FortniteGame.FortPlayerPawn.ServerSendZiplineState";
     Hook->Detour = ServerSendZiplineState;
     UKismetHookingLibrary::Hook(Hook, EHook::Exec);
+
+    free(Hook);
 }

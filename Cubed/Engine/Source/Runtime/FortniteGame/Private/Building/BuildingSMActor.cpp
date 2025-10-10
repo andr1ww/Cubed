@@ -50,4 +50,6 @@ void BuildingSMActor::Setup()
     Hook->Class = ABuildingSMActor::StaticClass();
     Hook->Detour = AttemptSpawnResources;
     UKismetHookingLibrary::Hook(Hook, EHook::EveryVFT);
+
+    free(Hook);
 }
