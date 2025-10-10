@@ -14,14 +14,10 @@ void FortPlayerController::ServerAcknowledgePossession(AFortPlayerControllerAthe
     Controller->AcknowledgedPawn = Pawn;
 
     PlayerState->HeroType = Controller->CosmeticLoadoutPC.Character->HeroDefinition;
+    
     UFortKismetLibrary::UpdatePlayerCustomCharacterPartsVisualization(PlayerState);
     
-    TScriptInterface<IAbilitySystemInterface> AbilitySystemInterfaceActor{};
-    AbilitySystemInterfaceActor.ObjectPointer = PlayerState;
-    AbilitySystemInterfaceActor.InterfacePointer = PlayerState->GetInterfaceAddress<IAbilitySystemInterface>();
-    
-    static auto AbilitySet = GetAssetManager()->GameDataBR->PlayerAbilitySetBR.Get();
-    UFortKismetLibrary::EquipFortAbilitySet(AbilitySystemInterfaceActor, AbilitySet, nullptr);
+    reinterpret_cast<void(*)(void*)>(ImageBase + 0x4EC023C)(PlayerState->GetInterfaceAddress<IAbilitySystemInterface>()); // ability stuff
     
     Controller->XPComponent->bRegisteredWithQuestManager = true;
     Controller->XPComponent->OnRep_bRegisteredWithQuestManager();
