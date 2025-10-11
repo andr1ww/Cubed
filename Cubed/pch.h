@@ -47,6 +47,8 @@ inline T* Cast(UObject* Object)
         return Object && (Object->IsA(T::StaticClass())) ? (T*)Object : nullptr;
 }
 
+constexpr bool bCreative = true;
+
 // credits to NotTacs for this below
 namespace SDK
 {

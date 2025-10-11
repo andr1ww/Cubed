@@ -14,8 +14,9 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
     
     if (GameMode->CurrentPlaylistId == -1)
     {
-        auto Playlist = UObject::FindObject<UFortPlaylistAthena>(
-            "FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
+        auto Playlist = bCreative 
+            ? UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_PlaygroundV2.Playlist_PlaygroundV2")
+            : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
         //   "FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
         if (!Playlist) return false;
 

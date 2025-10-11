@@ -66,6 +66,18 @@
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Building\BuildingContainer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Source\Runtime\CoreUObject\Public\UObject\Stack.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Building\BuildingSMActor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Player\FortPlayerPawn.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Athena\Creative\FortAthenaCreativePortal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Source\Runtime\Windows\Private\LaunchWindows.cpp">
@@ -123,6 +135,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Building\BuildingContainer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Building\BuildingSMActor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Player\FortPlayerPawn.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -212,6 +212,89 @@ void FortPlayerController::ServerAttemptInventoryDrop(AFortPlayerController* Con
     PlayerController->WorldInventory->ReplaceEntry(*ItemEntry);
 }
 
+static inline __int64 (*LoadPlaysetOG)(UPlaysetLevelStreamComponent*) = decltype(LoadPlaysetOG)(__int64(InSDKUtils::GetImageBase() + 0x5279654));
+void FortPlayerController::ServerLoadingScreenDropped(AFortPlayerControllerAthena* PC)
+{
+    auto GS = Cast<AFortGameStateAthena>(GetWorld()->GameState);
+    auto GM = Cast<AFortGameModeAthena>(GetWorld()->AuthorityGameMode);
+    if (!PC || !GM || !GS) return ServerLoadingScreenDroppedOG(PC);
+
+    auto PS = Cast<AFortPlayerStateAthena>(PC->PlayerState);
+    if(!PS) return ServerLoadingScreenDroppedOG(PC);
+
+    if (bCreative)
+    {
+        auto CreativePortalManager = GS->CreativePortalManager;
+        GS->CreativePortalManager->GetCreativePortalManager(UWorld::GetWorld(), &CreativePortalManager, nullptr);
+        AFortAthenaCreativePortal* Portal = nullptr;
+
+        for (auto& Portal1 : CreativePortalManager->AllPortals)
+        {
+            if (!Portal1->LinkedVolume || Portal1->LinkedVolume->VolumeState == ESpatialLoadingState::Ready)
+            {
+                continue;
+
+            }
+            Portal = Portal1;
+            break;
+
+        }
+
+        if (!Portal) return;
+
+        //Portal->GetLinkedVolume()->bShowPublishWatermark = false;
+        Portal->GetLinkedVolume()->bNeverAllowSaving = false;
+        Portal->GetLinkedVolume()->VolumeState = ESpatialLoadingState::Ready;
+        Portal->GetLinkedVolume()->OnRep_VolumeState();
+
+        Portal->OwningPlayer = PS->UniqueId;
+        Portal->OnRep_OwningPlayer();
+
+        Portal->IslandInfo.CreatorName = PS->GetPlayerName();
+        Portal->IslandInfo.SupportCode = L"Nigger";
+        Portal->IslandInfo.Version = 1.0f;
+        Portal->OnRep_IslandInfo();
+
+        Portal->bPortalOpen = true;
+        Portal->OnRep_PortalOpen();
+
+        Portal->PlayersReady.Add(PS->UniqueId);
+        Portal->OnRep_PlayersReady();
+
+        Portal->bUserInitiatedLoad = true;
+        Portal->bInErrorState = false;
+
+        PC->OwnedPortal = Portal;
+
+        auto LevelSaveComponent = (UFortLevelSaveComponent*)Portal->GetLinkedVolume()->GetComponentByClass(UFortLevelSaveComponent::StaticClass());
+        LevelSaveComponent->AccountIdOfOwner = PS->UniqueId;
+        LevelSaveComponent->bIsLoaded = true;
+        LevelSaveComponent->OnRep_IsActive();
+
+        PC->CreativePlotLinkedVolume = Portal->GetLinkedVolume();
+        PC->OnRep_CreativePlotLinkedVolume();
+
+        static auto MinigameSettingsMachine = StaticLoadObject<UClass>("/Game/Athena/Items/Gameplay/MinigameSettingsControl/MinigameSettingsMachine.MinigameSettingsMachine_C");
+        auto OK = Portal->GetLinkedVolume()->GetTransform();
+        GetWorld()->SpawnActor<AActor>(MinigameSettingsMachine, OK.Translation, FRotator(), Portal->LinkedVolume);//World::SpawnActorOG<AActor>(MinigameSettingsMachine, OK, Portal->LinkedVolume);
+
+        static auto Playset = StaticLoadObject<UFortPlaysetItemDefinition>("/Game/Playsets/PID_Playset_60x60_Composed.PID_Playset_60x60_Composed");
+
+
+        auto LevelStreamComponent = (UPlaysetLevelStreamComponent*)Portal->GetLinkedVolume()->GetComponentByClass(UPlaysetLevelStreamComponent::StaticClass());
+
+        LevelStreamComponent->SetPlayset(Playset);
+
+        
+        LoadPlaysetOG(LevelStreamComponent);
+
+        
+
+    }
+    return ServerLoadingScreenDroppedOG(PC);
+}
+
+
 void FortPlayerController::GetPlayerViewPoint(AFortPlayerControllerAthena* Controller, FVector& Loc, FRotator& Rot)
 {
     static auto SFName = UKismetStringLibrary::Conv_StringToName(FString(L"Spectating"));
@@ -271,4 +354,9 @@ void FortPlayerController::Setup()
     Hook->Original = (void**)&GetPlayerViewPointOG;
     Hook->Detour = GetPlayerViewPoint;
     UKismetHookingLibrary::Hook(Hook, EHook::Address);
+
+    Hook->Address = 0x282;
+    Hook->Original = (void**)&ServerLoadingScreenDroppedOG;
+    Hook->Detour = ServerLoadingScreenDropped;
+    UKismetHookingLibrary::Hook(Hook, EHook::VFT);
 }

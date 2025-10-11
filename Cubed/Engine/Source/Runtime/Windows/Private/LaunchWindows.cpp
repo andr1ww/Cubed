@@ -88,7 +88,7 @@ DWORD WINAPI Startup(LPVOID)
     std::srand(std::time(nullptr));
 
     MH_Initialize();
-    Sleep(2500);
+    Sleep(5500);
     
     FortGameModeAthena::Setup();
     World::Setup();
@@ -160,7 +160,7 @@ DWORD WINAPI Startup(LPVOID)
 
     MH_EnableHook(MH_ALL_HOOKS);
     UWorld::GetWorld()->OwningGameInstance->LocalPlayers.Remove(0);
-    UGameplayStatics::OpenLevel(UWorld::GetWorld(), UKismetStringLibrary::Conv_StringToName(L"Apollo_Terrain"), true, FString());
+    UGameplayStatics::OpenLevel(UWorld::GetWorld(), bCreative ? UKismetStringLibrary::Conv_StringToName(L"Creative_NoApollo_Terrain") : UKismetStringLibrary::Conv_StringToName(L"Apollo_Terrain"), true, FString());
 
     std::vector<std::wstring> Logs = {
         L"LogFortUIDirector",

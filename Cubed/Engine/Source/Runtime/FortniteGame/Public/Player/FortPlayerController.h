@@ -11,6 +11,7 @@ namespace FortPlayerController
     void ServerEndEditingBuildingActor(AFortPlayerController* PlayerController, ABuildingSMActor* BuildingActorToEdit);
     void ServerAttemptInventoryDrop(AFortPlayerController* Controller, const struct FGuid& ItemGuid, int32 Count, bool bTrash);
     DefineOriginal(void, GetPlayerViewPoint, AFortPlayerControllerAthena* Controller, FVector&, FRotator&);
+    DefineOriginal(void, ServerLoadingScreenDropped, AFortPlayerControllerAthena* PC);
     
     void Setup();
 }
