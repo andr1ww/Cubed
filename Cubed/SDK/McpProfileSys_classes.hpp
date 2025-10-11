@@ -58,6 +58,75 @@ public:
 	}
 };
 
+	template< class ObjectType>
+class TSharedPtr
+	{
+	public:
+		ObjectType* Object;
+
+		int32 SharedReferenceCount;
+		int32 WeakReferenceCount;
+
+		FORCEINLINE ObjectType* Get()
+		{
+			return Object;
+		}
+		FORCEINLINE ObjectType* Get() const
+		{
+			return Object;
+		}
+		FORCEINLINE ObjectType& operator*()
+		{
+			return *Object;
+		}
+		FORCEINLINE const ObjectType& operator*() const
+		{
+			return *Object;
+		}
+		FORCEINLINE ObjectType* operator->()
+		{
+			return Object;
+		}
+		FORCEINLINE ObjectType* operator->() const
+		{
+			return Object;
+		}
+		
+	};
+	class FMcpItem
+	{
+	public:
+		FString ItemType;
+		FString InstanceId;
+		FString TemplateId;
+		int Quantity;
+	private:
+		unsigned char Pad[0x18];
+	public:
+		TMap<FString, void*> Attributes;
+		UObject* Instance;
+		int64 LastUpdate;
+		TWeakObjectPtr<UMcpProfile> OwningProfile;
+	};
+
+	class FMcpItemsContainer
+	{
+	public:
+		TMap<FString, TSharedPtr<FMcpItem>> Items;
+		TMap<FString, FString> ItemsByType;
+	};
+
+	class FMcpProfileState
+	{
+		void* Pad;
+	public:
+		FMcpItemsContainer ItemsContainer;
+		TArray<void*> PendingForceQueryDelegates;
+		TArray<void*> PendingUpdateQueue;
+		int64 MtxBalanceCacheVersion;
+		int32 MtxBalanceCache;
+	};
+
 // Class McpProfileSys.McpProfile
 // 0x00E8 (0x0110 - 0x0028)
 class UMcpProfile : public UObject
@@ -87,6 +156,11 @@ public:
 	void QueryPublicProfile(struct FBaseUrlContext* Context);
 	void UnlockProfileForWrite(const class FString& Code, struct FDedicatedServerUrlContext* Context);
 
+	inline FMcpProfileState* InternalGetState()
+	{
+		return *(FMcpProfileState**)(__int64(this) + 0xD8);
+	}
+	
 public:
 	static class UClass* StaticClass()
 	{

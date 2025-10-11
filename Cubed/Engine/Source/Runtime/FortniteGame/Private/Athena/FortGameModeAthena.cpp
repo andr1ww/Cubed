@@ -209,12 +209,6 @@ void FortGameModeAthena::HandleStartingNewPlayer(AFortGameModeAthena* GameMode, 
 
     if (!NewPlayer->MatchReport)
         NewPlayer->MatchReport = (UAthenaPlayerMatchReport*)UGameplayStatics::SpawnObject(UAthenaPlayerMatchReport::StaticClass(), NewPlayer);
-
-    if (bCreative)
-    {
-        GameMode->StartMatch();
-        GameMode->StartPlay();
-    }
 }
 
 void FortGameModeAthena::StartNewSafeZonePhase(AFortGameModeAthena* GameMode, int NewSafeZonePhase)

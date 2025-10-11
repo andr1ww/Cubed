@@ -44,10 +44,12 @@ inline uint64_t ImageBase = *(uint64_t*)(__readgsqword(0x60) + 0x10);
 template<class T>
 inline T* Cast(UObject* Object)
 {
-        return Object && (Object->IsA(T::StaticClass())) ? (T*)Object : nullptr;
+        if (!Object)
+                return nullptr;
+        return Object->IsA(T::StaticClass()) ? (T*)Object : nullptr;
 }
 
-constexpr bool bCreative = true;
+constexpr bool bCreative = false;
 
 // credits to NotTacs for this below
 namespace SDK

@@ -272,24 +272,69 @@ void FortPlayerController::ServerLoadingScreenDropped(AFortPlayerControllerAthen
 
         static auto MinigameSettingsMachine = StaticLoadObject<UClass>("/Game/Athena/Items/Gameplay/MinigameSettingsControl/MinigameSettingsMachine.MinigameSettingsMachine_C");
         auto OK = Portal->GetLinkedVolume()->GetTransform();
-        GetWorld()->SpawnActor<AActor>(MinigameSettingsMachine, OK.Translation, FRotator(), Portal->LinkedVolume);//World::SpawnActorOG<AActor>(MinigameSettingsMachine, OK, Portal->LinkedVolume);
+        GetWorld()->SpawnActor<AActor>(MinigameSettingsMachine, OK.Translation, FRotator(), Portal->LinkedVolume);
 
         static auto Playset = StaticLoadObject<UFortPlaysetItemDefinition>("/Game/Playsets/PID_Playset_60x60_Composed.PID_Playset_60x60_Composed");
-
-
         auto LevelStreamComponent = (UPlaysetLevelStreamComponent*)Portal->GetLinkedVolume()->GetComponentByClass(UPlaysetLevelStreamComponent::StaticClass());
+      //  LevelStreamComponent->SetPlayset(Playset);
+        //   LoadPlaysetOG(LevelStreamComponent);
+        auto State = PC->CreativeModeProfile->InternalGetState();
+        UE_LOG(LogServer, Log, "ItemContainerNum: %d", State->ItemsContainer.Items.Num());
 
-        LevelStreamComponent->SetPlayset(Playset);
+        if (State->ItemsContainer.Items.Num() > 0)
+        {
+            for (auto& Item : State->ItemsContainer.Items)
+            {
+                if (auto McpItem = Item.Value().Get())
+                {
+                    UE_LOG(LogServer, Log, "Item: %s, Count: %d", McpItem->TemplateId.ToString().c_str(), McpItem->Quantity);
+                   // auto Instance = Cast<UFortCreativeRealEstatePlotItem>(McpItem->Instance);
+                 //   if (!Instance)
+                   // {
+                    auto Instance = (UFortCreativeRealEstatePlotItem*)McpItem->Instance;
+                        string PlotId = McpItem->TemplateId.ToString().substr(
+                            McpItem->TemplateId.ToString().find(':') + 1
+                        );
 
-        
-        LoadPlaysetOG(LevelStreamComponent);
+                        auto PlotItemDefinition = StaticFindObject<UFortCreativeRealEstatePlotItemDefinition>(
+                            "/Game/Playgrounds/Items/Plots/" + PlotId + "." + PlotId);
+                        if (!PlotItemDefinition) continue;
 
-        
+                        Instance = (UFortCreativeRealEstatePlotItem*)PlotItemDefinition->CreateTemporaryItemInstanceBP(1, 0);
+                        Instance->InstanceID = McpItem->InstanceId;
+                        McpItem->Instance = Instance;
+                   // }
 
+                    auto CreativeIsland = PC->CreativeIslands.Search([McpItem](FCreativeIslandData& IslandData)
+                        { return IslandData.McpId == McpItem->InstanceId; });
+                    bool bIsNew = false;
+                    if (!CreativeIsland)
+                    {
+                        bIsNew = true;
+                        CreativeIsland = new FCreativeIslandData();
+                    }
+
+                    reinterpret_cast<void(*)(UFortCreativeRealEstatePlotItem*, FMcpItem*)>(ImageBase + 0x1F165E4)(Instance, McpItem);
+                    
+                    CreativeIsland->McpId = McpItem->InstanceId;
+                    CreativeIsland->IslandName = UKismetTextLibrary::Conv_StringToText(Instance->IslandTitle);
+                    CreativeIsland->LastLoadedDate = Instance->LastUsedDate;
+                    CreativeIsland->PublishedIslandCode = Instance->IslandCode;
+                    CreativeIsland->bIsDeleted = false;
+
+                    if (bIsNew)
+                        PC->CreativeIslands.Add(*CreativeIsland);
+
+                    PC->OnRep_CreativeIslands();
+
+                    //                    UE_LOG(LogServer, Log, "ItemInstance: %s, Count: %d", McpItem->Instance->GetFullName().c_str(), McpItem->Quantity);
+                }
+            }
+        }
     }
+    
     return ServerLoadingScreenDroppedOG(PC);
 }
-
 
 void FortPlayerController::GetPlayerViewPoint(AFortPlayerControllerAthena* Controller, FVector& Loc, FRotator& Rot)
 {
