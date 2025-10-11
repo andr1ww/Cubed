@@ -111,6 +111,23 @@ void FortPlayerControllerAthena::ClientOnPawnDied(AFortPlayerControllerAthena* P
 	auto KillerPawn = Cast<AFortPlayerPawnAthena>(DeathReport.KillerPawn);
 	auto VictimPawn = (AFortPlayerPawnAthena*)PlayerController->MyFortPawn;
 
+	TArray<FFortQuestObjectiveCompletion> Advance;
+	TArray<FAthenaAccolades> Accolades;
+	TArray<FString> ShuffledLoadoutUsed;
+	TArray<FSecondaryXpGained> secondaryXp;
+	TArray<FFortCreateItemDetail> GrantedItems;
+	TArray<FFortTransientQuestGrant> GrantedTransientQuests;
+	TArray<FAthenaSeasonItemMCPState> SeasonItemStates; 
+	static auto PlaylistId = UKismetStringLibrary::Conv_NameToString(GameState->CurrentPlaylistInfo.BasePlaylist->PlaylistName);
+	
+	PlayerController->AthenaProfile->EndBattleRoyaleGameV2(Advance, PlaylistId, PlayerController->MatchReport->MatchStats,
+		100, 0, 0, 0, 1.1f,
+		true, true, Accolades, ShuffledLoadoutUsed,
+		0, ShuffledLoadoutUsed, ShuffledLoadoutUsed, secondaryXp,
+		GrantedItems, GrantedTransientQuests, PlaylistId, SeasonItemStates,
+		UGameplayStatics::GetTimeSeconds(GetWorld()) + PlayerState->TimeOfPawnCreation,
+		{});
+	
 	FVector DeathLocation = VictimPawn ? VictimPawn->K2_GetActorLocation() : FVector{0,0,0};
 
 	if (!KillerPlayerState && VictimPawn)

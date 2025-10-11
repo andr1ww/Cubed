@@ -21,19 +21,15 @@
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/Creative/FortAthenaCreativePortal.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/Creative/AFortMinigameSettingsBuilding.h"
 
-static AFortPoiVolume* (*FindNextBestPOIOG)(UFortAthenaAIBotEvaluator_SelectNextPOI*);
-AFortPoiVolume* FindNextBestPOI(UFortAthenaAIBotEvaluator_SelectNextPOI* This)
-{
-    auto Poi = FindNextBestPOIOG(This);
-    if (!Poi)
-    {
-        TArray<AActor*> AllActors;
-        UGameplayStatics::GetAllActorsOfClass(UWorld::GetWorld(), AFortPoiVolume::StaticClass(), &AllActors);
-        if (AllActors.Num() > 0)
-            Poi = (AFortPoiVolume*)AllActors[std::rand() % AllActors.Num()];
+static inline char (*GetStringOG)(__int64 a1, const wchar_t* Section, const wchar_t* Key, __int64* Value, __int64* Filename)  = nullptr;
+char GetStringINI(__int64 a1, const wchar_t* Section, const wchar_t* Key, __int64* Value, __int64* Filename) {
+    if (Section && Key) {
+        if (wcscmp(Section, L"OnlineSubsystemMcp.McpProfile") == 0 && wcslen(Key) == 0) {
+            Key = L"McpDedicatedServerCommandUrl";
+        }
     }
-    UE_LOG(LogTemp, Log, Poi->GetFullName().c_str());
-    return Poi;
+    
+    return GetStringOG(a1, Section, Key, Value, Filename);
 }
 
 // move these funcs later
@@ -139,11 +135,11 @@ DWORD WINAPI Startup(LPVOID)
     Hook->Detour = RetNegativeOne;
     UKismetHookingLibrary::Hook(Hook, Address);
 
-    /*Hook->Address = ImageBase + 0x47E286C;
-    Hook->Original = (void**)&FindNextBestPOIOG;
-    Hook->Detour = FindNextBestPOI;
+    Hook->Address = ImageBase + 0x1075F30;
+    Hook->Original = (void**)&GetStringOG;
+    Hook->Detour = GetStringINI;
     UKismetHookingLibrary::Hook(Hook, Address);
-*/
+
     Hook->Address = ImageBase + 0x1023D3C;
     Hook->Original = (void**)&SendRequestNowOG;
     Hook->Detour = SendRequestNow;
