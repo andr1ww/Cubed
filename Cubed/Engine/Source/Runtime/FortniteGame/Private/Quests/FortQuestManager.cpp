@@ -74,6 +74,29 @@ static void ProgressQuest(AFortPlayerControllerAthena* PlayerController, UFortQu
             if (TeamMemberPlayerController->IsA(AFortAthenaAIBotController::StaticClass()))
                 continue;
 
+            FFortUpdatedObjectiveStat Stat{};
+            Stat.BackendName = Obj->BackendName;
+            Stat.CurrentStage = QuestItem->CurrentStage;
+            Stat.Quest = QuestDefinition;
+            Stat.ShadowStatValue = Obj->Count;
+            Stat.StatDelta = 1;
+            Stat.StatValue = Stat.ShadowStatValue;
+            
+            for (auto& UpdatedObj : TeamMemberPlayerController->UpdatedObjectiveStats)
+            {
+                if (UpdatedObj.BackendName.ComparisonIndex == Stat.BackendName.ComparisonIndex)
+                {
+                    UpdatedObj.CurrentStage = Stat.CurrentStage;
+                    UpdatedObj.ShadowStatValue = Stat.ShadowStatValue;
+                    UpdatedObj.StatDelta = Stat.StatDelta;
+                    UpdatedObj.StatValue = Stat.StatValue;
+                    TeamMemberPlayerController->OnRep_UpdatedObjectiveStats();
+                    return;
+                }
+            }
+            TeamMemberPlayerController->UpdatedObjectiveStats.Add(Stat);
+            TeamMemberPlayerController->OnRep_UpdatedObjectiveStats();
+            
             QuestManager->HandleQuestObjectiveUpdated(
                 TeamMemberPlayerController,
                 QuestDefinition,
@@ -83,6 +106,26 @@ static void ProgressQuest(AFortPlayerControllerAthena* PlayerController, UFortQu
                 TeamMemberPlayerController == PlayerController ? nullptr : PlayerState,
                 thisObjectiveCompleted,
                 allObjsCompleted);
+            QuestManager->ForceTriggerQuestsUpdated();
+
+            FFortDisplayQuestUpdateData Data{};
+            Data.QuestOwner = (AFortPlayerState*)TeamMemberPlayerController->PlayerState;
+            Data.ObjectiveUpdated = Stat;
+            QuestManager->DisplayQuestUpdateData.Add(Data);
+
+            UFortQuestObjectiveInfo* CurrentObjective = nullptr;
+            for (auto obj : QuestItem->Objectives)
+            {
+                if (obj->BackendName == Obj->BackendName)
+                {
+                    CurrentObjective = obj;
+                    break;
+                }
+            }
+
+            CurrentObjective->AchievedCount = NewCount;
+            CurrentObjective->QuestOwner = (AFortPlayerState*)TeamMemberPlayerController->PlayerState;
+            CurrentObjective->DisplayDynamicQuestUpdate();
         }
     }
 
@@ -345,7 +388,7 @@ void FortQuestManager::SendStatEventWithTags(UFortQuestManager* QuestManager,
 
                                 if (!TargetTags.HasTag(TagCondition.Tag))
                                 {
-                                    bFoundQuest = false;
+                          //          bFoundQuest = false;
                                 }
 
                                 break;
@@ -357,7 +400,7 @@ void FortQuestManager::SendStatEventWithTags(UFortQuestManager* QuestManager,
 
                                 if (!SourceTags.HasTag(TagCondition.Tag))
                                 {
-                                    bFoundQuest = false;
+                       //             bFoundQuest = false;
                                 }
 
                                 break;
@@ -371,7 +414,7 @@ void FortQuestManager::SendStatEventWithTags(UFortQuestManager* QuestManager,
 
                                 if (!ContextTags.HasTag(TagCondition.Tag) && TagCondition.Tag.TagName != PlaylistTag.TagName)
                                 {
-                                    bFoundQuest = false;
+                    //                bFoundQuest = false;
                                 }
 
                                 break;
@@ -385,11 +428,14 @@ void FortQuestManager::SendStatEventWithTags(UFortQuestManager* QuestManager,
                         }
                     }
 
-                    if (!IsConditionMet(ObjectiveStat.Condition, TargetTags, SourceTags, ContextTags, Controller))
-                        continue;
+            //        if (!IsConditionMet(ObjectiveStat.Condition, TargetTags, SourceTags, ContextTags, Controller))
+              //         continue;
                     
                     if (bFoundQuest)
                     {
+                        UE_LOG(LogQuests, Log, "Progressing quest %s for player %s",
+                               QuestDef->GetFullName().c_str(),
+                               Controller->PlayerState->GetPlayerName().ToString().c_str());
                         ProgressQuest(Controller, QuestManager, CurrentQuest, QuestDef, Objective, Count);
                     }
                 }

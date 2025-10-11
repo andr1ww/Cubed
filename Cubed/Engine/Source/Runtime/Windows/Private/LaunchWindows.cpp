@@ -20,6 +20,7 @@
 #include "Engine/Source/Runtime/GameplayAbilities/Public/AbilitySystemComponent.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/Creative/FortAthenaCreativePortal.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/Creative/AFortMinigameSettingsBuilding.h"
+#include "Engine/Source/Runtime/FortniteGame/Public/Quests/FortQuestManager.h"
 
 static inline char (*GetStringOG)(__int64 a1, const wchar_t* Section, const wchar_t* Key, __int64* Value, __int64* Filename)  = nullptr;
 char GetStringINI(__int64 a1, const wchar_t* Section, const wchar_t* Key, __int64* Value, __int64* Filename) {
@@ -97,6 +98,7 @@ DWORD WINAPI Startup(LPVOID)
     FortPlayerControllerAthena::Setup();
     FortPoiVolume::Setup();
     FortPlayerPawn::Setup();
+    FortQuestManager::Setup();
     BuildingSMActor::Setup();
 //    AthenaAIServicePlayerBots::Setup();
     BuildingContainer::Setup();
