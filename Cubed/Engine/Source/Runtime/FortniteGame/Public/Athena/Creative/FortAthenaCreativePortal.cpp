@@ -40,16 +40,11 @@ void FortAthenaCreativePortal::TeleportPlayerToLinkedVolumeHook(UObject* Context
 
 
 	auto PS = Cast<AFortPlayerStateAthena>(PC->PlayerState);
-	if (MG && PS)
-	{
-		MG->DetermineSpawnLocation(PS, &Location, &Rotation, &bGround);
 
-	}
-	else {
-		Location = LinkedVolume->K2_GetActorLocation();
-		Rotation = LinkedVolume->K2_GetActorRotation();
-		Location.Z += 15500;
-	}
+	Location = LinkedVolume->K2_GetActorLocation();
+	Rotation = LinkedVolume->K2_GetActorRotation();
+	Location.Z += 15500;
+
 
 	PS->RespawnData.RespawnLocation = Location;
 	PC->ClientStartRespawnPreparation(Location, Rotation, 0, UKismetStringLibrary::Conv_StringToName(L"CreativePortal"), PC->ClientIslandTravelText);//ProcessEvent(fn1, &f);

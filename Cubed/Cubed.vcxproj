@@ -151,6 +151,7 @@
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Engine\NetDriver.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Engine\World.h" />
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Athena\AI\Systems\AthenaAIServicePlayerBots.h" />
+    <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Athena\Creative\AFortMinigameSettingsBuilding.h" />
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Athena\Creative\FortAthenaCreativePortal.h" />
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Athena\FortGameModeAthena.h" />
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Athena\FortPoiVolume.h" />
@@ -181,6 +182,7 @@
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Kismet\FortKismetLibrary.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Player\FortPlayerController.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Player\FortPlayerPawn.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\FortniteGame\Public\Athena\Creative\AFortMinigameSettingsBuilding.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Public\Athena\Creative\FortAthenaCreativePortal.cpp" />
     <ClCompile Include="Engine\Source\Runtime\GameplayAbilities\Private\AbilitySystemComponent.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Windows\Private\LaunchWindows.cpp" />
