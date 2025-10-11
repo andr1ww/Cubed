@@ -154,6 +154,33 @@ APawn* FortGameModeAthena::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AF
 
             WarmupActors.Free(); 
         }
+        
+        if (bCreative)
+        {
+            if (UCurveTable* AthenaGameDataTable = Cast<AFortGameStateAthena>(GameMode->GameState)->AthenaGameDataTable)
+            {
+                static FName DefaultSafeZoneDamageName = UKismetStringLibrary::Conv_StringToName(FString(L"Default.SafeZone.Damage"));
+
+                for (const auto& [RowName, RowPtr] : ((UDataTable*)AthenaGameDataTable)->RowMap) 
+                {
+                    if (RowName != DefaultSafeZoneDamageName)
+                        continue;
+
+                    FSimpleCurve* Row = (FSimpleCurve*)RowPtr;
+
+                    if (!Row)
+                        continue;
+
+                    for (auto& Key : Row->Keys)
+                    {
+                        FSimpleCurveKey* KeyPtr = &Key;
+
+                        if (KeyPtr->Time == 0.f)
+                            KeyPtr->Value = 0.f;
+                    }
+                }
+            }
+        }
     }
     
     return Pawn;
