@@ -20,58 +20,59 @@ namespace SDK
 // Predefined Function
 // Finds a UObject in the global object array by name, optionally with ECastFlags to reduce heavy string comparison
 
-class UObject* UObject::FindObjectFastImpl(const std::string& Name, EClassCastFlags RequiredType)
-{
-	for (int i = 0; i < GObjects->Num(); ++i)
+	class UObject* UObject::FindObjectFastImpl(const char *Name, EClassCastFlags RequiredType)
 	{
-		UObject* Object = GObjects->GetByIndex(i);
+		for (int i = 0; i < GObjects->Num(); ++i)
+		{
+			UObject* Object = GObjects->GetByIndex(i);
 	
-		if (!Object)
-			continue;
+			if (!Object)
+				continue;
 		
-		if (Object->HasTypeFlag(RequiredType) && Object->GetName() == Name)
-			return Object;
+			if (Object->HasTypeFlag(RequiredType) && Object->GetName() == Name)
+				return Object;
+		}
+
+		return nullptr;
 	}
 
-	return nullptr;
-}
 
+	// Predefined Function
+	// Finds a UObject in the global object array by full-name, optionally with ECastFlags to reduce heavy xstring comparison
 
-// Predefined Function
-// Finds a UObject in the global object array by full-name, optionally with ECastFlags to reduce heavy string comparison
-
-class UObject* UObject::FindObjectImpl(const std::string& FullName, EClassCastFlags RequiredType)
-{
-	for (int i = 0; i < GObjects->Num(); ++i)
+	class UObject* UObject::FindObjectImpl(const char *FullName, EClassCastFlags RequiredType)
 	{
-		UObject* Object = GObjects->GetByIndex(i);
+		for (int i = 0; i < GObjects->Num(); ++i)
+		{
+			UObject* Object = GObjects->GetByIndex(i);
 	
-		if (!Object)
-			continue;
+			if (!Object)
+				continue;
 		
-		if (Object->HasTypeFlag(RequiredType) && Object->GetFullName() == FullName)
-			return Object;
+			if (Object->HasTypeFlag(RequiredType) && Object->GetFullName() == FullName)
+				return Object;
+		}
+
+		return nullptr;
 	}
 
-	return nullptr;
-}
 
 
 // Predefined Function
 // Returns the name of this object in the format 'Class Package.Outer.Object'
 
-std::string UObject::GetFullName() const
+xstring UObject::GetFullName() const
 {
 	if (this && Class)
 	{
-		std::string Temp;
+		xstring Temp;
 
 		for (UObject* NextOuter = Outer; NextOuter; NextOuter = NextOuter->Outer)
 		{
 			Temp = NextOuter->GetName() + "." + Temp;
 		}
 
-		std::string Name = Class->GetName();
+		xstring Name = Class->GetName();
 		Name += " ";
 		Name += Temp;
 		Name += GetName();
@@ -86,7 +87,7 @@ std::string UObject::GetFullName() const
 // Predefined Function
 // Retuns the name of this object
 
-std::string UObject::GetName() const
+xstring UObject::GetName() const
 {
 	return this ? Name.ToString() : "None";
 }
@@ -169,22 +170,21 @@ bool UStruct::IsSubclassOf(const UStruct* Base) const
 // Predefined Function
 // Gets a UFunction from this UClasses' 'Children' list
 
-class UFunction* UClass::GetFunction(const std::string& ClassName, const std::string& FuncName) const
-{
-	for(const UStruct* Clss = this; Clss; Clss = Clss->Super)
+	class UFunction* UClass::GetFunction(const char * ClassName, const char * FuncName) const
 	{
-		if (Clss->GetName() != ClassName)
-			continue;
-			
-		for (UField* Field = Clss->Children; Field; Field = Field->Next)
+		for(const UStruct* Clss = this; Clss; Clss = Clss->Super)
 		{
-			if(Field->HasTypeFlag(EClassCastFlags::Function) && Field->GetName() == FuncName)
-				return static_cast<class UFunction*>(Field);
+			if (Clss->GetName() != ClassName)
+				continue;
+			
+			for (UField* Field = Clss->Children; Field; Field = Field->Next)
+			{
+				if(Field->HasTypeFlag(EClassCastFlags::Function) && Field->GetName() == FuncName)
+					return static_cast<class UFunction*>(Field);
+			}
 		}
+
+		return nullptr;
 	}
 
-	return nullptr;
 }
-
-}
-

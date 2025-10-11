@@ -292,11 +292,11 @@ void FortPlayerController::ServerLoadingScreenDropped(AFortPlayerControllerAthen
                  //   if (!Instance)
                    // {
                     auto Instance = (UFortCreativeRealEstatePlotItem*)McpItem->Instance;
-                        string PlotId = McpItem->TemplateId.ToString().substr(
+                        xstring PlotId = McpItem->TemplateId.ToString().substr(
                             McpItem->TemplateId.ToString().find(':') + 1
                         );
 
-                        auto PlotItemDefinition = StaticFindObject<UFortCreativeRealEstatePlotItemDefinition>(
+                        auto PlotItemDefinition = StaticLoadObject<UFortCreativeRealEstatePlotItemDefinition>(
                             "/Game/Playgrounds/Items/Plots/" + PlotId + "." + PlotId);
                         if (!PlotItemDefinition) continue;
 

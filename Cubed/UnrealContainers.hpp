@@ -471,20 +471,20 @@ namespace UC
 		}
 
 	public:
-		inline std::string ToString() const
+		inline xstring ToString() const
 		{
 			if (*this)
 			{
-				return UtfN::Utf16StringToUtf8String<std::string>(Data, NumElements  - 1); // Exclude null-terminator
+				return UtfN::Utf16StringToUtf8String<xstring>(Data, NumElements  - 1); // Exclude null-terminator
 			}
 
 			return "";
 		}
 
-		inline std::wstring ToWString() const
+		inline xwstring ToWString() const
 		{
 			if (*this)
-				return std::wstring(Data);
+				return xwstring(Data);
 
 			return L"";
 		}

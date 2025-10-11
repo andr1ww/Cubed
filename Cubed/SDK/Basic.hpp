@@ -61,8 +61,9 @@ namespace InSDKUtils
 }
 
 
-template<int32 Len>
-struct StringLiteral
+
+	template<int32 Len>
+	struct StringLiteral
 {
 	char Chars[Len];
 
@@ -71,7 +72,7 @@ struct StringLiteral
 		std::copy_n(String, Len, Chars);
 	}
 
-	operator std::string() const
+	operator const char *() const
 	{
 		return static_cast<const char*>(Chars);
 	}
@@ -87,10 +88,10 @@ class FName;
 namespace BasicFilesImpleUtils
 {
 	// Helper functions for StaticClassImpl and StaticBPGeneratedClassImpl
-	UClass* FindClassByName(const std::string& Name);
-	UClass* FindClassByFullName(const std::string& Name);
+	UClass* FindClassByName(const char*  Name);
+	UClass* FindClassByFullName(const char*  Name);
 
-	std::string GetObjectName(class UClass* Class);
+	xstring GetObjectName(class UClass* Class);
 	int32 GetObjectIndex(class UClass* Class);
 
 	/* FName represented as a uint64. */
@@ -319,8 +320,20 @@ public:
 	{
 		return ComparisonIndex;
 	}
+
+	xwstring GetRawWString() const
+	{
+		thread_local FAllocatedString TempString(1024);
+
+		if (!AppendString)
+			InitInternal();
+
+		InSDKUtils::CallGameFunction(reinterpret_cast<void(*)(const FName*, FString&)>(AppendString), this, TempString);
+
+		return xwstring(TempString.CStr()).c_str();
+	}
 	
-	std::string GetRawString() const
+	xstring GetRawString() const
 	{
 		thread_local FAllocatedString TempString(1024);
 	
@@ -329,19 +342,19 @@ public:
 	
 		InSDKUtils::CallGameFunction(reinterpret_cast<void(*)(const FName*, FString&)>(AppendString), this, TempString);
 	
-		std::string OutputString = TempString.ToString();
+		xstring OutputString = TempString.ToString();
 		TempString.Clear();
 	
 		return OutputString;
 	}
 	
-	std::string ToString() const
+	xstring ToString() const
 	{
-		std::string OutputString = GetRawString();
+		xstring OutputString = GetRawString();
 	
 		size_t pos = OutputString.rfind('/');
 	
-		if (pos == std::string::npos)
+		if (pos == xstring::npos)
 			return OutputString;
 	
 		return OutputString.substr(pos + 1);
@@ -443,7 +456,7 @@ public:
 	{
 		return TextData->TextSource;
 	}
-	std::string ToString() const
+	xstring ToString() const
 	{
 		return TextData->TextSource.ToString();
 	}

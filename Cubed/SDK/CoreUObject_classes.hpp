@@ -29,16 +29,16 @@ public:
 	class UObject*                                Outer;                                             // 0x0020(0x0008)(NOT AUTO-GENERATED PROPERTY)
 
 public:
-	static class UObject* FindObjectFastImpl(const std::string& Name, EClassCastFlags RequiredType = EClassCastFlags::None);
-	static class UObject* FindObjectImpl(const std::string& FullName, EClassCastFlags RequiredType = EClassCastFlags::None);
+	static class UObject* FindObjectFastImpl(const char *Name, EClassCastFlags RequiredType = EClassCastFlags::None);
+	static class UObject* FindObjectImpl(const char *FullName, EClassCastFlags RequiredType = EClassCastFlags::None);
 
 	template <typename T>
 	inline T* GetInterfaceAddress() {
 		return ((T * (*)(UObject*, UClass*)) (*(uint64_t*)(__readgsqword(0x60) + 0x10) + 0xCF9EA0))(this, T::StaticClass());
 	}
 	
-	std::string GetFullName() const;
-	std::string GetName() const;
+	xstring GetFullName() const;
+	xstring GetName() const;
 	bool HasTypeFlag(EClassCastFlags TypeFlags) const;
 	bool IsA(EClassCastFlags TypeFlags) const;
 	bool IsA(class UClass* TypeClass) const;
@@ -47,22 +47,22 @@ public:
 	void ExecuteUbergraph(int32 EntryPoint);
 
 public:
-	static class UClass* FindClass(const std::string& ClassFullName)
+	static class UClass* FindClass(const char* ClassFullName)
 	{
 		return FindObject<class UClass>(ClassFullName, EClassCastFlags::Class);
 	}
-	static class UClass* FindClassFast(const std::string& ClassName)
+	static class UClass* FindClassFast(const char* ClassName)
 	{
 		return FindObjectFast<class UClass>(ClassName, EClassCastFlags::Class);
 	}
 	
 	template<typename UEType = UObject>
-	static UEType* FindObject(const std::string& Name, EClassCastFlags RequiredType = EClassCastFlags::None)
+	static UEType* FindObject(const char* Name, EClassCastFlags RequiredType = EClassCastFlags::None)
 	{
 		return static_cast<UEType*>(FindObjectImpl(Name, RequiredType));
 	}
 	template<typename UEType = UObject>
-	static UEType* FindObjectFast(const std::string& Name, EClassCastFlags RequiredType = EClassCastFlags::None)
+	static UEType* FindObjectFast(const char* Name, EClassCastFlags RequiredType = EClassCastFlags::None)
 	{
 		return static_cast<UEType*>(FindObjectFastImpl(Name, RequiredType));
 	}
@@ -361,7 +361,7 @@ public:
 	uint8                                         Pad_120[0x118];                                    // 0x0120(0x0118)(Fixing Struct Size After Last Property [ Dumper-7 ])
 
 public:
-	class UFunction* GetFunction(const std::string& ClassName, const std::string& FuncName) const;
+	class UFunction* GetFunction(const char* ClassName, const char* FuncName) const;
 
 public:
 	static class UClass* StaticClass()

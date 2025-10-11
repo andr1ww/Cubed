@@ -162,6 +162,7 @@
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Kismet\FortKismetLibrary.h" />
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Player\FortPlayerController.h" />
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Player\FortPlayerPawn.h" />
+    <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Quests\FortQuestManager.h" />
     <ClInclude Include="Engine\Source\Runtime\GameplayAbilities\Public\AbilitySystemComponent.h" />
     <ClInclude Include="Logging.h" />
     <ClInclude Include="Offsets.h" />
@@ -182,6 +183,7 @@
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Kismet\FortKismetLibrary.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Player\FortPlayerController.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Player\FortPlayerPawn.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Quests\FortQuestManager.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Public\Athena\Creative\AFortMinigameSettingsBuilding.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Public\Athena\Creative\FortAthenaCreativePortal.cpp" />
     <ClCompile Include="Engine\Source\Runtime\GameplayAbilities\Private\AbilitySystemComponent.cpp" />
