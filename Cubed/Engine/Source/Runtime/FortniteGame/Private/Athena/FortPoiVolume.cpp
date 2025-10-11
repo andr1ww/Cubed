@@ -73,4 +73,6 @@ void FortPoiVolume::Setup()
         0xB0, 0x01,  // mov al, 1
         0xC3         // ret
     });
+
+    free(Hook);
 }

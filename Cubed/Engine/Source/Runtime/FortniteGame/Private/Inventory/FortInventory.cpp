@@ -201,4 +201,6 @@ void FortInventory::Setup()
             UKismetHookingLibrary::Hook(Hook, EHook::EveryVFT);
         }
     }
+
+    free(Hook);
 }

@@ -255,19 +255,20 @@ bool ValidateLootPackage(FFortLootPackageData* LootPackage, FName LootPackageNam
 	return true;
 }
 
-FFortItemEntry* FortKismetLibrary::ConstructItemEntry(UFortItemDefinition* ItemDefinition, int32 Count, int32 Level) {
-	FFortItemEntry* ItemEntry = new FFortItemEntry();
+FFortItemEntry FortKismetLibrary::ConstructItemEntry(UFortItemDefinition* ItemDefinition, int32 Count, int32 Level) {
+	FFortItemEntry ItemEntry{};
 
-	ItemEntry->MostRecentArrayReplicationKey = -1;
-	ItemEntry->ReplicationID = -1;
-	ItemEntry->ReplicationKey = -1;
+	ItemEntry.MostRecentArrayReplicationKey = -1;
+	ItemEntry.ReplicationID = -1;
+	ItemEntry.ReplicationKey = -1;
 
-	ItemEntry->ItemDefinition = ItemDefinition;
-	ItemEntry->Count = Count;
-	ItemEntry->Durability = 1.f;
-	ItemEntry->GameplayAbilitySpecHandle = FGameplayAbilitySpecHandle(-1);
-	ItemEntry->ParentInventory.ObjectIndex = -1;
-	ItemEntry->Level = Level;
+	ItemEntry.ItemDefinition = ItemDefinition;
+	ItemEntry.Count = Count;
+	ItemEntry.Durability = 1.f;
+	ItemEntry.GameplayAbilitySpecHandle = FGameplayAbilitySpecHandle(-1);
+	ItemEntry.ParentInventory.ObjectIndex = -1;
+	ItemEntry.Level = Level;
+    
 	return ItemEntry;
 }
 
@@ -335,12 +336,12 @@ void PickLootFromLP(TArray<FFortItemEntry>& LootDrops, FName LootPackageName, in
 				CurrentCountForEntry = 0;
 
 			auto ActualItemLevel = PickLevel(WorldItemDefinition, FinalItemLevel);
-			LootDrops.Add(*FortKismetLibrary::ConstructItemEntry(ItemDefinition, CurrentCountForEntry, ActualItemLevel));
+			LootDrops.Add(FortKismetLibrary::ConstructItemEntry(ItemDefinition, CurrentCountForEntry, ActualItemLevel));
 			bool IsWeapon = LootPackage->LootPackageID.ToString().contains(".Weapon.") && WeaponItemDefinition;
 
 			if (IsWeapon && WeaponItemDefinition->GetAmmoWorldItemDefinition_BP() && WeaponItemDefinition->GetAmmoWorldItemDefinition_BP() != WeaponItemDefinition)
 			{
-				LootDrops.Add(*FortKismetLibrary::ConstructItemEntry(WeaponItemDefinition->GetAmmoWorldItemDefinition_BP(), ((UFortAmmoItemDefinition*)WeaponItemDefinition->GetAmmoWorldItemDefinition_BP())->DropCount, 0));
+				LootDrops.Add(FortKismetLibrary::ConstructItemEntry(WeaponItemDefinition->GetAmmoWorldItemDefinition_BP(), ((UFortAmmoItemDefinition*)WeaponItemDefinition->GetAmmoWorldItemDefinition_BP())->DropCount, 0));
 			}
 
 			Count -= CurrentCountForEntry;
@@ -409,17 +410,15 @@ TArray<FFortItemEntry> FortKismetLibrary::PickLootDrops(FName TierGroupName, int
 	return Result;
 }
 
-AFortPickupAthena* FortKismetLibrary::SpawnPickup(FVector Loc, FFortItemEntry* Entry, EFortPickupSourceTypeFlag SourceTypeFlag, EFortPickupSpawnSource SpawnSource, AFortPlayerPawn* Pawn, int OverrideCount, bool Toss, bool RandomRotation, bool bCombine)
+AFortPickupAthena* FortKismetLibrary::SpawnPickup(FVector Loc, FFortItemEntry Entry, EFortPickupSourceTypeFlag SourceTypeFlag, EFortPickupSpawnSource SpawnSource, AFortPlayerPawn* Pawn, int OverrideCount, bool Toss, bool RandomRotation, bool bCombine)
 {
-	if (!Entry) return nullptr;
-
 	static auto PickupClass = AFortPickupAthena::StaticClass();
 	AFortPickupAthena* NewPickup = UWorld::GetWorld()->SpawnActor<AFortPickupAthena>(PickupClass, Loc);
     
 	NewPickup->bRandomRotation = RandomRotation;
-	NewPickup->PrimaryPickupItemEntry.ItemDefinition = Entry->ItemDefinition;
-	NewPickup->PrimaryPickupItemEntry.LoadedAmmo = Entry->LoadedAmmo;
-	NewPickup->PrimaryPickupItemEntry.Count = OverrideCount != -1 ? OverrideCount : Entry->Count;
+	NewPickup->PrimaryPickupItemEntry.ItemDefinition = Entry.ItemDefinition;
+	NewPickup->PrimaryPickupItemEntry.LoadedAmmo = Entry.LoadedAmmo;
+	NewPickup->PrimaryPickupItemEntry.Count = OverrideCount != -1 ? OverrideCount : Entry.Count;
 	NewPickup->PawnWhoDroppedPickup = Pawn;
 	NewPickup->OnRep_PrimaryPickupItemEntry();
 
@@ -427,8 +426,6 @@ AFortPickupAthena* FortKismetLibrary::SpawnPickup(FVector Loc, FFortItemEntry* E
 	NewPickup->MovementComponent = (UProjectileMovementComponent*)UGameplayStatics::SpawnObject(UProjectileMovementComponent::StaticClass(), NewPickup);
 	NewPickup->SetReplicateMovement(true);
 	NewPickup->OnRep_ReplicateMovement();
-
-	free(Entry);
-    
+	
 	return NewPickup;
 }

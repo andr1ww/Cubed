@@ -335,4 +335,6 @@ void FortGameModeAthena::Setup()
     Hook->Original = (void**)&StartAircraftPhaseOG;
     Hook->Detour = StartAircraftPhase;
     //  UKismetHookingLibrary::Hook(Hook, EHook::Address);
+
+    free(Hook);
 }

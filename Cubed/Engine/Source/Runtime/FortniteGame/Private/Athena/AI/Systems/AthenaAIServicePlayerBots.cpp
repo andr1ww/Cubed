@@ -52,4 +52,6 @@ void AthenaAIServicePlayerBots::Setup()
         0xE9, 0xA4, 0x00, 0x00, 0x00,  // jmp
         0x90                            // nop
     });
+    
+    free(Hook);
 }

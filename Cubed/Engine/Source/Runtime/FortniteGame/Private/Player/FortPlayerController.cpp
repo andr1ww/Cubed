@@ -14,14 +14,10 @@ void FortPlayerController::ServerAcknowledgePossession(AFortPlayerControllerAthe
     Controller->AcknowledgedPawn = Pawn;
 
     PlayerState->HeroType = Controller->CosmeticLoadoutPC.Character->HeroDefinition;
+    
     UFortKismetLibrary::UpdatePlayerCustomCharacterPartsVisualization(PlayerState);
     
-    TScriptInterface<IAbilitySystemInterface> AbilitySystemInterfaceActor{};
-    AbilitySystemInterfaceActor.ObjectPointer = PlayerState;
-    AbilitySystemInterfaceActor.InterfacePointer = PlayerState->GetInterfaceAddress<IAbilitySystemInterface>();
-    
-    static auto AbilitySet = GetAssetManager()->GameDataBR->PlayerAbilitySetBR.Get();
-    UFortKismetLibrary::EquipFortAbilitySet(AbilitySystemInterfaceActor, AbilitySet, nullptr);
+    reinterpret_cast<void(*)(void*)>(ImageBase + 0x4EC023C)(PlayerState->GetInterfaceAddress<IAbilitySystemInterface>()); // ability stuff
     
     Controller->XPComponent->bRegisteredWithQuestManager = true;
     Controller->XPComponent->OnRep_bRegisteredWithQuestManager();
@@ -206,7 +202,7 @@ void FortPlayerController::ServerAttemptInventoryDrop(AFortPlayerController* Con
         DropLocation = PlayerController->Pawn->K2_GetActorLocation() + PlayerController->Pawn->GetActorForwardVector() * 70.f + FVector(0, 0, 50);
     }
     FortKismetLibrary::SpawnPickup(
-        DropLocation, ItemEntry, EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::Unset, PlayerController->MyFortPawn, Count, true,
+        DropLocation, *ItemEntry, EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::Unset, PlayerController->MyFortPawn, Count, true,
         true, false);
     
     PlayerController->WorldInventory->ReplaceEntry(*ItemEntry);
@@ -359,4 +355,5 @@ void FortPlayerController::Setup()
     Hook->Original = (void**)&ServerLoadingScreenDroppedOG;
     Hook->Detour = ServerLoadingScreenDropped;
     UKismetHookingLibrary::Hook(Hook, EHook::VFT);
+    free(Hook);
 }

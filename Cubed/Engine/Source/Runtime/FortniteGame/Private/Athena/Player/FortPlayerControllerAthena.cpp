@@ -11,15 +11,17 @@ void FortPlayerControllerAthena::ServerAttemptAircraftJump(UFortControllerCompon
     auto Controller = (AFortPlayerControllerAthena*)Comp->GetOwner();
     auto GameMode = (AFortGameModeAthena*)UWorld::GetWorld()->AuthorityGameMode;
 
-    for (int32 i = 0; i < Controller->WorldInventory->Inventory.ItemInstances.Num(); i++)
-    {
-        if (Controller->WorldInventory->Inventory.ItemInstances.IsValidIndex(i))
-        {
-            auto& Item = Controller->WorldInventory->Inventory.ItemInstances[i];
-            if (Item->CanBeDropped())
-                Controller->WorldInventory->Remove(Item->ItemEntry.ItemGuid);
-        }
-    }
+	TArray<FGuid> ItemsToRemove;
+	for (const auto& Item : Controller->WorldInventory->Inventory.ItemInstances)
+	{
+		if (Item && Item->CanBeDropped())
+			ItemsToRemove.Add(Item->ItemEntry.ItemGuid);
+	}
+
+	for (const FGuid& Guid : ItemsToRemove)
+	{
+		Controller->WorldInventory->Remove(Guid);
+	}
     
     GameMode->RestartPlayer(Controller);
     if (Controller->MyFortPawn)
@@ -163,7 +165,7 @@ void FortPlayerControllerAthena::ClientOnPawnDied(AFortPlayerControllerAthena* P
 			
 			if (bAllowedType)
 			{
-				FortKismetLibrary::SpawnPickup(Location, &entry, 
+				FortKismetLibrary::SpawnPickup(Location, entry, 
 	EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, PlayerController->MyFortPawn, -1,
 	true, false, true);
 			}
@@ -366,4 +368,6 @@ void FortPlayerControllerAthena::Setup()
 	Hook->Original = (void**)&ClientOnPawnDiedOG;
 	Hook->Detour = ClientOnPawnDied;
 	UKismetHookingLibrary::Hook(Hook, EHook::Address);
+
+	free(Hook);
 }
