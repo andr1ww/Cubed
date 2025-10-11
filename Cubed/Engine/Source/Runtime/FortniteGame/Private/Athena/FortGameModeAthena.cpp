@@ -249,23 +249,26 @@ void FortGameModeAthena::StartNewSafeZonePhase(AFortGameModeAthena* GameMode, in
 void FortGameModeAthena::StartAircraftPhase(AFortGameModeAthena* GameMode, char a2)
 {
     StartAircraftPhaseOG(GameMode, a2);
-    auto GameState = GetGameState();
-
-    GameState->GamePhase = EAthenaGamePhase::Aircraft;
-    GameState->GamePhaseStep = EAthenaGamePhaseStep::BusLocked;
-    GameState->OnRep_GamePhase(EAthenaGamePhase::Warmup);
-    
-    std::thread([GameMode]()
+    if (!bCreative)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(7000));
-        for (auto& Player : GameMode->AliveBots)
+        auto GameState = GetGameState();
+
+        GameState->GamePhase = EAthenaGamePhase::Aircraft;
+        GameState->GamePhaseStep = EAthenaGamePhaseStep::BusLocked;
+        GameState->OnRep_GamePhase(EAthenaGamePhase::Warmup);
+    
+        std::thread([GameMode]()
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(250));
-            Player->PlayerBotPawn->K2_TeleportTo(GameMode->Aircrafts[0]->K2_GetActorLocation(), GameMode->Aircrafts[0]->K2_GetActorRotation());
-            Player->ThankBusDriver();
-            Player->PlayerBotPawn->BeginSkydiving(true);
-        }
-    }).detach();
+            std::this_thread::sleep_for(std::chrono::milliseconds(7000));
+            for (auto& Player : GameMode->AliveBots)
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(250));
+                Player->PlayerBotPawn->K2_TeleportTo(GameMode->Aircrafts[0]->K2_GetActorLocation(), GameMode->Aircrafts[0]->K2_GetActorRotation());
+                Player->ThankBusDriver();
+                Player->PlayerBotPawn->BeginSkydiving(true);
+            }
+        }).detach();
+    }
 }
 
 __int64 FortGameModeAthena::InitializeFlightPath(

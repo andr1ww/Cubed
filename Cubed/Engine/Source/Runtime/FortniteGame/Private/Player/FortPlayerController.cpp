@@ -352,8 +352,10 @@ void FortPlayerController::Setup()
     UKismetHookingLibrary::Hook(Hook, EHook::Address);
 
     Hook->Address = 0x282;
+    Hook->Class = AFortPlayerControllerAthena::StaticClass();
     Hook->Original = (void**)&ServerLoadingScreenDroppedOG;
     Hook->Detour = ServerLoadingScreenDropped;
     UKismetHookingLibrary::Hook(Hook, EHook::VFT);
+    
     free(Hook);
 }
