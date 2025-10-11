@@ -18,6 +18,7 @@
 #include "Engine/Source/Runtime/FortniteGame/Public/Player/FortPlayerController.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Player/FortPlayerPawn.h"
 #include "Engine/Source/Runtime/GameplayAbilities/Public/AbilitySystemComponent.h"
+#include "Engine/Source/Runtime/FortniteGame/Public/Athena/Creative/FortAthenaCreativePortal.h"
 
 static AFortPoiVolume* (*FindNextBestPOIOG)(UFortAthenaAIBotEvaluator_SelectNextPOI*);
 AFortPoiVolume* FindNextBestPOI(UFortAthenaAIBotEvaluator_SelectNextPOI* This)
@@ -102,6 +103,7 @@ DWORD WINAPI Startup(LPVOID)
     BuildingSMActor::Setup();
 //    AthenaAIServicePlayerBots::Setup();
     BuildingContainer::Setup();
+    FortAthenaCreativePortal::Setup();
     
     UHook* Hook = new UHook();
     

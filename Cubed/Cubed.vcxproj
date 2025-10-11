@@ -181,6 +181,7 @@
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Kismet\FortKismetLibrary.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Player\FortPlayerController.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Player\FortPlayerPawn.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\FortniteGame\Public\Athena\Creative\FortAthenaCreativePortal.cpp" />
     <ClCompile Include="Engine\Source\Runtime\GameplayAbilities\Private\AbilitySystemComponent.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Windows\Private\LaunchWindows.cpp" />
     <ClCompile Include="pch.cpp">
