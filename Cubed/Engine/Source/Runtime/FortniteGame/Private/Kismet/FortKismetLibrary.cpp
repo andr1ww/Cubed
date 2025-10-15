@@ -410,6 +410,30 @@ TArray<FFortItemEntry> FortKismetLibrary::PickLootDrops(FName TierGroupName, int
 	return Result;
 }
 
+bool FortKismetLibrary::PickLootDropsHook(UObject* Object, FFrame& Stack, bool* Ret)
+{
+	UObject* WorldContextObject;
+	FName TierGroupName;
+	int32 WorldLevel;
+	int32 ForcedLootTier;
+	FGameplayTagContainer OptionalLootTags;
+
+	Stack.StepCompiledIn(&WorldContextObject);
+	auto& OutLootToDrop = Stack.StepCompiledInRef<TArray<FFortItemEntry>>();
+	Stack.StepCompiledIn(&TierGroupName);
+	Stack.StepCompiledIn(&WorldLevel);
+	Stack.StepCompiledIn(&ForcedLootTier);
+	Stack.StepCompiledIn(&OptionalLootTags);
+	Stack.IncrementCode();
+	
+	auto LootDrops = PickLootDrops(TierGroupName, WorldLevel);
+
+	for (auto& LootDrop : LootDrops)
+		OutLootToDrop.Add(LootDrop);
+
+	return *Ret = true;
+}
+
 AFortPickupAthena* FortKismetLibrary::SpawnPickup(FVector Loc, FFortItemEntry Entry, EFortPickupSourceTypeFlag SourceTypeFlag, EFortPickupSpawnSource SpawnSource, AFortPlayerPawn* Pawn, int OverrideCount, bool Toss, bool RandomRotation, bool bCombine)
 {
 	static auto PickupClass = AFortPickupAthena::StaticClass();
@@ -428,4 +452,13 @@ AFortPickupAthena* FortKismetLibrary::SpawnPickup(FVector Loc, FFortItemEntry En
 	NewPickup->OnRep_ReplicateMovement();
 	
 	return NewPickup;
+}
+
+void FortKismetLibrary::Setup()
+{
+	UHook* Hook = new UHook();
+
+	Hook->Path = "/Script/FortniteGame.FortKismetLibrary.PickLootDrops";
+	Hook->Detour = PickLootDropsHook;
+	UKismetHookingLibrary::Hook(Hook, Exec);
 }

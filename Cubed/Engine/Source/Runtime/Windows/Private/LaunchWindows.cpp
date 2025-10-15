@@ -8,6 +8,7 @@
 #include "Engine/Source/Runtime/CoreUObject/Public/UObject/UObjectGlobals.h"
 #include "Engine/Source/Runtime/Engine/Classes/Engine/NetDriver.h"
 #include "Engine/Source/Runtime/Engine/Classes/Engine/World.h"
+#include "Engine/Source/Runtime/FortniteGame/Public/Athena/FortAthenaSupplyDrop.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/FortGameModeAthena.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Building/BuildingContainer.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/FortPoiVolume.h"
@@ -20,6 +21,7 @@
 #include "Engine/Source/Runtime/GameplayAbilities/Public/AbilitySystemComponent.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/Creative/FortAthenaCreativePortal.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/Creative/AFortMinigameSettingsBuilding.h"
+#include "Engine/Source/Runtime/FortniteGame/Public/Kismet/FortKismetLibrary.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Quests/FortQuestManager.h"
 
 static inline char (*GetStringOG)(__int64 a1, const wchar_t* Section, const wchar_t* Key, __int64* Value, __int64* Filename)  = nullptr;
@@ -104,6 +106,8 @@ DWORD WINAPI Startup(LPVOID)
     BuildingContainer::Setup();
     FortAthenaCreativePortal::Setup();
     FortMinigameSettingsBuilding::Setup();
+    FortAthenaSupplyDrop::Setup();
+    FortKismetLibrary::Setup();
     
     UHook* Hook = new UHook();
     

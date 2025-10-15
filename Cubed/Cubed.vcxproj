@@ -153,6 +153,7 @@
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Athena\AI\Systems\AthenaAIServicePlayerBots.h" />
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Athena\Creative\AFortMinigameSettingsBuilding.h" />
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Athena\Creative\FortAthenaCreativePortal.h" />
+    <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Athena\FortAthenaSupplyDrop.h" />
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Athena\FortGameModeAthena.h" />
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Athena\FortPoiVolume.h" />
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Athena\Player\FortPlayerControllerAthena.h" />
@@ -174,6 +175,7 @@
     <ClCompile Include="Engine\Source\Runtime\Engine\Private\NetDriver.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Private\World.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Athena\AI\Systems\AthenaAIServicePlayerBots.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Athena\FortAthenaSupplyDrop.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Athena\FortGameModeAthena.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Athena\FortPoiVolume.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Athena\Player\FortPlayerControllerAthena.cpp" />

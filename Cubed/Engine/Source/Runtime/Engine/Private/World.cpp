@@ -23,15 +23,17 @@ bool World::Listen(UWorld* InWorld, FURL)
     FString Err;    
     FURL URL;
     URL.Port = 7777;
-        
-    Runtime::Funcs::InitListen(NetDriver, UWorld::GetWorld(), URL, false, Err);
-    Runtime::Funcs::SetWorld(NetDriver, UWorld::GetWorld());
 
-    for (auto& Level : UWorld::GetWorld()->LevelCollections) Level.NetDriver = NetDriver;
-
-    SetConsoleTitleA("Cubed | Ready on Port 7777 | Joinable = false");
+    Runtime::Funcs::SetWorld(NetDriver, GetWorld());
+    if (Runtime::Funcs::InitListen(NetDriver, GetWorld(), URL, false, Err))
+    {
+        Runtime::Funcs::SetWorld(NetDriver, GetWorld());
+        for (auto& Level : GetWorld()->LevelCollections) Level.NetDriver = NetDriver;
+        SetConsoleTitleA("Cubed | Ready on Port 7777 | Joinable = false");
+        return true;
+    } 
     
-    return true;
+    return false;
 }
 
 enum ESpawnActorNameMode : uint8

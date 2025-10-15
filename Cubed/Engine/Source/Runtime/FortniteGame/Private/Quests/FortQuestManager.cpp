@@ -115,13 +115,11 @@ static void ProgressQuest(AFortPlayerControllerAthena* PlayerController, UFortQu
 
             UFortQuestObjectiveInfo* CurrentObjective = nullptr;
             for (auto obj : QuestItem->Objectives)
-            {
                 if (obj->BackendName == Obj->BackendName)
                 {
                     CurrentObjective = obj;
                     break;
                 }
-            }
 
             CurrentObjective->AchievedCount = NewCount;
             CurrentObjective->QuestOwner = (AFortPlayerState*)TeamMemberPlayerController->PlayerState;
@@ -432,12 +430,7 @@ void FortQuestManager::SendStatEventWithTags(UFortQuestManager* QuestManager,
               //         continue;
                     
                     if (bFoundQuest)
-                    {
-                        UE_LOG(LogQuests, Log, "Progressing quest %s for player %s",
-                               QuestDef->GetFullName().c_str(),
-                               Controller->PlayerState->GetPlayerName().ToString().c_str());
                         ProgressQuest(Controller, QuestManager, CurrentQuest, QuestDef, Objective, Count);
-                    }
                 }
             }
         }
