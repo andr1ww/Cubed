@@ -461,4 +461,6 @@ void FortKismetLibrary::Setup()
 	Hook->Path = "/Script/FortniteGame.FortKismetLibrary.PickLootDrops";
 	Hook->Detour = PickLootDropsHook;
 	UKismetHookingLibrary::Hook(Hook, Exec);
+
+	delete Hook;
 }

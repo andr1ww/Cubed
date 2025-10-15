@@ -96,17 +96,6 @@ static void ProgressQuest(AFortPlayerControllerAthena* PlayerController, UFortQu
             }
             TeamMemberPlayerController->UpdatedObjectiveStats.Add(Stat);
             TeamMemberPlayerController->OnRep_UpdatedObjectiveStats();
-            
-            QuestManager->HandleQuestObjectiveUpdated(
-                TeamMemberPlayerController,
-                QuestDefinition,
-                Obj->BackendName,
-                NewCount,
-                IncrementCount,
-                TeamMemberPlayerController == PlayerController ? nullptr : PlayerState,
-                thisObjectiveCompleted,
-                allObjsCompleted);
-            QuestManager->ForceTriggerQuestsUpdated();
 
             FFortDisplayQuestUpdateData Data{};
             Data.QuestOwner = (AFortPlayerState*)TeamMemberPlayerController->PlayerState;
@@ -124,6 +113,17 @@ static void ProgressQuest(AFortPlayerControllerAthena* PlayerController, UFortQu
             CurrentObjective->AchievedCount = NewCount;
             CurrentObjective->QuestOwner = (AFortPlayerState*)TeamMemberPlayerController->PlayerState;
             CurrentObjective->DisplayDynamicQuestUpdate();
+
+            QuestManager->HandleQuestObjectiveUpdated(
+    TeamMemberPlayerController,
+    QuestDefinition,
+    Obj->BackendName,
+    NewCount,
+    IncrementCount,
+    TeamMemberPlayerController == PlayerController ? nullptr : PlayerState,
+    thisObjectiveCompleted,
+    allObjsCompleted);
+            QuestManager->ForceTriggerQuestsUpdated();
         }
     }
 
@@ -149,12 +149,20 @@ static void ProgressQuest(AFortPlayerControllerAthena* PlayerController, UFortQu
                 auto* XPComp = TeamMemberPlayerController->XPComponent;
                 if (!XPComp) continue;
                 
-                FXPEventEntry QuestEntry;
-                QuestEntry.EventXpValue = XPPlayerControllerCount;
-                QuestEntry.QuestDef = QuestDefinition;
-                QuestEntry.Time = UGameplayStatics::GetTimeSeconds(UWorld::GetWorld());
-                QuestEntry.TotalXpEarnedInMatch = XPComp->TotalXpEarned + XPPlayerControllerCount;
-                QuestEntry.SimulatedXpEvent = UKismetTextLibrary::Conv_StringToText(L"Objective completed");
+                FXPEventInfo Info;
+                Info.EventXpValue = XPPlayerControllerCount;
+                Info.RestedValuePortion = Info.EventXpValue;
+                Info.RestedXPRemaining = Info.EventXpValue;
+                Info.QuestDef = QuestDefinition;
+                Info.TotalXpEarnedInMatch = Info.EventXpValue + XPComp->TotalXpEarned;
+                Info.Priority = EXPEventPriorityType::TopCenter;
+                Info.Priority = EXPEventPriorityType::TopCenter;
+                Info.SimulatedText = UKismetTextLibrary::Conv_StringToText(L"Objective completed");
+                Info.SimulatedName = QuestDefinition->GetDisplayName(true);
+                Info.Accolade = UKismetSystemLibrary::GetPrimaryAssetIdFromObject(QuestDefinition);
+                Info.EventName = QuestDefinition->Name;
+                Info.SeasonBoostValuePortion = 0;
+                Info.PlayerController = PlayerController;
 
                 XPComp->ChallengeXp += XPPlayerControllerCount;
                 XPComp->TotalXpEarned += XPPlayerControllerCount;
@@ -164,7 +172,7 @@ static void ProgressQuest(AFortPlayerControllerAthena* PlayerController, UFortQu
                 XPComp->OnInMatchProfileUpdate(XPComp->InMatchProfileVer);
                 XPComp->OnProfileUpdated();
 
-                XPComp->HighPrioXPEvent(QuestEntry);
+                XPComp->OnXpEvent(Info);
             }
         
             QuestManager->ClaimQuestReward(QuestItem);
@@ -193,10 +201,11 @@ void FortQuestManager::SendStatEventWithTags(UFortQuestManager* QuestManager,
                                              FGameplayTagContainer& ContextTags,
                                              int32 Count)
 {
+    if (Count <= 0) Count = 1;
     if (QuestManager)
     {
         auto Controller = (AFortPlayerControllerAthena*)QuestManager->GetPlayerControllerBP();
-        UE_LOG(LogQuests, Log, "SendStatEventWithTags called for player %s with type: %d and count: %d",
+        UE_LOG(LogQuests, Log, "QuestManager called for player %s with type: %d and count: %d",
                Controller ? Controller->PlayerState->GetPlayerName().ToString().c_str() : "Unknown", Type, Count);
         if (!Controller) return;
 
@@ -275,13 +284,17 @@ void FortQuestManager::SendStatEventWithTags(UFortQuestManager* QuestManager,
                     }
 
                     FXPEventInfo Info{};
-                    Info.Accolade = Row->AccoladePrimaryAssetId;
-                    Info.EventXpValue = Info.RestedValuePortion = Info.RestedXPRemaining = (int32)XpValue;
+                    Info.EventXpValue = (int32)XpValue;
+                    Info.RestedValuePortion = Info.EventXpValue;
+                    Info.RestedXPRemaining = Info.EventXpValue;
                     Info.TotalXpEarnedInMatch = Info.EventXpValue + Controller->XPComponent->TotalXpEarned;
                     Info.Priority = AccoladeToGive->Priority;
                     Info.SimulatedText = AccoladeToGive->GetShortDescription();
+                    Info.SimulatedName = AccoladeToGive->GetDisplayName(true);
+                    Info.Accolade = UKismetSystemLibrary::GetPrimaryAssetIdFromObject(AccoladeToGive);
                     Info.EventName = AccoladeToGive->Name;
                     Info.SeasonBoostValuePortion = 0;
+                    Info.PlayerController = Controller;
 
                     Controller->XPComponent->MatchXp += Info.EventXpValue;
                     Controller->XPComponent->TotalXpEarned += Info.EventXpValue;
