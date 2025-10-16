@@ -256,20 +256,37 @@ void FortGameModeAthena::StartNewSafeZonePhase(AFortGameModeAthena* GameMode, in
     FFortSafeZoneDefinition* SafeZoneDefinition = &GameState->MapInfo->SafeZoneDefinition;
     TArray<float>& Durations = *(TArray<float>*)(__int64(SafeZoneDefinition) + 0x248);
     TArray<float>& HoldDurations = *(TArray<float>*)(__int64(SafeZoneDefinition) + 0x238);
-    
-    int SafeZonePhase = GameMode->SafeZonePhase;
+    auto Sum = 0.f;
+    for (auto& _v : Durations) Sum += _v;
+    if (Sum == 0.f)
+    {
+        UCurveTable* GameData = GameState->CurrentPlaylistInfo.BasePlaylist->GameData.Get();
 
-    float ZoneDuration = 0.f;
-    float ZoneHoldDuration = 0.f;
+        if (!GameData)
+            GameData = StaticFindObject<UCurveTable>("/Game/Balance/AthenaGameData.AthenaGameData");
 
-    if (SafeZonePhase >= 0 && SafeZonePhase < Durations.Num())
-        ZoneDuration = Durations[SafeZonePhase];
-    if (SafeZonePhase >= 0 && SafeZonePhase < HoldDurations.Num())
-        ZoneHoldDuration = HoldDurations[SafeZonePhase];
+        auto ShrinkTime = UKismetStringLibrary::Conv_StringToName(L"Default.SafeZone.ShrinkTime");
+        auto HoldTime = UKismetStringLibrary::Conv_StringToName(L"Default.SafeZone.WaitTime");
+        
+        for (size_t i = 0; i < HoldDurations.Num(); i++)
+        {
+            float Out;
+            EEvaluateCurveTableResult Res;
+            UDataTableFunctionLibrary::EvaluateCurveTableRow(GameData, HoldTime, i, &Res, &Out, FString());
+            HoldDurations[i] = Out;
+        }
+        for (size_t i = 0; i < Durations.Num(); i++)
+        {
+            float Out;
+            EEvaluateCurveTableResult Res;
+            UDataTableFunctionLibrary::EvaluateCurveTableRow(GameData, ShrinkTime, i, &Res, &Out, FString());
+            Durations[i] = Out;
+        }
+    }
 
-    float CurrentTime = UGameplayStatics::GetTimeSeconds(GetWorld());
-    GameMode->SafeZoneIndicator->SafeZoneStartShrinkTime  = CurrentTime + ZoneHoldDuration;
-    GameMode->SafeZoneIndicator->SafeZoneFinishShrinkTime = GameMode->SafeZoneIndicator->SafeZoneStartShrinkTime + ZoneDuration;
+    auto SafeZoneIndicator = GameMode->SafeZoneIndicator;
+    SafeZoneIndicator->SafeZoneStartShrinkTime = UGameplayStatics::GetTimeSeconds(GetWorld()) + HoldDurations[GameMode->SafeZonePhase + 1];
+    SafeZoneIndicator->SafeZoneFinishShrinkTime = SafeZoneIndicator->SafeZoneStartShrinkTime + Durations[GameMode->SafeZonePhase + 1];
     StartNewSafeZonePhaseOG(GameMode, NewSafeZonePhase);
 }
 

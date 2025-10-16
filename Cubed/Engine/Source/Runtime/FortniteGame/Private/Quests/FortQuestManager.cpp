@@ -124,6 +124,17 @@ static void ProgressQuest(AFortPlayerControllerAthena* PlayerController, UFortQu
     thisObjectiveCompleted,
     allObjsCompleted);
             QuestManager->ForceTriggerQuestsUpdated();
+
+            TArray<FFortQuestObjectiveCompletion> Progress;
+            FFortQuestObjectiveCompletion Completion;
+            Completion.StatName = UKismetStringLibrary::Conv_NameToString(Obj->BackendName);
+            Completion.Count = NewCount;
+            Progress.Add(Completion);
+
+            PlayerController->XPComponent->ClientQuestsUpdated(Progress);
+            PlayerController->XPComponent->QuestObjectiveUpdated(PlayerController, QuestDefinition, Obj->BackendName,
+                                                                 NewCount, thisObjectiveCompleted,
+                                                                 allObjsCompleted);
         }
     }
 
@@ -155,7 +166,6 @@ static void ProgressQuest(AFortPlayerControllerAthena* PlayerController, UFortQu
                 Info.RestedXPRemaining = Info.EventXpValue;
                 Info.QuestDef = QuestDefinition;
                 Info.TotalXpEarnedInMatch = Info.EventXpValue + XPComp->TotalXpEarned;
-                Info.Priority = EXPEventPriorityType::TopCenter;
                 Info.Priority = EXPEventPriorityType::TopCenter;
                 Info.SimulatedText = UKismetTextLibrary::Conv_StringToText(L"Objective completed");
                 Info.SimulatedName = QuestDefinition->GetDisplayName(true);
@@ -201,6 +211,7 @@ void FortQuestManager::SendStatEventWithTags(UFortQuestManager* QuestManager,
                                              FGameplayTagContainer& ContextTags,
                                              int32 Count)
 {
+    if (Count <= 0) Count = 1;
     if (QuestManager)
     {
         auto Controller = (AFortPlayerControllerAthena*)QuestManager->GetPlayerControllerBP();
@@ -398,7 +409,7 @@ void FortQuestManager::SendStatEventWithTags(UFortQuestManager* QuestManager,
 
                                 if (!TargetTags.HasTag(TagCondition.Tag))
                                 {
-                                    bFoundQuest = false;
+                    //                bFoundQuest = false;
                                 }
 
                                 break;
@@ -410,7 +421,7 @@ void FortQuestManager::SendStatEventWithTags(UFortQuestManager* QuestManager,
 
                                 if (!SourceTags.HasTag(TagCondition.Tag))
                                 {
-                                    bFoundQuest = false;
+                      //              bFoundQuest = false;
                                 }
 
                                 break;
@@ -424,7 +435,7 @@ void FortQuestManager::SendStatEventWithTags(UFortQuestManager* QuestManager,
 
                                 if (!ContextTags.HasTag(TagCondition.Tag) && TagCondition.Tag.TagName != PlaylistTag.TagName)
                                 {
-                                    bFoundQuest = false;
+                        //            bFoundQuest = false;
                                 }
 
                                 break;
@@ -438,8 +449,8 @@ void FortQuestManager::SendStatEventWithTags(UFortQuestManager* QuestManager,
                         }
                     }
 
-                    if (!IsConditionMet(ObjectiveStat.Condition, TargetTags, SourceTags, ContextTags, Controller))
-                       continue;
+               //     if (!IsConditionMet(ObjectiveStat.Condition, TargetTags, SourceTags, ContextTags, Controller))
+                 //      continue;
                     
                     if (bFoundQuest)
                         ProgressQuest(Controller, QuestManager, CurrentQuest, QuestDef, Objective, Count);
