@@ -3,6 +3,7 @@
 
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Kismet/FortKismetLibrary.h"
+#include "Engine/Source/Runtime/FortniteGame/Public/Quests/FortQuestManager.h"
 
 void FortPlayerPawn::ServerHandlePickupInfo(AFortPlayerPawn* Pawn, AFortPickup* Pickup, FFortPickupRequestInfo& Params)
 {
@@ -188,10 +189,26 @@ void FortPlayerPawn::ServerSendZiplineState(AFortPlayerPawn* Pawn, FFrame& Stack
         }
     }
 }
+
 void FortPlayerPawn::OnRep_IsInAnyStorm(AFortPlayerPawn* Pawn) {
     Pawn->bIsInsideSafeZone = !Pawn->bIsInAnyStorm;
     Pawn->OnRep_IsInsideSafeZone();
     return OnRep_IsInAnyStormOG(Pawn);
+}
+
+void FortPlayerPawn::EndSkydiving(AFortPlayerPawn* Pawn)
+{
+    EndSkydivingOG(Pawn);   
+    auto Controller = (AFortPlayerControllerAthena*)Pawn->GetController();
+    auto QuestManager = Controller ? Controller->GetQuestManager(ESubGame::Athena) : nullptr;
+    if (!QuestManager) return;
+    FGameplayTagContainer ContextTags;
+    FGameplayTagContainer TargetTags;
+    FGameplayTagContainer SourceTags;
+    QuestManager->GetSourceAndContextTags(&SourceTags, &ContextTags);
+    
+    FortQuestManager::SendStatEventWithTags(QuestManager, EFortQuestObjectiveStatEvent::Land, NULL, TargetTags, SourceTags,
+                          ContextTags, 1);
 }
 
 void FortPlayerPawn::Setup()
@@ -223,5 +240,10 @@ void FortPlayerPawn::Setup()
     Hook->Detour = ServerSendZiplineState;
     UKismetHookingLibrary::Hook(Hook, EHook::Exec);
 
-    free(Hook);
+    Hook->Address = ImageBase + 0x1890154;
+    Hook->Original = (void**)&EndSkydivingOG;
+    Hook->Detour = EndSkydiving;
+    UKismetHookingLibrary::Hook(Hook, EHook::Address);
+
+    delete Hook;
 }

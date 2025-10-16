@@ -10,6 +10,7 @@ namespace FortPlayerPawn
     DefineOriginal(void, MovingEmoteStopped, AFortPawn*, FFrame& Stack);
     DefineOriginal(void, ServerSendZiplineState, AFortPlayerPawn* Pawn, FFrame& Stack);
     DefineOriginal(void, OnRep_IsInAnyStorm, AFortPlayerPawn* Pawn);
+    DefineOriginal(void, EndSkydiving, AFortPlayerPawn* Pawn);
 
     void Setup();
 }

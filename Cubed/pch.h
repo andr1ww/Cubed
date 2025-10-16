@@ -225,7 +225,7 @@ UE_LOG_DISPATCH(Category, Verbosity, Format, ##__VA_ARGS__)
 #define UE_LOG_W(Category, Verbosity, Format, ...) \
 UE_LOG_DISPATCH(Category, Verbosity, Format, ##__VA_ARGS__)
 
-#define DefineOriginal(_Rt, _Name, ...) static inline _Rt (*_Name##OG)(##__VA_ARGS__); static _Rt _Name(##__VA_ARGS__);
+#define DefineOriginal(_Rt, _Name, ...) static inline _Rt (*_Name##OG)(##__VA_ARGS__); _Rt _Name(##__VA_ARGS__);
 static int RetTrue() { return 1; }
 static int RetFalse() { return 0; }
 
