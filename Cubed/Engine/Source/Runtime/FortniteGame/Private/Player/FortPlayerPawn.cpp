@@ -211,6 +211,21 @@ void FortPlayerPawn::EndSkydiving(AFortPlayerPawn* Pawn)
                           ContextTags, 1);
 }
 
+void FortPlayerPawn::UpdatePlayerDistanceTraveled(AFortPlayerPawn* Pawn, __int64 a2)
+{
+    UpdatePlayerDistanceTraveledOG(Pawn, a2);
+    auto Controller = (AFortPlayerControllerAthena*)Pawn->GetController();
+    auto QuestManager = Controller ? Controller->GetQuestManager(ESubGame::Athena) : nullptr;
+    if (!QuestManager) return;
+    FGameplayTagContainer ContextTags;
+    FGameplayTagContainer TargetTags;
+    FGameplayTagContainer SourceTags;
+    QuestManager->GetSourceAndContextTags(&SourceTags, &ContextTags);
+    
+    FortQuestManager::SendStatEventWithTags(QuestManager, EFortQuestObjectiveStatEvent::DistanceTraveled, NULL, TargetTags, SourceTags,
+                          ContextTags, 1 /* idk what to put here yet */);
+}
+
 void FortPlayerPawn::Setup()
 {
     UHook* Hook = new UHook();
@@ -245,5 +260,10 @@ void FortPlayerPawn::Setup()
     Hook->Detour = EndSkydiving;
     UKismetHookingLibrary::Hook(Hook, EHook::Address);
 
+    Hook->Address = ImageBase + 0x51FCFFC;
+    Hook->Original = (void**)&UpdatePlayerDistanceTraveledOG;
+    Hook->Detour = UpdatePlayerDistanceTraveled;
+    UKismetHookingLibrary::Hook(Hook, EHook::Address);
+    
     delete Hook;
 }

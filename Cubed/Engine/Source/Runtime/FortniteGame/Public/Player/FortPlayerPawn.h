@@ -11,6 +11,7 @@ namespace FortPlayerPawn
     DefineOriginal(void, ServerSendZiplineState, AFortPlayerPawn* Pawn, FFrame& Stack);
     DefineOriginal(void, OnRep_IsInAnyStorm, AFortPlayerPawn* Pawn);
     DefineOriginal(void, EndSkydiving, AFortPlayerPawn* Pawn);
+    DefineOriginal(void, UpdatePlayerDistanceTraveled, AFortPlayerPawn* Pawn, __int64 a2);
 
     void Setup();
 }
