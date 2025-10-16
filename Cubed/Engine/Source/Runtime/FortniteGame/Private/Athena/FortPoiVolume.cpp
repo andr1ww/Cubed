@@ -7,7 +7,7 @@
 void FortPoiVolume::PostInitializeComponents(AFortPoiVolume* Volume)
 {
     Volume->BrushComponent = (UBrushComponent*)UGameplayStatics::SpawnObject(UBrushComponent::StaticClass(), Volume);
-    Volume->K2_AttachToComponent(Volume->RootComponent, FName(0), EAttachmentRule::KeepRelative, EAttachmentRule::KeepRelative, EAttachmentRule::KeepRelative, false);
+    Volume->K2_AttachToComponent(Volume->BrushComponent, FName(0), EAttachmentRule::KeepRelative, EAttachmentRule::KeepRelative, EAttachmentRule::KeepRelative, false);
     
     static void (*SetCollisonProfileName)(UBrushComponent*, __int64*, __int64*) =
         decltype(SetCollisonProfileName)(Volume->BrushComponent->VTable[(0x620 / 8)]);

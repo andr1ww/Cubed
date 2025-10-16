@@ -409,7 +409,7 @@ void FortQuestManager::SendStatEventWithTags(UFortQuestManager* QuestManager,
 
                                 if (!TargetTags.HasTag(TagCondition.Tag))
                                 {
-                    //                bFoundQuest = false;
+                                    bFoundQuest = false;
                                 }
 
                                 break;
@@ -421,7 +421,7 @@ void FortQuestManager::SendStatEventWithTags(UFortQuestManager* QuestManager,
 
                                 if (!SourceTags.HasTag(TagCondition.Tag))
                                 {
-                      //              bFoundQuest = false;
+                                    bFoundQuest = false;
                                 }
 
                                 break;
@@ -435,7 +435,7 @@ void FortQuestManager::SendStatEventWithTags(UFortQuestManager* QuestManager,
 
                                 if (!ContextTags.HasTag(TagCondition.Tag) && TagCondition.Tag.TagName != PlaylistTag.TagName)
                                 {
-                        //            bFoundQuest = false;
+                                    bFoundQuest = false;
                                 }
 
                                 break;
@@ -449,8 +449,8 @@ void FortQuestManager::SendStatEventWithTags(UFortQuestManager* QuestManager,
                         }
                     }
 
-               //     if (!IsConditionMet(ObjectiveStat.Condition, TargetTags, SourceTags, ContextTags, Controller))
-                 //      continue;
+                    if (!IsConditionMet(ObjectiveStat.Condition, TargetTags, SourceTags, ContextTags, Controller))
+                       continue;
                     
                     if (bFoundQuest)
                         ProgressQuest(Controller, QuestManager, CurrentQuest, QuestDef, Objective, Count);
