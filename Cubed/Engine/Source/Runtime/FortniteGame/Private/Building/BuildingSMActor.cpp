@@ -3,6 +3,7 @@
 
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"
 #include "Engine/Source/Runtime/CoreUObject/Public/UObject/UObjectGlobals.h"
+#include "Engine/Source/Runtime/FortniteGame/Public/Quests/FortQuestManager.h"
 
 bool BuildingSMActor::AttemptSpawnResources(ABuildingSMActor* BuildingSMActor, AFortPlayerPawn* Pawn, float DamageDealt, bool WeakSpot)
 {
@@ -38,7 +39,18 @@ bool BuildingSMActor::AttemptSpawnResources(ABuildingSMActor* BuildingSMActor, A
     }
 
     Controller->ClientReportDamagedResourceBuilding(BuildingSMActor, BuildingSMActor->ResourceType, ResourceCount, BuildingSMActor->GetHealth() - DamageDealt <= 0, WeakSpot);
+
+    auto QuestManager = Controller ? Controller->GetQuestManager(ESubGame::Athena) : nullptr;
+    if (!QuestManager) return true;
+    FGameplayTagContainer ContextTags;
+    FGameplayTagContainer TargetTags;
+    FGameplayTagContainer SourceTags;
+    QuestManager->GetSourceAndContextTags(&SourceTags, &ContextTags);
+    TargetTags.AppendTags(BuildingSMActor->StaticGameplayTags);
+    TargetTags.AppendTags(BuildingSMActor->ConstTags);
     
+    FortQuestManager::SendStatEventWithTags(QuestManager, EFortQuestObjectiveStatEvent::Damage, BuildingSMActor, TargetTags, SourceTags,
+                          ContextTags, ResourceCount /* prob wrong but wtv */);
     return true;
 }
 

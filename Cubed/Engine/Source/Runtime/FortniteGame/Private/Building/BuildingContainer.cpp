@@ -33,6 +33,7 @@ bool BuildingContainer::SpawnLoot(ABuildingContainer* Container)
 	Container->OnRep_bAlreadySearched();
 	Container->SearchBounceData.SearchAnimationCount++;
 	Container->BounceContainer();
+	
 	return true;
 }
 
