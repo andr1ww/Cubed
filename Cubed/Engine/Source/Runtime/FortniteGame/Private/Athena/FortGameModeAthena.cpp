@@ -293,6 +293,17 @@ void FortGameModeAthena::StartNewSafeZonePhase(AFortGameModeAthena* GameMode, in
     StartNewSafeZonePhaseOG(GameMode, NewSafeZonePhase);
 }
 
+void FortGameModeAthena::OnAircraftExitedDropZone(AFortGameModeAthena* GameMode, AFortAthenaAircraft* FortAthenaAircraft)
+{
+    for (auto& Player : GameMode->AlivePlayers)
+    {
+        if (Player->IsInAircraft())
+            Player->GetAircraftComponent()->ServerAttemptAircraftJump({}); // we want this cause we do safezone stuff there
+    }
+    
+    return OnAircraftExitedDropZoneOG(GameMode, FortAthenaAircraft);
+}
+
 void FortGameModeAthena::StartAircraftPhase(AFortGameModeAthena* GameMode, char a2)
 {
     StartAircraftPhaseOG(GameMode, a2);
@@ -380,11 +391,11 @@ void FortGameModeAthena::Setup()
     Hook->Original = (void**)&InitializeFlightPathOG;
     Hook->Detour = InitializeFlightPath;
     UKismetHookingLibrary::Hook(Hook, EHook::Address);
-    
-    Hook->Address = ImageBase + 0x4A8D71C;
-    Hook->Original = (void**)&StartAircraftPhaseOG;
-    Hook->Detour = StartAircraftPhase;
-    //  UKismetHookingLibrary::Hook(Hook, EHook::Address);
 
+    Hook->Address = ImageBase + 0x4A76B34;
+    Hook->Original = (void**)&OnAircraftExitedDropZoneOG;
+    Hook->Detour = OnAircraftExitedDropZone;
+    UKismetHookingLibrary::Hook(Hook, EHook::Address);
+    
     free(Hook);
 }
