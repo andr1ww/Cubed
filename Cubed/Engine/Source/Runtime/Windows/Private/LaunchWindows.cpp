@@ -154,12 +154,12 @@ DWORD WINAPI Startup(LPVOID)
     Hook->Address = 0x1B;
     Hook->Class = AActor::StaticClass();
     Hook->Detour = RetTrue;
-    UKismetHookingLibrary::Hook(Hook, EveryVFT);
+    if (!bCreative) UKismetHookingLibrary::Hook(Hook, EveryVFT);
 
     Hook->Address = ImageBase + 0x11B6DAC;
     Hook->Original = (void**)&CreateAndConfigureNavigationSystemOG;
     Hook->Detour = CreateAndConfigureNavigationSystem;
-    UKismetHookingLibrary::Hook(Hook, Address);
+    if (!bCreative) UKismetHookingLibrary::Hook(Hook, Address);
 
     free(Hook);
     

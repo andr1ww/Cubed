@@ -1,7 +1,7 @@
 ﻿#include "pch.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Quests/FortQuestManager.h"
 
-#include "Logging.h"
+#include "Globals.h"
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"
 #include "Engine/Source/Runtime/CoreUObject/Public/UObject/UObjectGlobals.h"
 

@@ -165,7 +165,7 @@
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Player\FortPlayerPawn.h" />
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Quests\FortQuestManager.h" />
     <ClInclude Include="Engine\Source\Runtime\GameplayAbilities\Public\AbilitySystemComponent.h" />
-    <ClInclude Include="Logging.h" />
+    <ClInclude Include="Globals.h" />
     <ClInclude Include="Offsets.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="UtfN.hpp" />

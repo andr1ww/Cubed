@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "pch.h"
 
-#include "Logging.h"
+#include "Globals.h"
 
 template <typename T>
 inline T* StaticFindObject(const std::string& Path, UClass* Class = UObject::StaticClass()) {

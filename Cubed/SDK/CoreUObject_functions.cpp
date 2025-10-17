@@ -116,6 +116,8 @@ bool UObject::IsA(EClassCastFlags TypeFlags) const
 
 bool UObject::IsA(class UClass* TypeClass) const
 {
+		if (!this) return false;
+		if (!TypeClass)	return false;
 	return Class->IsSubclassOf(TypeClass);
 }
 

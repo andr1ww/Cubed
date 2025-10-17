@@ -1,7 +1,7 @@
 ﻿#include "pch.h"
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"
 
-#include "Logging.h"    
+#include "Globals.h"    
 #include "Engine/Source/Runtime/CoreUObject/Public/UObject/UObjectGlobals.h"
 
 void UKismetHookingLibrary::Hook(UHook* Hook, EHook Type)

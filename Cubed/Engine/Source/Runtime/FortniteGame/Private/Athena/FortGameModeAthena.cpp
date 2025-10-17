@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/FortGameModeAthena.h"
 
-#include "Logging.h"
+#include "Globals.h"
 #include "Offsets.h"
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"
 #include "Engine/Source/Runtime/CoreUObject/Public/UObject/UObjectGlobals.h"
@@ -20,16 +20,19 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
           : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
         if (!Playlist) return false;
 
-        GameMode->AIDirector = GetWorld()->SpawnActor<AAthenaAIDirector>(AAthenaAIDirector::StaticClass(), { 0, 0, -99999 }, {});
-        if (!GameMode->AIDirector) return false;
-        GameMode->AIDirector->Activate();
-        if (!GameMode->AIGoalManager)
-            GameMode->AIGoalManager = GetWorld()->SpawnActor<AFortAIGoalManager>(AFortAIGoalManager::StaticClass(), { 0, 0, -99999 }, {});
+        if (!bCreative)
+        {
+            GameMode->AIDirector = GetWorld()->SpawnActor<AAthenaAIDirector>(AAthenaAIDirector::StaticClass(), { 0, 0, -99999 }, {});
+            if (!GameMode->AIDirector) return false;
+            GameMode->AIDirector->Activate();
+            if (!GameMode->AIGoalManager)
+                GameMode->AIGoalManager = GetWorld()->SpawnActor<AFortAIGoalManager>(AFortAIGoalManager::StaticClass(), { 0, 0, -99999 }, {});
         
-        GameMode->SpawningPolicyManager = GetWorld()->SpawnActor<AFortAthenaSpawningPolicyManager>(AFortAthenaSpawningPolicyManager::StaticClass(), { 0, 0, -99999 }, {});
-        GameMode->SpawningPolicyManager->GameModeAthena = GameMode;
-        GameMode->SpawningPolicyManager->GameStateAthena = GameState;
-
+            GameMode->SpawningPolicyManager = GetWorld()->SpawnActor<AFortAthenaSpawningPolicyManager>(AFortAthenaSpawningPolicyManager::StaticClass(), { 0, 0, -99999 }, {});
+            GameMode->SpawningPolicyManager->GameModeAthena = GameMode;
+            GameMode->SpawningPolicyManager->GameStateAthena = GameState;
+        }
+        
         Playlist->GarbageCollectionFrequency = 99999999999999.f;
         GameState->CurrentPlaylistInfo.BasePlaylist = Playlist;
         GameState->CurrentPlaylistInfo.OverridePlaylist = Playlist;

@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "pch.h"
 
-#include "Logging.h"
+#include "Globals.h"
 #include <unordered_map>
 
 namespace FortQuestManager

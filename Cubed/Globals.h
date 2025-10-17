@@ -23,3 +23,5 @@ DEFINE_LOG_CATEGORY(LogKismet);
 DEFINE_LOG_CATEGORY(LogGameMode);
 DEFINE_LOG_CATEGORY(LogGameState);
 DEFINE_LOG_CATEGORY(LogNet);
+
+constexpr bool bCreative = true;

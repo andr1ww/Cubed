@@ -1,7 +1,7 @@
 ﻿#include "pch.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/FortPoiVolume.h"
 
-#include "Logging.h"
+#include "Globals.h"
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"
 
 void FortPoiVolume::PostInitializeComponents(AFortPoiVolume* Volume)

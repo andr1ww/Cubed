@@ -1,7 +1,7 @@
 ﻿#include "pch.h"
 #include "Engine/Source/Runtime/Engine/Classes/Engine/World.h"
 
-#include "Logging.h"
+#include "Globals.h"
 #include "memcury.h"
 #include "Offsets.h"
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"

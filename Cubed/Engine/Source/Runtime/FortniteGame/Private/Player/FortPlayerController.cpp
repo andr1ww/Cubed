@@ -1,7 +1,7 @@
 ﻿#include "pch.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Player/FortPlayerController.h"
 
-#include "Logging.h"
+#include "Globals.h"
 #include "Offsets.h"
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"
 #include "Engine/Source/Runtime/CoreUObject/Public/UObject/UObjectGlobals.h"
@@ -209,78 +209,23 @@ void FortPlayerController::ServerAttemptInventoryDrop(AFortPlayerController* Con
 }
 
 static inline __int64 (*LoadPlaysetOG)(UPlaysetLevelStreamComponent*) = decltype(LoadPlaysetOG)(__int64(InSDKUtils::GetImageBase() + 0x5279654));
-void FortPlayerController::ServerLoadingScreenDropped(AFortPlayerControllerAthena* PC)
+void FortPlayerController::ServerLoadingScreenDropped(AFortPlayerControllerAthena* Controller)
 {
     auto GS = Cast<AFortGameStateAthena>(GetWorld()->GameState);
     auto GM = Cast<AFortGameModeAthena>(GetWorld()->AuthorityGameMode);
-    if (!PC || !GM || !GS) return ServerLoadingScreenDroppedOG(PC);
+    if (!Controller || !GM || !GS) return ServerLoadingScreenDroppedOG(Controller);
 
-    auto PS = Cast<AFortPlayerStateAthena>(PC->PlayerState);
-    if(!PS) return ServerLoadingScreenDroppedOG(PC);
+    auto PlayerState = Cast<AFortPlayerStateAthena>(Controller->PlayerState);
+    if(!PlayerState) return ServerLoadingScreenDroppedOG(Controller);
 
     if (bCreative)
     {
         auto CreativePortalManager = GS->CreativePortalManager;
-        GS->CreativePortalManager->GetCreativePortalManager(UWorld::GetWorld(), &CreativePortalManager, nullptr);
-        AFortAthenaCreativePortal* Portal = nullptr;
-
-        for (auto& Portal1 : CreativePortalManager->AllPortals)
-        {
-            if (!Portal1->LinkedVolume || Portal1->LinkedVolume->VolumeState == ESpatialLoadingState::Ready)
-            {
-                continue;
-
-            }
-            Portal = Portal1;
-            break;
-
-        }
-
-        if (!Portal) return;
-
-        //Portal->GetLinkedVolume()->bShowPublishWatermark = false;
-        Portal->GetLinkedVolume()->bNeverAllowSaving = false;
-        Portal->GetLinkedVolume()->VolumeState = ESpatialLoadingState::Ready;
-        Portal->GetLinkedVolume()->OnRep_VolumeState();
-
-        Portal->OwningPlayer = PS->UniqueId;
-        Portal->OnRep_OwningPlayer();
-
-        Portal->IslandInfo.CreatorName = PS->GetPlayerName();
-        Portal->IslandInfo.SupportCode = L"Nigger";
-        Portal->IslandInfo.Version = 1.0f;
-        Portal->OnRep_IslandInfo();
-
-        Portal->bPortalOpen = true;
-        Portal->OnRep_PortalOpen();
-
-        Portal->PlayersReady.Add(PS->UniqueId);
-        Portal->OnRep_PlayersReady();
-
-        Portal->bUserInitiatedLoad = true;
-        Portal->bInErrorState = false;
-
-        PC->OwnedPortal = Portal;
-
-        auto LevelSaveComponent = (UFortLevelSaveComponent*)Portal->GetLinkedVolume()->GetComponentByClass(UFortLevelSaveComponent::StaticClass());
-        LevelSaveComponent->AccountIdOfOwner = PS->UniqueId;
-        LevelSaveComponent->bIsLoaded = true;
-        LevelSaveComponent->OnRep_IsActive();
-
-        PC->CreativePlotLinkedVolume = Portal->GetLinkedVolume();
-        PC->OnRep_CreativePlotLinkedVolume();
-
-        static auto MinigameSettingsMachine = StaticLoadObject<UClass>("/Game/Athena/Items/Gameplay/MinigameSettingsControl/MinigameSettingsMachine.MinigameSettingsMachine_C");
-        auto OK = Portal->GetLinkedVolume()->GetTransform();
-        GetWorld()->SpawnActor<AActor>(MinigameSettingsMachine, OK.Translation, FRotator(), Portal->LinkedVolume);
-
-        static auto Playset = StaticLoadObject<UFortPlaysetItemDefinition>("/Game/Playsets/PID_Playset_60x60_Composed.PID_Playset_60x60_Composed");
-        auto LevelStreamComponent = (UPlaysetLevelStreamComponent*)Portal->GetLinkedVolume()->GetComponentByClass(UPlaysetLevelStreamComponent::StaticClass());
-      //  LevelStreamComponent->SetPlayset(Playset);
-        //   LoadPlaysetOG(LevelStreamComponent);
-        auto State = PC->CreativeModeProfile->InternalGetState();
+        xmap<xstring, UFortCreativeRealEstatePlotItemDefinition*> PlotDefinitionsByMcpId;
+        
+        auto State = Controller->CreativeModeProfile->InternalGetState();
         UE_LOG(LogServer, Log, "ItemContainerNum: %d", State->ItemsContainer.Items.Num());
-
+        
         if (State->ItemsContainer.Items.Num() > 0)
         {
             for (auto& Item : State->ItemsContainer.Items)
@@ -288,52 +233,153 @@ void FortPlayerController::ServerLoadingScreenDropped(AFortPlayerControllerAthen
                 if (auto McpItem = Item.Value().Get())
                 {
                     UE_LOG(LogServer, Log, "Item: %s, Count: %d", McpItem->TemplateId.ToString().c_str(), McpItem->Quantity);
-                   // auto Instance = Cast<UFortCreativeRealEstatePlotItem>(McpItem->Instance);
-                 //   if (!Instance)
-                   // {
-                    auto Instance = (UFortCreativeRealEstatePlotItem*)McpItem->Instance;
-                        xstring PlotId = McpItem->TemplateId.ToString().substr(
-                            McpItem->TemplateId.ToString().find(':') + 1
-                        );
+                    UFortCreativeRealEstatePlotItem* Instance = nullptr;
+                    FText AltName;
+                    xstring PlotId = McpItem->TemplateId.ToString().substr(
+                        McpItem->TemplateId.ToString().find(':') + 1
+                    );
 
-                        auto PlotItemDefinition = StaticLoadObject<UFortCreativeRealEstatePlotItemDefinition>(
-                            "/Game/Playgrounds/Items/Plots/" + PlotId + "." + PlotId);
-                        if (!PlotItemDefinition) continue;
-
-                        Instance = (UFortCreativeRealEstatePlotItem*)PlotItemDefinition->CreateTemporaryItemInstanceBP(1, 0);
-                        Instance->InstanceID = McpItem->InstanceId;
-                        McpItem->Instance = Instance;
-                   // }
-
-                    auto CreativeIsland = PC->CreativeIslands.Search([McpItem](FCreativeIslandData& IslandData)
-                        { return IslandData.McpId == McpItem->InstanceId; });
-                    bool bIsNew = false;
-                    if (!CreativeIsland)
-                    {
-                        bIsNew = true;
-                        CreativeIsland = new FCreativeIslandData();
-                    }
-
-                    reinterpret_cast<void(*)(UFortCreativeRealEstatePlotItem*, FMcpItem*)>(ImageBase + 0x1F165E4)(Instance, McpItem);
+                    auto PlotItemDefinition = StaticLoadObject<UFortCreativeRealEstatePlotItemDefinition>(
+                        "/Game/Playgrounds/Items/Plots/" + PlotId + "." + PlotId);
+                    if (!PlotItemDefinition) continue;
                     
-                    CreativeIsland->McpId = McpItem->InstanceId;
-                    CreativeIsland->IslandName = UKismetTextLibrary::Conv_StringToText(Instance->IslandTitle);
-                    CreativeIsland->LastLoadedDate = Instance->LastUsedDate;
-                    CreativeIsland->PublishedIslandCode = Instance->IslandCode;
-                    CreativeIsland->bIsDeleted = false;
+                    PlotDefinitionsByMcpId[McpItem->InstanceId.ToString()] = PlotItemDefinition;
 
-                    if (bIsNew)
-                        PC->CreativeIslands.Add(*CreativeIsland);
+                    AltName = PlotItemDefinition->GetDisplayName(true);
+                    
+                    Instance = (UFortCreativeRealEstatePlotItem*)PlotItemDefinition->CreateTemporaryItemInstanceBP(1, 0);
+                    Instance->InstanceID = McpItem->InstanceId;
+                    McpItem->Instance = Instance;
 
-                    PC->OnRep_CreativeIslands();
+                    if (Instance)
+                    {
+                        auto CreativeIsland = Controller->CreativeIslands.Search([McpItem](FCreativeIslandData& IslandData)
+                            { return IslandData.McpId == McpItem->InstanceId; });
+                        bool bIsNew = false;
+                        if (!CreativeIsland)
+                        {
+                            bIsNew = true;
+                            CreativeIsland = new FCreativeIslandData();
+                        }
 
-                    //                    UE_LOG(LogServer, Log, "ItemInstance: %s, Count: %d", McpItem->Instance->GetFullName().c_str(), McpItem->Quantity);
+                        reinterpret_cast<void(*)(UFortCreativeRealEstatePlotItem*, FMcpItem*)>(ImageBase + 0x1F165E4)(Instance, McpItem);
+
+                        auto IslandTitle = UKismetTextLibrary::Conv_StringToText(Instance->IslandTitle);
+                        CreativeIsland->McpId = McpItem->InstanceId;
+                        CreativeIsland->IslandName = IslandTitle.ToString().empty() ? AltName : IslandTitle;
+                        CreativeIsland->LastLoadedDate = Instance->LastUsedDate;
+                        CreativeIsland->PublishedIslandCode = Instance->IslandCode;
+                        CreativeIsland->bIsDeleted = false;
+
+                        if (bIsNew)
+                            Controller->CreativeIslands.Add(*CreativeIsland);
+                
+                        Controller->OnRep_CreativeIslands();
+                    }
                 }
             }
         }
+
+        AFortAthenaCreativePortal* Portal = nullptr;
+
+        FString TargetMcpId;
+        if (Controller->CreativeIslands.Num() > 0)
+        {
+            FCreativeIslandData* MostRecentIsland = nullptr;
+    
+            for (auto& Island : Controller->CreativeIslands)
+            {
+                if (!MostRecentIsland || Island.LastLoadedDate > MostRecentIsland->LastLoadedDate)
+                {
+                    MostRecentIsland = &Island;
+                }
+            }
+    
+            if (MostRecentIsland)
+            {
+                TargetMcpId = MostRecentIsland->McpId;
+            }
+        }
+
+        if (TargetMcpId.ToString().empty())
+            return;
+
+        if (!Portal)
+        {
+            for (auto& Portal1 : CreativePortalManager->AllPortals)
+            {
+                if (!Portal1->LinkedVolume || Portal1->LinkedVolume->VolumeState == ESpatialLoadingState::Ready)
+                {
+                    continue;
+                }
+                Portal = Portal1;
+                break;
+            }
+        }
+
+        if (!Portal)
+            return;
+
+        Portal->GetLinkedVolume()->bNeverAllowSaving = false;
+        Portal->GetLinkedVolume()->VolumeState = ESpatialLoadingState::Ready;
+        Portal->GetLinkedVolume()->OnRep_VolumeState();
+
+        Portal->OwningPlayer = PlayerState->UniqueId;
+        Portal->OnRep_OwningPlayer();
+        
+        auto TargetIsland = Controller->CreativeIslands.Search([TargetMcpId](FCreativeIslandData& IslandData)
+            { return IslandData.McpId == TargetMcpId; });
+    
+        if (TargetIsland)
+        {
+            Portal->IslandInfo.AltTitle = TargetIsland->IslandName;
+            Portal->IslandInfo.CreatorName = TargetIsland->IslandName.GetStringRef();
+            Portal->IslandInfo.SupportCode = TargetIsland->PublishedIslandCode.ToString().empty() ? L"1111-1111-1111" : TargetIsland->PublishedIslandCode;
+        }
+        else
+        {
+            Portal->IslandInfo.CreatorName = PlayerState->GetPlayerName();
+            Portal->IslandInfo.SupportCode = L"Ok";
+        }
+
+        Portal->CachedEditIslandData = *TargetIsland;
+        
+        Portal->IslandInfo.Version = 1.0f;
+        Portal->OnRep_IslandInfo();
+
+        Portal->bPortalOpen = true;
+        Portal->OnRep_PortalOpen();
+
+        Portal->PlayersReady.Add(PlayerState->UniqueId);
+        Portal->OnRep_PlayersReady();
+
+        Portal->bUserInitiatedLoad = true;
+        Portal->bInErrorState = false;
+
+        Controller->OwnedPortal = Portal;
+
+        auto LevelSaveComponent = (UFortLevelSaveComponent*)Portal->GetLinkedVolume()->GetComponentByClass(UFortLevelSaveComponent::StaticClass());
+        LevelSaveComponent->AccountIdOfOwner = PlayerState->UniqueId;
+        LevelSaveComponent->bIsLoaded = true;
+        LevelSaveComponent->OnRep_IsActive();
+
+        Controller->CreativePlotLinkedVolume = Portal->GetLinkedVolume();
+        Controller->OnRep_CreativePlotLinkedVolume();
+
+        static auto MinigameSettingsMachine = StaticLoadObject<UClass>("/Game/Athena/Items/Gameplay/MinigameSettingsControl/MinigameSettingsMachine.MinigameSettingsMachine_C");
+        auto OK = Portal->GetLinkedVolume()->GetTransform();
+        GetWorld()->SpawnActor<AActor>(MinigameSettingsMachine, OK.Translation, FRotator(), Portal->LinkedVolume);
+
+        auto it = PlotDefinitionsByMcpId.find(TargetMcpId.ToString());
+        if (it != PlotDefinitionsByMcpId.end() && it->second && it->second->BasePlayset)
+        {
+            auto LevelStreamComponent = (UPlaysetLevelStreamComponent*)Portal->GetLinkedVolume()->GetComponentByClass(UPlaysetLevelStreamComponent::StaticClass());
+            LevelStreamComponent->SetPlayset(it->second->BasePlayset);
+            LoadPlaysetOG(LevelStreamComponent);
+        }
     }
     
-    return ServerLoadingScreenDroppedOG(PC);
+    return ServerLoadingScreenDroppedOG(Controller);
 }
 
 void FortPlayerController::GetPlayerViewPoint(AFortPlayerControllerAthena* Controller, FVector& Loc, FRotator& Rot)

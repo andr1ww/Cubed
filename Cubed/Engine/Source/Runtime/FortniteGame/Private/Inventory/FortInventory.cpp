@@ -2,7 +2,7 @@
 
 #include "Engine/Source/Runtime/FortniteGame/Public/Inventory/FortInventory.h"
 
-#include "Logging.h"
+#include "Globals.h"
 #include "memcury.h"
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"
 

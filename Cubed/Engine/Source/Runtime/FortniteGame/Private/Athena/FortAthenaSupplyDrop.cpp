@@ -2,7 +2,7 @@
 
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/FortAthenaSupplyDrop.h"
 
-#include "Logging.h"
+#include "Globals.h"
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Kismet/FortKismetLibrary.h"
 
