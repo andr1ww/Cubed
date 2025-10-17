@@ -96,6 +96,98 @@ void FortPlayerControllerAthena::ServerPlayEmoteItem(AFortPlayerControllerAthena
     }
 }
 
+void FortPlayerControllerAthena::ServerLoadPlotForPortal(AFortPlayerControllerAthena* Controller, FFrame& Stack)
+{
+    AFortAthenaCreativePortal* Portal;
+    FString PlotItemId;
+    Stack.StepCompiledIn(&Portal);
+    Stack.StepCompiledIn(&PlotItemId);
+    Stack.IncrementCode();
+    
+    auto PlotItem = Controller->CreativeModeProfile->FindPlotById(PlotItemId);
+    if (!PlotItem) return;
+    
+    auto PlayerState = Controller->PlayerState;
+    
+    if (!Portal || !Portal->LinkedVolume)
+       return;
+            
+    Portal->GetLinkedVolume()->bNeverAllowSaving = false;
+    Portal->GetLinkedVolume()->VolumeState = ESpatialLoadingState::Initializing;
+    Portal->GetLinkedVolume()->OnRep_VolumeState();
+        
+    Portal->OwningPlayer = PlayerState->UniqueId;
+    Portal->OnRep_OwningPlayer();
+        
+    Portal->IslandInfo.AltTitle = Portal->LoadingText;
+    Portal->OnRep_IslandInfo();
+        
+    Portal->bPortalOpen = true;
+    Portal->OnRep_PortalOpen();
+
+    xstring PlotId = PlotItem->TemplateId.ToString().substr(
+        PlotItem->TemplateId.ToString().find(':') + 1
+    );
+
+    auto PlotItemDefinition = StaticLoadObject<UFortCreativeRealEstatePlotItemDefinition>(
+       "/Game/Playgrounds/Items/Plots/" + PlotId + "." + PlotId);
+    if (!PlotItemDefinition) return;
+
+    std::thread([PlotItemDefinition, Controller, Portal, PlotItem, PlayerState, PlotItemId]()
+    {
+        std::this_thread::sleep_for(std::chrono::seconds(10));
+        
+        Portal->GetLinkedVolume()->VolumeState = ESpatialLoadingState::Ready;
+        Portal->GetLinkedVolume()->OnRep_VolumeState();
+            
+        auto TargetIsland = Controller->CreativeIslands.Search([PlotItemId](FCreativeIslandData& IslandData)
+            { return IslandData.McpId == PlotItemId; });
+        
+        if (TargetIsland)
+        {
+            Portal->IslandInfo.AltTitle = TargetIsland->IslandName;
+            Portal->IslandInfo.CreatorName = TargetIsland->IslandName.GetStringRef();
+            Portal->IslandInfo.SupportCode = TargetIsland->PublishedIslandCode.ToString().empty() ? L"1111-1111-1111" : TargetIsland->PublishedIslandCode;
+        }
+        else
+        {
+            Portal->IslandInfo.CreatorName = PlayerState->GetPlayerName();
+            Portal->IslandInfo.SupportCode = L"Ok";
+        }
+            
+        Portal->CachedEditIslandData = *TargetIsland;
+        Portal->IslandInfo.Version = 1.0f;
+        Portal->OnRep_IslandInfo();
+            
+        Portal->PlayersReady.Add(PlayerState->UniqueId);
+        Portal->OnRep_PlayersReady();
+            
+        Portal->bUserInitiatedLoad = true;
+        Portal->bInErrorState = false;
+            
+        Controller->OwnedPortal = Portal;
+            
+        auto LevelSaveComponent = (UFortLevelSaveComponent*)Portal->GetLinkedVolume()->GetComponentByClass(UFortLevelSaveComponent::StaticClass());
+        LevelSaveComponent->AccountIdOfOwner = PlayerState->UniqueId;
+        LevelSaveComponent->bIsLoaded = true;
+        LevelSaveComponent->OnRep_IsActive();
+            
+        Controller->CreativePlotLinkedVolume = Portal->GetLinkedVolume();
+        Controller->OnRep_CreativePlotLinkedVolume();
+            
+        static auto MinigameSettingsMachine = StaticLoadObject<UClass>("/Game/Athena/Items/Gameplay/MinigameSettingsControl/MinigameSettingsMachine.MinigameSettingsMachine_C");
+        auto Transform = Portal->GetLinkedVolume()->GetTransform();
+        GetWorld()->SpawnActor<AActor>(MinigameSettingsMachine, Transform.Translation, FRotator(), Portal->LinkedVolume);
+            
+        if (PlotItemDefinition && PlotItemDefinition->BasePlayset)
+        {
+            auto LevelStreamComponent = (UPlaysetLevelStreamComponent*)Portal->GetLinkedVolume()->GetComponentByClass(UPlaysetLevelStreamComponent::StaticClass());
+            LevelStreamComponent->SetPlayset(PlotItemDefinition->BasePlayset);
+            LoadPlaysetOG(LevelStreamComponent);
+        }
+    }).detach();
+}
+
 void FortPlayerControllerAthena::ClientOnPawnDied(AFortPlayerControllerAthena* PlayerController, FFortPlayerDeathReport& DeathReport)
 {
 	if (!PlayerController)
@@ -380,6 +472,10 @@ void FortPlayerControllerAthena::Setup()
     Hook->Class = AFortPlayerControllerAthena::StaticClass();
     Hook->Detour = ServerPlayEmoteItem;
     UKismetHookingLibrary::Hook(Hook, EHook::EveryVFT);
+
+	Hook->Path = "/Script/FortniteGame.FortPlayerControllerAthena.ServerLoadPlotForPortal";
+	Hook->Detour = ServerLoadPlotForPortal;
+	UKismetHookingLibrary::Hook(Hook, EHook::Exec);
 
 	Hook->Address = ImageBase + 0x5711728;
 	Hook->Original = (void**)&ClientOnPawnDiedOG;

@@ -208,7 +208,6 @@ void FortPlayerController::ServerAttemptInventoryDrop(AFortPlayerController* Con
     PlayerController->WorldInventory->ReplaceEntry(*ItemEntry);
 }
 
-static inline __int64 (*LoadPlaysetOG)(UPlaysetLevelStreamComponent*) = decltype(LoadPlaysetOG)(__int64(InSDKUtils::GetImageBase() + 0x5279654));
 void FortPlayerController::ServerLoadingScreenDropped(AFortPlayerControllerAthena* Controller)
 {
     auto GS = Cast<AFortGameStateAthena>(GetWorld()->GameState);
