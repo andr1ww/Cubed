@@ -54,3 +54,4 @@ namespace Runtime {
 };
 
 static inline __int64 (*LoadPlaysetOG)(UPlaysetLevelStreamComponent*) = decltype(LoadPlaysetOG)(__int64(InSDKUtils::GetImageBase() + 0x5279654));
+static inline __int64 (*UnLoadPlaysetOG)(UPlaysetLevelStreamComponent*) = decltype(UnLoadPlaysetOG)(__int64(InSDKUtils::GetImageBase() + 0x528261C));

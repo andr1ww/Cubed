@@ -2,7 +2,7 @@
 
 #include "Globals.h"
 
-UFortCreativeRealEstatePlotItem* UFortMcpProfileCreative::FindPlotById(FString PlotId)
+FMcpItem* UFortMcpProfileCreative::FindPlotById(FString PlotId)
 {
     auto State = InternalGetState();
     UE_LOG(LogServer, Log, "ItemContainerNum: %d", State->ItemsContainer.Items.Num());
@@ -15,7 +15,7 @@ UFortCreativeRealEstatePlotItem* UFortMcpProfileCreative::FindPlotById(FString P
             {
                 UE_LOG(LogServer, Log, "Item: %s, Count: %d", McpItem->TemplateId.ToString().c_str(), McpItem->Quantity);
                 if (McpItem->InstanceId == PlotId)
-                    return Cast<UFortCreativeRealEstatePlotItem>(McpItem->Instance);
+                    return McpItem;
             }
         }
     }

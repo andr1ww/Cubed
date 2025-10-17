@@ -146,6 +146,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Plugins\HookingLibrary\Public\HookingLibrary.h" />
+    <ClInclude Include="Engine\Plugins\TaskLibrary\Public\TaskLibrary.h" />
     <ClInclude Include="Engine\Source\Runtime\CoreUObject\Public\UObject\Stack.h" />
     <ClInclude Include="Engine\Source\Runtime\CoreUObject\Public\UObject\UObjectGlobals.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Engine\NetDriver.h" />
@@ -172,6 +173,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Plugins\HookingLibrary\Private\HookingLibrary.cpp" />
+    <ClCompile Include="Engine\Plugins\TaskLibrary\Private\TaskLibrary.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Private\NetDriver.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Private\World.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Athena\AI\Systems\AthenaAIServicePlayerBots.cpp" />

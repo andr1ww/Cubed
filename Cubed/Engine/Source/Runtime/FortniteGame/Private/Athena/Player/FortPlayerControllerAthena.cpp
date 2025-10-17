@@ -3,6 +3,7 @@
 
 #include "Offsets.h"
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"
+#include "Engine/Plugins/TaskLibrary/Public/TaskLibrary.h"
 #include "Engine/Source/Runtime/CoreUObject/Public/UObject/UObjectGlobals.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Kismet/FortKismetLibrary.h"
 
@@ -115,14 +116,17 @@ void FortPlayerControllerAthena::ServerLoadPlotForPortal(AFortPlayerControllerAt
     Portal->GetLinkedVolume()->bNeverAllowSaving = false;
     Portal->GetLinkedVolume()->VolumeState = ESpatialLoadingState::Initializing;
     Portal->GetLinkedVolume()->OnRep_VolumeState();
-        
+    Portal->GetLinkedVolume()->ServerClearVolume();
+    auto LevelStreamComponent = (UPlaysetLevelStreamComponent*)Portal->GetLinkedVolume()->GetComponentByClass(UPlaysetLevelStreamComponent::StaticClass());
+    UnLoadPlaysetOG(LevelStreamComponent);
+    
     Portal->OwningPlayer = PlayerState->UniqueId;
     Portal->OnRep_OwningPlayer();
         
     Portal->IslandInfo.AltTitle = Portal->LoadingText;
     Portal->OnRep_IslandInfo();
-        
-    Portal->bPortalOpen = true;
+
+    Portal->bPortalOpen = false;
     Portal->OnRep_PortalOpen();
 
     xstring PlotId = PlotItem->TemplateId.ToString().substr(
@@ -130,13 +134,23 @@ void FortPlayerControllerAthena::ServerLoadPlotForPortal(AFortPlayerControllerAt
     );
 
     auto PlotItemDefinition = StaticLoadObject<UFortCreativeRealEstatePlotItemDefinition>(
-       "/Game/Playgrounds/Items/Plots/" + PlotId + "." + PlotId);
-    if (!PlotItemDefinition) return;
+        "/Game/Playgrounds/Items/Plots/" + PlotId + "." + PlotId);
 
-    std::thread([PlotItemDefinition, Controller, Portal, PlotItem, PlayerState, PlotItemId]()
-    {
-        std::this_thread::sleep_for(std::chrono::seconds(10));
+    if (!PlotItemDefinition)
+        return;
+
+	std::string QueueId = "PortalLoading_" + std::to_string(rand());
+	float currentTime = static_cast<float>(
+std::chrono::duration<double>(
+	std::chrono::steady_clock::now().time_since_epoch()
+).count()
+);
+    
+	UTaskLibrary::Initialize(QueueId, currentTime, UTaskLibrary::ExecutionMode::SeparateThread);
         
+    UTaskLibrary::QueueTask(QueueId, currentTime, 10.0f, [
+    	QueueId, PlotItemDefinition, Controller, Portal, PlayerState, PlotItemId]()
+    {
         Portal->GetLinkedVolume()->VolumeState = ESpatialLoadingState::Ready;
         Portal->GetLinkedVolume()->OnRep_VolumeState();
             
@@ -164,6 +178,9 @@ void FortPlayerControllerAthena::ServerLoadPlotForPortal(AFortPlayerControllerAt
             
         Portal->bUserInitiatedLoad = true;
         Portal->bInErrorState = false;
+
+        Portal->bPortalOpen = true;
+        Portal->OnRep_PortalOpen();
             
         Controller->OwnedPortal = Portal;
             
@@ -179,13 +196,15 @@ void FortPlayerControllerAthena::ServerLoadPlotForPortal(AFortPlayerControllerAt
         auto Transform = Portal->GetLinkedVolume()->GetTransform();
         GetWorld()->SpawnActor<AActor>(MinigameSettingsMachine, Transform.Translation, FRotator(), Portal->LinkedVolume);
             
-        if (PlotItemDefinition && PlotItemDefinition->BasePlayset)
+        if (PlotItemDefinition->BasePlayset)
         {
             auto LevelStreamComponent = (UPlaysetLevelStreamComponent*)Portal->GetLinkedVolume()->GetComponentByClass(UPlaysetLevelStreamComponent::StaticClass());
             LevelStreamComponent->SetPlayset(PlotItemDefinition->BasePlayset);
             LoadPlaysetOG(LevelStreamComponent);
         }
-    }).detach();
+    	
+    	UTaskLibrary::Shutdown(QueueId);
+    });
 }
 
 void FortPlayerControllerAthena::ClientOnPawnDied(AFortPlayerControllerAthena* PlayerController, FFortPlayerDeathReport& DeathReport)
