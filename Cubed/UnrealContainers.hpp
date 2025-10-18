@@ -368,7 +368,7 @@ struct TGuardValue
 	public:
 		inline void Reserve(const int Num)
 		{
-			if (NumElements + 1 > MaxElements) Data = FMemory::ReallocForType<ArrayElementType>(Data, MaxElements = Num + NumElements);
+			if (NumElements + 1 > MaxElements) Data = FMemory::Realloc<ArrayElementType>(Data, (MaxElements = NumElements + 1) * sizeof(ArrayElementType));
 		}
 
 		ArrayElementType* GetData() const

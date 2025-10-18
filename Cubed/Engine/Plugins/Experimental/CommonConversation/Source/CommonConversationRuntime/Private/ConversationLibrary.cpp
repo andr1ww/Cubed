@@ -18,7 +18,7 @@ FConversationTaskResult ConversationLibrary::ExecuteTaskNode(UConversationTaskNo
 
 	if (auto SpeechNode = Cast<UFortConversationTaskNode_Speech>(TaskNode))
 	{
-		auto ParticipantComponent = (UFortNonPlayerConversationParticipantComponent*)InContext.ActiveConversation->Participants.List[0].ParticipantComponent;
+		auto ParticipantComponent = (UFortNonPlayerConversationParticipantComponent*)InContext.ActiveConversation->Participants.List[0].InternalGetParticipantComponent();
 
 		if (ParticipantComponent)
 		{
@@ -190,11 +190,14 @@ FConversationTaskResult ConversationLibrary::ExecuteTaskNodeWithSideEffects(UCon
         FConversationParticipants Participants = InContext.ActiveConversation->Participants;
         for (FConversationParticipantEntry& ParticipantEntry : Participants.List)
         {
-            if (ParticipantEntry.ParticipantComponent->GetOwner()->GetRemoteRole() == ENetRole::ROLE_AutonomousProxy)
-            {
-                if (ParticipantEntry.ParticipantComponent->GetOwner()->GetLocalRole() == ENetRole::ROLE_Authority)
-                    ParticipantEntry.ParticipantComponent->ClientExecuteTaskAndSideEffects(InContext.ActiveConversation->CurrentBranchPoint.ClientChoice.ChoiceReference.NodeReference);
-            }
+        	if (ParticipantEntry.ParticipantComponent)
+        	{
+        		if (ParticipantEntry.InternalGetParticipantComponent()->GetOwner()->GetRemoteRole() == ENetRole::ROLE_AutonomousProxy)
+        		{
+        			if (ParticipantEntry.InternalGetParticipantComponent()->GetOwner()->GetLocalRole() == ENetRole::ROLE_Authority)
+        				ParticipantEntry.InternalGetParticipantComponent()->ClientExecuteTaskAndSideEffects(InContext.ActiveConversation->CurrentBranchPoint.ClientChoice.ChoiceReference.NodeReference);
+        		}
+        	}
         }
     }
 
@@ -275,6 +278,11 @@ static EConversationRequirementResult IsRequirementSatisfied(UObject* Context, F
 	return *Ret = EConversationRequirementResult::FailedAndHidden;
 }
 
+namespace ConversationLibrary
+{
+	xmap<uint32, AActor*> ConversationParticipantEntry;
+}
+
 void ConversationLibrary::MakeConversationParticipant(UObject *, FFrame& Stack)
 {
 	auto& ConversationContext = Stack.StepCompiledInRef<FConversationContext>();
@@ -283,25 +291,26 @@ void ConversationLibrary::MakeConversationParticipant(UObject *, FFrame& Stack)
 	Stack.StepCompiledIn(&ParticipantActor);
 	Stack.StepCompiledIn(&ParticipantID);
 	Stack.IncrementCode();
-	if (!ParticipantActor || ParticipantID.TagName.ComparisonIndex <= 0) 
+	if (!IsValidPointer(ParticipantActor) || ParticipantID.TagName.ComparisonIndex <= 0) 
 		return;
 
-	if (UConversationInstance* Conversation = UConversationContextHelpers::GetConversationInstance(ConversationContext))
+	if (UConversationInstance* Instance = ConversationContext.ActiveConversation)
 	{
-		if (ParticipantID.TagName.ComparisonIndex <= 0 || (ParticipantActor == nullptr))
+		if (ParticipantID.TagName.ComparisonIndex <= 0 || !Instance)
 			return;
 
-		Conversation->ServerRemoveParticipant(ParticipantID);
+		Instance->ServerRemoveParticipant(ParticipantID);
 
-		FConversationParticipantEntry NewEntry{};
+		FConversationParticipantEntry NewEntry = FConversationParticipantEntry();
 		NewEntry.ParticipantID = ParticipantID;
-		NewEntry.Actor = ParticipantActor;
-		//Conversation->Participants.List.Add(NewEntry);
+	//	NewEntry.Actor = ParticipantActor;
+		Instance->Participants.List.Add(NewEntry);
+		ConversationParticipantEntry[ParticipantID.TagName.Number] = ParticipantActor; // for some reason when i set the one above it closed so Proper!
 
-		if (Conversation->bConversationStarted)
+		if (Instance->bConversationStarted)
 		{
 			if (UConversationParticipantComponent* ParticipantComponent = NewEntry.ParticipantComponent)
-				ParticipantComponent->ServerNotifyConversationStarted(Conversation, ParticipantID);
+				ParticipantComponent->ServerNotifyConversationStarted(Instance, ParticipantID);
 		}
 	}
 }
@@ -392,6 +401,14 @@ void ConversationLibrary::AbortConversation(UObject*, FFrame& Stack, FConversati
 	*Ret = OutResult;
 }
 
+static FConversationTaskResult ExecuteTaskNodeWithSideEffectsHook(UConversationTaskNode* TaskNode, FConversationTaskResult* Ret, FConversationContext& InContext)
+{
+	if (Ret)
+		return *Ret = ConversationLibrary::ExecuteTaskNodeWithSideEffects(TaskNode, InContext);
+
+	return ConversationLibrary::ExecuteTaskNodeWithSideEffects(TaskNode, InContext);
+}
+
 void ConversationLibrary::Setup()
 {
     UHook* Hook = new UHook();
@@ -399,6 +416,10 @@ void ConversationLibrary::Setup()
     Hook->Path = "/Script/CommonConversationRuntime.ConversationLibrary.StartConversation";
     Hook->Detour = StartConversation;
     UKismetHookingLibrary::Hook(Hook, Exec);
+
+	Hook->Address = ImageBase + 0x3DC8768;
+	Hook->Detour = ExecuteTaskNodeWithSideEffectsHook;
+	UKismetHookingLibrary::Hook(Hook, Address);
 
 	Hook->Path = "/Script/CommonConversationRuntime.ConversationParticipantComponent.ServerAdvanceConversation";
 	Hook->Detour = ServerAdvanceConversationHook;

@@ -36,6 +36,7 @@ static T PickWeighted(vector<T>& Map, float (*RandFunc)(float), bool bCheckZero 
     static void ReturnToCurrentClientChoice(UObject*, FFrame&, FConversationTaskResult*);
     static void ReturnToConversationStart(UObject*, FFrame&, FConversationTaskResult*);
     static void AbortConversation(UObject*, FFrame&, FConversationTaskResult*);
+    extern xmap<uint32, AActor*> ConversationParticipantEntry;
     
     void Setup();
 }
