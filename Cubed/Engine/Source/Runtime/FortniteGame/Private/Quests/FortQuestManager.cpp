@@ -211,8 +211,9 @@ void FortQuestManager::SendStatEventWithTags(UFortQuestManager* QuestManager,
                                              FGameplayTagContainer& ContextTags,
                                              int32 Count)
 {
-    if (bCreative) return; // no quests on creative bro!
+    if (bCreative || GetGameState()->GamePhase <= EAthenaGamePhase::Aircraft) return; // no quests on creative bro!
     if (Count <= 0) Count = 1;
+    
     if (QuestManager)
     {
         auto Controller = (AFortPlayerControllerAthena*)QuestManager->GetPlayerControllerBP();

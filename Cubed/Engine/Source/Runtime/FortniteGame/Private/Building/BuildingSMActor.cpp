@@ -51,6 +51,11 @@ bool BuildingSMActor::AttemptSpawnResources(ABuildingSMActor* BuildingSMActor, A
     
     FortQuestManager::SendStatEventWithTags(QuestManager, EFortQuestObjectiveStatEvent::Damage, BuildingSMActor, TargetTags, SourceTags,
                           ContextTags, ResourceCount /* prob wrong but wtv */);
+
+    if (WeakSpot)
+        FortQuestManager::SendStatEventWithTags(QuestManager, EFortQuestObjectiveStatEvent::ComplexCustom, BuildingSMActor, TargetTags, SourceTags,
+                      ContextTags, 1);
+    
     return true;
 }
 
