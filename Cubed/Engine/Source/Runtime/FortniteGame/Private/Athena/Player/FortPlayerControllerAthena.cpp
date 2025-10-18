@@ -60,6 +60,30 @@ void FortPlayerControllerAthena::ServerAttemptAircraftJump(UFortControllerCompon
     }
 }
 
+void FortPlayerControllerAthena::ServerAttemptInteract(UFortControllerComponent_Interaction* Comp, AActor* ReceivingActor, UPrimitiveComponent* InteractComponent, ETInteractionType InteractType, UObject* OptionalData, EInteractionBeingAttempted InteractionBeingAttempted)
+{
+	if (!ReceivingActor)
+		return;
+
+	AController* Controller = Cast<AController>(Comp->GetOwner());
+
+	if (!Controller)
+		return;
+
+	AFortPlayerPawn* PlayerPawn = Cast<AFortPlayerPawn>(Controller->Pawn);
+
+	if (!PlayerPawn)
+		return;
+	
+	if (auto ParticipantComponent = (UFortNonPlayerConversationParticipantComponent*) ReceivingActor->GetComponentByClass(UFortNonPlayerConversationParticipantComponent::StaticClass()))
+	{
+		auto ConversationComponent = (UFortPlayerConversationComponent*)Controller->GetComponentByClass(UFortPlayerConversationComponent::StaticClass());
+		UConversationLibrary::StartConversation(ParticipantComponent->ConversationEntryTag, ConversationComponent->GetOwner(), ParticipantComponent->InteractorParticipantTag, ReceivingActor, ParticipantComponent->SelfParticipantTag);
+	}
+
+	return ServerAttemptInteractOG(Comp, ReceivingActor, InteractComponent, InteractType, OptionalData, InteractionBeingAttempted);
+}
+
 void FortPlayerControllerAthena::ServerPlayEmoteItem(AFortPlayerControllerAthena* Controller, UFortMontageItemDefinitionBase* EmoteAsset, float EmoteRandomNumber)
 {
     if (!Controller || !Controller->MyFortPawn || !EmoteAsset) return;
@@ -507,6 +531,12 @@ void FortPlayerControllerAthena::Setup()
     Hook->Class = AFortPlayerControllerAthena::StaticClass();
     Hook->Detour = ServerPlayEmoteItem;
     UKismetHookingLibrary::Hook(Hook, EHook::EveryVFT);
+
+	Hook->Address = 0x96;
+	Hook->Class = UFortControllerComponent_Interaction::StaticClass();
+	Hook->Detour = ServerAttemptInteract;
+	Hook->Original = (void**)&ServerAttemptInteractOG;
+	UKismetHookingLibrary::Hook(Hook, EHook::VFT);
 
 	Hook->Path = "/Script/FortniteGame.FortPlayerControllerAthena.ServerLoadPlotForPortal";
 	Hook->Detour = ServerLoadPlotForPortal;

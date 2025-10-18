@@ -26,11 +26,13 @@ namespace SDK
 class UConversationParticipantComponent : public UActorComponent
 {
 public:
-	uint8                                         Pad_B0[0xDC];                                      // 0x00B0(0x00DC)(Fixing Size After Last Property [ Dumper-7 ])
-	int32                                         ConversationsActive;                               // 0x018C(0x0004)(Net, ZeroConstructor, IsPlainOldData, RepNotify, NoDestructor, HasGetValueTypeHash, NativeAccessSpecifierPrivate)
-	class UConversationInstance*                  Auth_CurrentConversation;                          // 0x0190(0x0008)(ZeroConstructor, IsPlainOldData, NoDestructor, HasGetValueTypeHash, NativeAccessSpecifierPrivate)
-	TArray<class UConversationInstance*>          Auth_Conversations;                                // 0x0198(0x0010)(ZeroConstructor, NativeAccessSpecifierPrivate)
-	uint8                                         Pad_1A8[0x8];                                      // 0x01A8(0x0008)(Fixing Struct Size After Last Property [ Dumper-7 ])
+	uint8                                         Pad_A0[0x60];                                      // 0x00A0(0x0060)(Fixing Size After Last Property [ Dumper-7 ])
+	int32                                         ConversationsActive;                               // 0x0100(0x0004)(Net, ZeroConstructor, IsPlainOldData, RepNotify, NoDestructor, HasGetValueTypeHash, NativeAccessSpecifierPrivate)
+	uint8                                         Pad_104[0x4];                                      // 0x0104(0x0004)(Fixing Size After Last Property [ Dumper-7 ])
+	class UConversationInstance*                  Auth_CurrentConversation;                          // 0x0108(0x0008)(ZeroConstructor, IsPlainOldData, NoDestructor, HasGetValueTypeHash, NativeAccessSpecifierPrivate)
+	TArray<class UConversationInstance*>          Auth_Conversations;                                // 0x0110(0x0010)(ZeroConstructor, NativeAccessSpecifierPrivate)
+	struct FClientConversationMessagePayload      LastMessage;                                       // 0x0120(0x0078)(NativeAccessSpecifierPrivate)
+	uint8                                         Pad_198[0x8];                                      // 0x0198(0x0008)(Fixing Struct Size After Last Property [ Dumper-7 ])
 
 public:
 	void ClientExecuteTaskAndSideEffects(const struct FConversationNodeHandle& Handle);
@@ -45,7 +47,9 @@ public:
 	void ServerAdvanceConversation(const struct FAdvanceConversationRequest& InChoicePicked);
 
 	bool IsInActiveConversation() const;
-
+	
+	void ServerNotifyConversationStarted(UConversationInstance*, FGameplayTag);
+	void ServerNotifyConversationEnded(UConversationInstance*);
 public:
 	static class UClass* StaticClass()
 	{
@@ -210,16 +214,40 @@ public:
 	}
 };
 
+	struct FCheckpoint
+	{
+		FConversationBranchPoint ClientBranchPoint;
+		TArray<FConversationChoiceReference> ScopeStack;
+	};
+	
 // Class CommonConversationRuntime.ConversationInstance
 // 0x0180 (0x01A8 - 0x0028)
 class UConversationInstance : public UObject
 {
 public:
-	uint8                                         Pad_28[0x28];                                      // 0x0028(0x0028)(Fixing Size After Last Property [ Dumper-7 ])
+	uint8                                         Pad_28[0x18];                                      // 0x0028(0x0018)(Fixing Size After Last Property [ Dumper-7 ])
+	TArray<FClientConversationOptionEntry> CurrentUserChoices;
 	struct FConversationParticipants              Participants;                                      // 0x0050(0x0010)(NativeAccessSpecifierPrivate)
-	uint8                                         Pad_60[0x148];                                     // 0x0060(0x0148)(Fixing Struct Size After Last Property [ Dumper-7 ])
-
+	FGameplayTag StartingEntryGameplayTag;
+	FConversationBranchPoint StartingBranchPoint;
+	FConversationBranchPoint CurrentBranchPoint;
+	TArray<FCheckpoint> ClientBranchPoints;
+	TArray<FConversationBranchPoint> CurrentBranchPoints;
+	TArray<FConversationChoiceReference> ScopeStack;
+	FRandomStream ConversationRNG;
+	bool bConversationStarted;
 public:
+	class FConversationContext ConstructServerContext(UConversationTaskNode* InTaskBeingConsidered);
+	void ServerAbortConversation();
+	void ServerStartConversation(FGameplayTag Entry);
+	void ServerRemoveParticipant(FGameplayTag);
+	TArray<FGuid> ConstructBranches(const TArray<FGuid>&, EConversationRequirementResult);
+	void OnCurrentConversationNodeModified();
+	void UpdateNextChoices(FConversationContext&);
+	void ServerAdvanceConversation(FAdvanceConversationRequest);
+	void ModifyCurrentConversationNode(FConversationBranchPoint&);
+	void ModifyCurrentConversationNode(const FConversationChoiceReference&);
+	
 	static class UClass* StaticClass()
 	{
 		return StaticClassImpl<"ConversationInstance">();
@@ -299,9 +327,13 @@ class UConversationRegistry final : public UWorldSubsystem
 {
 public:
 	uint8                                         Pad_30[0x8];                                       // 0x0030(0x0008)(Fixing Size After Last Property [ Dumper-7 ])
-	struct FNetSerializeScriptStructCache_ConvVersion ConversationChoiceDataStructCache;             // 0x0038(0x0060)(Transient, NativeAccessSpecifierPublic)
-	uint8                                         Pad_98[0x160];                                     // 0x0098(0x0160)(Fixing Struct Size After Last Property [ Dumper-7 ])
-
+	struct FNetSerializeScriptStructCache_ConvVersion ConversationChoiceDataStructCache;                 // 0x0038(0x0060)(Transient, NativeAccessSpecifierPublic)
+	uint8                                         Pad_98[0xb8];                                     // 0x0098(0x0160)(Fixing Struct Size After Last Property [ Dumper-7 ])
+	TMap<FGameplayTag, TArray<FGuid>> EntryTagToEntryList;
+	uint8                                         Pad_1a7[0x51];                                     // 0x01a7(0x0051)(Fixing Struct Size After Last Property [ Dumper-7 ])
+	TArray<FGuid> GetEntryNodeIDs(FGameplayTag EntryTag);
+	TArray<FGuid> GetConnectedNodeIDs(TArray<FGuid>& NodeIDs);
+	TArray<FGuid> GetConnectedNodeIDs(FGameplayTag EntryTag);
 public:
 	static class UClass* StaticClass()
 	{

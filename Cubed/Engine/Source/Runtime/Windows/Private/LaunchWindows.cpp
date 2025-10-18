@@ -4,6 +4,7 @@
 #include <memcury.h>
 
 #include "Offsets.h"
+#include "Engine/Plugins/Experimental/CommonConversation/Source/CommonConversationRuntime/Public/ConversationLibrary.h"
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"
 #include "Engine/Source/Runtime/CoreUObject/Public/UObject/UObjectGlobals.h"
 #include "Engine/Source/Runtime/Engine/Classes/Engine/NetDriver.h"
@@ -127,6 +128,7 @@ DWORD WINAPI Startup(LPVOID)
     FortMinigameSettingsBuilding::Setup();
     FortAthenaSupplyDrop::Setup();
     FortKismetLibrary::Setup();
+    ConversationLibrary::Setup();
     
     UHook* Hook = new UHook();
     

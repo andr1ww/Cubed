@@ -188,5 +188,17 @@ bool UStruct::IsSubclassOf(const UStruct* Base) const
 
 		return nullptr;
 	}
+	__declspec(noinline) class UFunction* UClass::FindFunction(const char* FuncName) const
+	{
+		for (const UStruct* Clss = this; Clss; Clss = Clss->Super)
+		{
+			for (UField* Field = Clss->Children; Field; Field = Field->Next)
+			{
+				if (Field->HasTypeFlag(EClassCastFlags::Function) && Field->GetName() == FuncName)
+					return static_cast<class UFunction*>(Field);
+			}
+		}
 
+		return nullptr;
+	}
 }

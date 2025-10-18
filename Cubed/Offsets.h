@@ -56,3 +56,8 @@ namespace Runtime {
 static inline __int64 (*ResetLevelRecordOG)(UFortLevelSaveComponent*) = decltype(ResetLevelRecordOG)(__int64(InSDKUtils::GetImageBase() + 0x4F04B6C));
 static inline __int64 (*LoadPlaysetOG)(UPlaysetLevelStreamComponent*) = decltype(LoadPlaysetOG)(__int64(InSDKUtils::GetImageBase() + 0x5279654));
 static inline __int64 (*UnLoadPlaysetOG)(UPlaysetLevelStreamComponent*) = decltype(UnLoadPlaysetOG)(__int64(InSDKUtils::GetImageBase() + 0x528261C));
+static UConversationRegistry* (*ConversationRegistryFromWorld)(UWorld*) = decltype(ConversationRegistryFromWorld)(ImageBase + 0x39D0DA4);
+static void (*BuildDependenciesGraph)(UConversationRegistry*) = decltype(BuildDependenciesGraph)(ImageBase + 0x1011C50);
+static UConversationDatabase* (*ConversationFromNodeGUID)(UConversationRegistry*, FGuid&) = decltype(ConversationFromNodeGUID)(ImageBase + 0x3DC8B6C);
+static UConversationNode* (*GetRuntimeNodeFromGUID)(UConversationRegistry*, FGuid&) = decltype(GetRuntimeNodeFromGUID)(ImageBase + 0x3DC8E04);
+static EConversationRequirementResult(*CheckRequirements)(UConversationTaskNode*, FConversationContext&) = decltype(CheckRequirements)(ImageBase + 0x3DC7F00);

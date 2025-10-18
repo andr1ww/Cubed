@@ -74,13 +74,17 @@ public:
 
 // ScriptStruct CommonConversationRuntime.ConversationParticipantEntry
 // 0x0010 (0x0010 - 0x0000)
-struct FConversationParticipantEntry final
-{
-public:
-	class AActor*                                 Actor;                                             // 0x0000(0x0008)(BlueprintVisible, ZeroConstructor, IsPlainOldData, NoDestructor, HasGetValueTypeHash, NativeAccessSpecifierPublic)
-	struct FGameplayTag                           ParticipantID;                                     // 0x0008(0x0008)(BlueprintVisible, NoDestructor, HasGetValueTypeHash, NativeAccessSpecifierPublic)
-};
+	struct FConversationParticipantEntry final
+	{
+	public:
+		class AActor*                                 Actor;                                             // 0x0000(0x0008)(BlueprintVisible, ZeroConstructor, IsPlainOldData, NoDestructor, HasGetValueTypeHash, NativeAccessSpecifierPublic)
+		struct FGameplayTag                           ParticipantID;                                     // 0x0008(0x0008)(BlueprintVisible, NoDestructor, HasGetValueTypeHash, NativeAccessSpecifierPublic)
+	
+		class UConversationParticipantComponent* InternalGetParticipantComponent();
 
+	public:
+		__declspec(property(get = InternalGetParticipantComponent)) class UConversationParticipantComponent* ParticipantComponent;
+	};
 // ScriptStruct CommonConversationRuntime.ConversationParticipants
 // 0x0010 (0x0010 - 0x0000)
 struct FConversationParticipants final

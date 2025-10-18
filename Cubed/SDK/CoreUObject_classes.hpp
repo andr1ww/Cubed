@@ -362,6 +362,7 @@ public:
 
 public:
 	class UFunction* GetFunction(const char* ClassName, const char* FuncName) const;
+	class UFunction* FindFunction(const char* FuncName) const;
 
 public:
 	static class UClass* StaticClass()

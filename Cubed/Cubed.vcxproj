@@ -145,6 +145,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Plugins\Experimental\CommonConversation\Source\CommonConversationRuntime\Public\ConversationLibrary.h" />
     <ClInclude Include="Engine\Plugins\HookingLibrary\Public\HookingLibrary.h" />
     <ClInclude Include="Engine\Plugins\TaskLibrary\Public\TaskLibrary.h" />
     <ClInclude Include="Engine\Source\Runtime\CoreUObject\Public\UObject\Stack.h" />
@@ -172,6 +173,10 @@
     <ClInclude Include="UtfN.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Plugins\Experimental\CommonConversation\Source\CommonConversationRuntime\Private\Components\ConversationParticipantComponent.cpp" />
+    <ClCompile Include="Engine\Plugins\Experimental\CommonConversation\Source\CommonConversationRuntime\Private\ConversationInstance.cpp" />
+    <ClCompile Include="Engine\Plugins\Experimental\CommonConversation\Source\CommonConversationRuntime\Private\ConversationLibrary.cpp" />
+    <ClCompile Include="Engine\Plugins\Experimental\CommonConversation\Source\CommonConversationRuntime\Private\ConversationRegistry.cpp" />
     <ClCompile Include="Engine\Plugins\HookingLibrary\Private\HookingLibrary.cpp" />
     <ClCompile Include="Engine\Plugins\TaskLibrary\Private\TaskLibrary.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Private\NetDriver.cpp" />
@@ -200,6 +205,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="SDK\Basic.cpp" />
+    <ClCompile Include="SDK\CommonConversationRuntime_functions.cpp" />
     <ClCompile Include="SDK\CoreUObject_functions.cpp" />
     <ClCompile Include="SDK\Engine_functions.cpp" />
     <ClCompile Include="SDK\FortniteGame_functions.cpp" />

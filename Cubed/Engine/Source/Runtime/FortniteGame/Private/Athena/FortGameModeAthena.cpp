@@ -209,6 +209,52 @@ void FortGameModeAthena::HandleStartingNewPlayer(AFortGameModeAthena* GameMode, 
 
     if (!NewPlayer->MatchReport)
         NewPlayer->MatchReport = (UAthenaPlayerMatchReport*)UGameplayStatics::SpawnObject(UAthenaPlayerMatchReport::StaticClass(), NewPlayer);
+
+    static TArray<ABuildingProp_ConversationCompatible*> ConversationProps;
+    if (ConversationProps.Num() == 0)
+    {
+        static TArray<AActor*> Actors;
+        UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABuildingProp_ConversationCompatible::StaticClass(), &Actors);
+        for (auto& Actor : Actors)
+        {
+            ABuildingProp_ConversationCompatible* ConversationProp = Cast<ABuildingProp_ConversationCompatible>(Actor);
+            if (ConversationProp)
+                ConversationProps.Add(ConversationProp);
+        }
+    }
+    
+    for (ABuildingProp_ConversationCompatible* ConversationProp : ConversationProps)
+    {
+        if (!ConversationProp) continue;
+    
+        auto* ParticipantComponent = reinterpret_cast<UFortNonPlayerConversationParticipantComponent*>(
+            ConversationProp->GetComponentByClass(UFortNonPlayerConversationParticipantComponent::StaticClass()));
+    
+        if (!ParticipantComponent) continue;
+    
+        if (ParticipantComponent->ServiceProviderIDTag.TagName == FName(0))
+            ParticipantComponent->ServiceProviderIDTag.TagName = ParticipantComponent->ConversationEntryTag.TagName;
+    
+        if (ParticipantComponent->SupportedSales.Num() < 1 && ParticipantComponent->SalesInventory)
+        {
+            for (const auto& [RowName, RowPtr] : ParticipantComponent->SalesInventory->RowMap)
+            {
+                auto* Row = reinterpret_cast<FNPCSaleInventoryRow*>(RowPtr);
+                if (RowName.IsValid() && Row && Row->NPC.TagName == ParticipantComponent->ServiceProviderIDTag.TagName)
+                    ParticipantComponent->SupportedSales.Add(*Row);
+            }
+        }
+    
+        if (ParticipantComponent->SupportedServices.GameplayTags.Num() < 1 && ParticipantComponent->Services)
+        {
+            for (const auto& [RowName, RowPtr] : ParticipantComponent->Services->RowMap)
+            {
+                auto* Row = reinterpret_cast<FNPCDynamicServiceRow*>(RowPtr);
+                if (RowName.IsValid() && Row && Row->NPC == ParticipantComponent->ServiceProviderIDTag)
+                    ParticipantComponent->SupportedServices.GameplayTags.Add(Row->ServiceTag);
+            }
+        }
+    }
 }
 
 void FortGameModeAthena::StartNewSafeZonePhase(AFortGameModeAthena* GameMode, int NewSafeZonePhase)

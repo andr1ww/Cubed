@@ -315,7 +315,9 @@ public:
 	{
 		AppendString = reinterpret_cast<void*>(Location);
 	}
-
+	bool IsValid() const {
+		return ComparisonIndex > 0;
+	}
 	int32 GetDisplayIndex() const
 	{
 		return ComparisonIndex;

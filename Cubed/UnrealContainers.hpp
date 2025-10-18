@@ -290,6 +290,35 @@ namespace UC
 	using xstring = std::basic_string<char, std::char_traits<char>, TMemoryAllocator<char>>;
 	using xwstring = std::basic_string<wchar_t, std::char_traits<wchar_t>, TMemoryAllocator<wchar_t>>;
 
+	template <typename RefType, typename AssignedType = RefType>
+struct TGuardValue
+	{
+		TGuardValue(RefType& ReferenceValue, const AssignedType& NewValue)
+			: RefValue(ReferenceValue), OldValue(ReferenceValue)
+		{
+			RefValue = NewValue;
+		}
+		~TGuardValue()
+		{
+			RefValue = OldValue;
+		}
+
+		/**
+		 * Overloaded dereference operator.
+		 * Provides read-only access to the original value of the data being tracked by this struct
+		 *
+		 * @return	a const reference to the original data value
+		 */
+		FORCEINLINE const AssignedType& operator*() const
+		{
+			return OldValue;
+		}
+
+	private:
+		RefType& RefValue;
+		AssignedType OldValue;
+	};
+	
 	template<typename ArrayElementType>
 	class TArray
 	{
@@ -431,7 +460,22 @@ namespace UC
 			}
 			return -1;
 		}
+		inline void Append(const TArray<ArrayElementType>& Other)
+		{
+			if (Other.NumElements == 0) return;
+    
+			Reserve(Other.NumElements);
+    
+			for (int32 i = 0; i < Other.NumElements; i++)
+			{
+				Add(Other.Data[i]);
+			}
+		}
 
+		inline void Append(TArray<ArrayElementType>&& Other)
+		{
+			Append(Other);
+		}
 	public:
 		inline       ArrayElementType& operator[](int32 Index)       { VerifyIndex(Index); return Data[Index]; }
 		inline const ArrayElementType& operator[](int32 Index) const { VerifyIndex(Index); return Data[Index]; }
