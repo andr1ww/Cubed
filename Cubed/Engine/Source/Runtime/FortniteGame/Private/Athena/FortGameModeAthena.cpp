@@ -42,7 +42,7 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
         GameMode->bDisableGCOnServerDuringMatch = true;
         GameMode->bPlaylistHotfixChangedGCDisabling = true;
 
-        GameState->DefaultParachuteDeployTraceForGroundDistance = Playlist->PlaylistName.ToString().contains("BlueCheese") ? 100 : 10000; 
+        GameState->DefaultParachuteDeployTraceForGroundDistance = Playlist->PlaylistName.ToString().contains("BlueCheese") ? 50 : 10000; 
         GameMode->CurrentPlaylistId = GameState->CurrentPlaylistId = Playlist->PlaylistId;
         GameMode->CurrentPlaylistName = Playlist->PlaylistName;
         GameMode->bAllowSpectateAfterDeath = true;
