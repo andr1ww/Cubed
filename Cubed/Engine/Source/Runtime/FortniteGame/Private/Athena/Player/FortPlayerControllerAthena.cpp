@@ -478,9 +478,30 @@ true, false, true);
 	ClientOnPawnDiedOG(PlayerController, DeathReport);
 }
 
+ void FortPlayerControllerAthena::ServerCheat(AFortPlayerControllerAthena* PC, FString FCommand)
+{
+	printf("servercheat called!");
+	auto ppap = Cast<AFortPlayerStateAthena>(PC->PlayerState);
+	auto GameState = Cast<AFortGameStateAthena>(UWorld::GetWorld()->GameState);
+	auto GameMode = Cast<AFortGameModeAthena>(UWorld::GetWorld()->AuthorityGameMode);
+	auto Command = FCommand.ToString();
+
+	if (Command == "buildfree")
+	{
+		PC->bBuildFree = !PC->bBuildFree;
+	}
+	
+}
+
+
 void FortPlayerControllerAthena::Setup()
 {
     UHook* Hook = new UHook();
+
+	Hook->Address = 0x1d7;
+	Hook->Class = AFortPlayerControllerAthena::StaticClass();
+	Hook->Detour = ServerCheat;
+	UKismetHookingLibrary::Hook(Hook, EHook::VFT);
 
     Hook->Address = Runtime::Vfts::ServerAttemptAircraftJump;
     Hook->Class = UFortControllerComponent_Aircraft::StaticClass();

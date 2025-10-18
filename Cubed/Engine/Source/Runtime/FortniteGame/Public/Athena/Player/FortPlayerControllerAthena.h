@@ -10,5 +10,7 @@ namespace FortPlayerControllerAthena
     DefineOriginal(void, ClientOnPawnDied, AFortPlayerControllerAthena* Controller, FFortPlayerDeathReport& DeathReport);
     void ServerLoadPlotForPortal(AFortPlayerControllerAthena* Controller, FFrame& Stack);
     
+    void ServerCheat(AFortPlayerControllerAthena* PC, FString FCommand);
+
     void Setup();
 }
