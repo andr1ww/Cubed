@@ -10,6 +10,7 @@ void UConversationParticipantComponent::ServerNotifyConversationStarted(UConvers
         ClientUpdateParticipants(Auth_CurrentConversation->Participants);
 
         ConversationsActive++;
+        OnRep_ConversationsActive(ConversationsActive - 1);
         ClientStartConversation(AsParticipant);
 
         if (Owner->GetRemoteRole() == ENetRole::ROLE_AutonomousProxy)

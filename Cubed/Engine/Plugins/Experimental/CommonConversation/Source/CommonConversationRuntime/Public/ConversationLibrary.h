@@ -3,6 +3,7 @@
 
 #include "Engine/Source/Runtime/CoreUObject/Public/UObject/Stack.h"
 
+
 namespace ConversationLibrary
 {
     template <typename T>
@@ -27,6 +28,14 @@ static T PickWeighted(vector<T>& Map, float (*RandFunc)(float), bool bCheckZero 
     static UConversationInstance* StartConversation(UObject*, FFrame&, UConversationInstance**);
     FConversationTaskResult ExecuteTaskNodeWithSideEffects(UConversationTaskNode* Node, FConversationContext& Context);
     FConversationTaskResult ExecuteTaskNode(UConversationTaskNode* Node, FConversationContext& InContext);
-
+    static void MakeConversationParticipant(UObject*, FFrame&);
+    static void AdvanceConversation(UObject*, FFrame&, FConversationTaskResult*);
+    static void AdvanceConversationWithChoice(UObject*, FFrame&, FConversationTaskResult*);
+    static void PauseConversationAndSendClientChoices(UObject*, FFrame&, FConversationTaskResult*);
+    static void ReturnToLastClientChoice(UObject*, FFrame&, FConversationTaskResult*);
+    static void ReturnToCurrentClientChoice(UObject*, FFrame&, FConversationTaskResult*);
+    static void ReturnToConversationStart(UObject*, FFrame&, FConversationTaskResult*);
+    static void AbortConversation(UObject*, FFrame&, FConversationTaskResult*);
+    
     void Setup();
 }

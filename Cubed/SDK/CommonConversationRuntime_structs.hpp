@@ -79,7 +79,7 @@ public:
 	public:
 		class AActor*                                 Actor;                                             // 0x0000(0x0008)(BlueprintVisible, ZeroConstructor, IsPlainOldData, NoDestructor, HasGetValueTypeHash, NativeAccessSpecifierPublic)
 		struct FGameplayTag                           ParticipantID;                                     // 0x0008(0x0008)(BlueprintVisible, NoDestructor, HasGetValueTypeHash, NativeAccessSpecifierPublic)
-	
+
 		class UConversationParticipantComponent* InternalGetParticipantComponent();
 
 	public:

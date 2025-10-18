@@ -71,7 +71,6 @@ void UConversationInstance::ServerAbortConversation()
     CurrentBranchPoint = FConversationBranchPoint();
     CurrentBranchPoints.ResetNum();
     ClientBranchPoints.ResetNum();
-    CurrentUserChoices.ResetNum();
     bConversationStarted = false;
 }
 
@@ -235,7 +234,6 @@ void UConversationInstance::OnCurrentConversationNodeModified()
 		{
 			FClientConversationMessagePayload LastMessage = FClientConversationMessagePayload();
 			LastMessage.Message = TaskResult.Message;
-			LastMessage.Options = CurrentUserChoices;
 			LastMessage.CurrentNode = Context.ActiveConversation->CurrentBranchPoint.ClientChoice.ChoiceReference.NodeReference;
 			LastMessage.Participants = Participants;
 
@@ -281,7 +279,6 @@ void UConversationInstance::OnCurrentConversationNodeModified()
 			CurrentBranchPoint = FConversationBranchPoint();
 			CurrentBranchPoints.ResetNum();
 			ClientBranchPoints.ResetNum();
-			CurrentUserChoices.ResetNum();
 
 			StartingEntryGameplayTag = EntryStartPointGameplayTagCache;
 			StartingBranchPoint = StartingBranchPointCache;
@@ -302,7 +299,6 @@ void UConversationInstance::ServerStartConversation(FGameplayTag Entry)
     CurrentBranchPoint = FConversationBranchPoint();
     CurrentBranchPoints.ResetNum();
     ClientBranchPoints.ResetNum();
-    CurrentUserChoices.ResetNum();
     StartingEntryGameplayTag = Entry;
     
     UConversationRegistry* ConversationRegistry = ConversationRegistryFromWorld(GetWorld());

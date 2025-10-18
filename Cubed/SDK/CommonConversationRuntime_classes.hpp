@@ -226,16 +226,18 @@ class UConversationInstance : public UObject
 {
 public:
 	uint8                                         Pad_28[0x18];                                      // 0x0028(0x0018)(Fixing Size After Last Property [ Dumper-7 ])
-	TArray<FClientConversationOptionEntry> CurrentUserChoices;
+	TArray<FClientConversationOptionEntry>        CurrentUserChoices;                                // 0x0040(0x0010)(NativeAccessSpecifierPublic)
 	struct FConversationParticipants              Participants;                                      // 0x0050(0x0010)(NativeAccessSpecifierPrivate)
-	FGameplayTag StartingEntryGameplayTag;
-	FConversationBranchPoint StartingBranchPoint;
-	FConversationBranchPoint CurrentBranchPoint;
-	TArray<FCheckpoint> ClientBranchPoints;
-	TArray<FConversationBranchPoint> CurrentBranchPoints;
-	TArray<FConversationChoiceReference> ScopeStack;
-	FRandomStream ConversationRNG;
-	bool bConversationStarted;
+	FGameplayTag                                  StartingEntryGameplayTag;                          // 0x0060(0x0008)(NativeAccessSpecifierPrivate)
+	FConversationBranchPoint                      StartingBranchPoint;                               // 0x0068(0x0080)(NativeAccessSpecifierPrivate)
+	FConversationBranchPoint                      CurrentBranchPoint;                                // 0x00E8(0x0080)(NativeAccessSpecifierPrivate)
+	TArray<FCheckpoint>                           ClientBranchPoints;                                // 0x0168(0x0010)(NativeAccessSpecifierPrivate)
+	TArray<FConversationBranchPoint>              CurrentBranchPoints;                               // 0x0178(0x0010)(NativeAccessSpecifierPrivate)
+	TArray<FConversationChoiceReference>          ScopeStack;                                        // 0x0188(0x0010)(NativeAccessSpecifierPrivate)
+	FRandomStream                                 ConversationRNG;                                   // 0x0198(0x0008)(NativeAccessSpecifierPrivate)
+	bool                                          bConversationStarted;                              // 0x01A0(0x0001)(NativeAccessSpecifierPrivate)
+	uint8                                         Pad_1A1[0x7];                                      // 0x01A1(0x0007)(Fixing Struct Size After Last Property [ Dumper-7 ])
+
 public:
 	class FConversationContext ConstructServerContext(UConversationTaskNode* InTaskBeingConsidered);
 	void ServerAbortConversation();

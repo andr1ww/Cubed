@@ -240,6 +240,158 @@ UConversationInstance* ConversationLibrary::StartConversation(UObject*, FFrame& 
     return *Ret = Instance;
 }
 
+static void ServerAdvanceConversationHook(UObject* Context, FFrame& Stack)
+{
+	FAdvanceConversationRequest InChoicePicked;
+	Stack.StepCompiledIn(&InChoicePicked);
+	Stack.IncrementCode();
+	((UConversationParticipantComponent*)Context)->Auth_CurrentConversation->ServerAdvanceConversation(InChoicePicked);
+}
+
+static EConversationRequirementResult IsRequirementSatisfied(UObject* Context, FFrame& Stack, EConversationRequirementResult* Ret)
+{
+	auto& ConversationContext = Stack.StepCompiledInRef<FConversationContext>();
+	Stack.IncrementCode();
+	
+	if (Context->IsA(UConversationTaskNode::StaticClass()))
+		return EConversationRequirementResult::Passed;
+
+	auto ParticipantComponent =
+		(UFortNonPlayerConversationParticipantComponent*)
+		ConversationContext.ActiveConversation->Participants.List[0].Actor->GetComponentByClass(UFortNonPlayerConversationParticipantComponent::StaticClass());
+
+	if (!ParticipantComponent)
+		return *Ret = EConversationRequirementResult::FailedAndHidden;
+
+	if (auto HasService = Cast<UFortConversationRequirement_HasService>(Context))
+	{
+		for (auto& GameplayTag : ParticipantComponent->SupportedServices.GameplayTags)
+		{
+			if (GameplayTag.TagName == HasService->ServiceTag.TagName)
+				return *Ret = EConversationRequirementResult::Passed;
+		}
+	}
+
+	return *Ret = EConversationRequirementResult::FailedAndHidden;
+}
+
+void ConversationLibrary::MakeConversationParticipant(UObject *, FFrame& Stack)
+{
+	auto& ConversationContext = Stack.StepCompiledInRef<FConversationContext>();
+	AActor* ParticipantActor;
+	FGameplayTag ParticipantID; 
+	Stack.StepCompiledIn(&ParticipantActor);
+	Stack.StepCompiledIn(&ParticipantID);
+	Stack.IncrementCode();
+	if (!ParticipantActor || ParticipantID.TagName.ComparisonIndex <= 0) 
+		return;
+
+	if (UConversationInstance* Conversation = UConversationContextHelpers::GetConversationInstance(ConversationContext))
+	{
+		if (ParticipantID.TagName.ComparisonIndex <= 0 || (ParticipantActor == nullptr))
+			return;
+
+		Conversation->ServerRemoveParticipant(ParticipantID);
+
+		FConversationParticipantEntry NewEntry{};
+		NewEntry.ParticipantID = ParticipantID;
+		NewEntry.Actor = ParticipantActor;
+		//Conversation->Participants.List.Add(NewEntry);
+
+		if (Conversation->bConversationStarted)
+		{
+			if (UConversationParticipantComponent* ParticipantComponent = NewEntry.ParticipantComponent)
+				ParticipantComponent->ServerNotifyConversationStarted(Conversation, ParticipantID);
+		}
+	}
+}
+
+void ConversationLibrary::AdvanceConversation(UObject*, FFrame& Stack, FConversationTaskResult* Ret)
+{
+	auto& ConversationContext = Stack.StepCompiledInRef<FConversationContext>();
+	Stack.IncrementCode();
+
+	FConversationTaskResult OutResult;
+	OutResult.Type = EConversationTaskResultType::AdvanceConversation;
+	OutResult.AdvanceToChoice = FAdvanceConversationRequest();
+	OutResult.Message = FClientConversationMessage();
+	*Ret = OutResult;
+}
+
+void ConversationLibrary::AdvanceConversationWithChoice(UObject*, FFrame& Stack, FConversationTaskResult* Ret)
+{
+	auto& ConversationContext = Stack.StepCompiledInRef<FConversationContext>();
+	auto& Choice = Stack.StepCompiledInRef<FAdvanceConversationRequest>();
+	Stack.IncrementCode();
+
+	FConversationTaskResult OutResult;
+	OutResult.Type = EConversationTaskResultType::AdvanceConversationWithChoice;
+	OutResult.AdvanceToChoice = Choice;
+	OutResult.Message = FClientConversationMessage();
+	*Ret = OutResult;
+}
+
+void ConversationLibrary::PauseConversationAndSendClientChoices(UObject*, FFrame& Stack, FConversationTaskResult* Ret)
+{
+	auto& ConversationContext = Stack.StepCompiledInRef<FConversationContext>();
+	auto& Message = Stack.StepCompiledInRef<FClientConversationMessage>();
+	Stack.IncrementCode();
+
+	FConversationTaskResult OutResult;
+	OutResult.Type = EConversationTaskResultType::PauseConversationAndSendClientChoices;
+	OutResult.AdvanceToChoice = FAdvanceConversationRequest();
+	OutResult.Message = Message;
+	*Ret = OutResult;
+}
+
+void ConversationLibrary::ReturnToLastClientChoice(UObject*, FFrame& Stack, FConversationTaskResult* Ret)
+{
+	auto& ConversationContext = Stack.StepCompiledInRef<FConversationContext>();
+	Stack.IncrementCode();
+
+	FConversationTaskResult OutResult;
+	OutResult.Type = EConversationTaskResultType::ReturnToLastClientChoice;
+	OutResult.AdvanceToChoice = FAdvanceConversationRequest();
+	OutResult.Message = FClientConversationMessage();
+	*Ret = OutResult;
+}
+
+void ConversationLibrary::ReturnToCurrentClientChoice(UObject*, FFrame& Stack, FConversationTaskResult* Ret)
+{
+	auto& ConversationContext = Stack.StepCompiledInRef<FConversationContext>();
+	Stack.IncrementCode();
+
+	FConversationTaskResult OutResult;
+	OutResult.Type = EConversationTaskResultType::ReturnToCurrentClientChoice;
+	OutResult.AdvanceToChoice = FAdvanceConversationRequest();
+	OutResult.Message = FClientConversationMessage();
+	*Ret = OutResult;
+}
+
+void ConversationLibrary::ReturnToConversationStart(UObject*, FFrame& Stack, FConversationTaskResult* Ret)
+{
+	auto& ConversationContext = Stack.StepCompiledInRef<FConversationContext>();
+	Stack.IncrementCode();
+
+	FConversationTaskResult OutResult;
+	OutResult.Type = EConversationTaskResultType::ReturnToConversationStart;
+	OutResult.AdvanceToChoice = FAdvanceConversationRequest();
+	OutResult.Message = FClientConversationMessage();
+	*Ret = OutResult;
+}
+
+void ConversationLibrary::AbortConversation(UObject*, FFrame& Stack, FConversationTaskResult* Ret)
+{
+	auto& ConversationContext = Stack.StepCompiledInRef<FConversationContext>();
+	Stack.IncrementCode();
+
+	FConversationTaskResult OutResult;
+	OutResult.Type = EConversationTaskResultType::AbortConversation;
+	OutResult.AdvanceToChoice = FAdvanceConversationRequest();
+	OutResult.Message = FClientConversationMessage();
+	*Ret = OutResult;
+}
+
 void ConversationLibrary::Setup()
 {
     UHook* Hook = new UHook();
@@ -247,6 +399,46 @@ void ConversationLibrary::Setup()
     Hook->Path = "/Script/CommonConversationRuntime.ConversationLibrary.StartConversation";
     Hook->Detour = StartConversation;
     UKismetHookingLibrary::Hook(Hook, Exec);
+
+	Hook->Path = "/Script/CommonConversationRuntime.ConversationParticipantComponent.ServerAdvanceConversation";
+	Hook->Detour = ServerAdvanceConversationHook;
+	UKismetHookingLibrary::Hook(Hook, Exec);
+
+	Hook->Path = "/Script/CommonConversationRuntime.ConversationRequirementNode.IsRequirementSatisfied";
+	Hook->Detour = IsRequirementSatisfied;
+	UKismetHookingLibrary::Hook(Hook, Exec);
+
+	Hook->Path = "/Script/CommonConversationRuntime.ConversationContextHelpers.MakeConversationParticipant";
+	Hook->Detour = MakeConversationParticipant;
+	UKismetHookingLibrary::Hook(Hook, Exec);
+
+	Hook->Path = "/Script/CommonConversationRuntime.ConversationContextHelpers.AdvanceConversation";
+	Hook->Detour = AdvanceConversation;
+	UKismetHookingLibrary::Hook(Hook, Exec);
+
+	Hook->Path = "/Script/CommonConversationRuntime.ConversationContextHelpers.AdvanceConversationWithChoice";
+	Hook->Detour = AdvanceConversationWithChoice;
+	UKismetHookingLibrary::Hook(Hook, Exec);
+
+	Hook->Path = "/Script/CommonConversationRuntime.ConversationContextHelpers.PauseConversationAndSendClientChoices";
+	Hook->Detour = PauseConversationAndSendClientChoices;
+	UKismetHookingLibrary::Hook(Hook, Exec);
+
+	Hook->Path = "/Script/CommonConversationRuntime.ConversationContextHelpers.ReturnToLastClientChoice";
+	Hook->Detour = ReturnToLastClientChoice;
+	UKismetHookingLibrary::Hook(Hook, Exec);
+
+	Hook->Path = "/Script/CommonConversationRuntime.ConversationContextHelpers.ReturnToCurrentClientChoice";
+	Hook->Detour = ReturnToCurrentClientChoice;
+	UKismetHookingLibrary::Hook(Hook, Exec);
+
+	Hook->Path = "/Script/CommonConversationRuntime.ConversationContextHelpers.ReturnToConversationStart";
+	Hook->Detour = ReturnToConversationStart;
+	UKismetHookingLibrary::Hook(Hook, Exec);
+
+	Hook->Path = "/Script/CommonConversationRuntime.ConversationContextHelpers.AbortConversation";
+	Hook->Detour = AbortConversation;
+	UKismetHookingLibrary::Hook(Hook, Exec);
 
     delete Hook;
 }

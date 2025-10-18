@@ -542,7 +542,7 @@ void FortPlayerControllerAthena::Setup()
 	Hook->Detour = ServerLoadPlotForPortal;
 	UKismetHookingLibrary::Hook(Hook, EHook::Exec);
 
-	Hook->Address = ImageBase + 0x5711728;
+	Hook->Address = ImageBase + 0x5711728; // OnPawnDied = 0x4AEF140 (proper func)
 	Hook->Original = (void**)&ClientOnPawnDiedOG;
 	Hook->Detour = ClientOnPawnDied;
 	UKismetHookingLibrary::Hook(Hook, EHook::Address);
