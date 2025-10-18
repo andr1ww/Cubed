@@ -200,6 +200,8 @@ void FortPlayerPawn::EndSkydiving(AFortPlayerPawn* Pawn)
 {
     EndSkydivingOG(Pawn);   
     auto Controller = (AFortPlayerControllerAthena*)Pawn->GetController();
+    if (Controller->IsA(AFortAthenaAIBotController::StaticClass())) return;
+    
     auto QuestManager = Controller ? Controller->GetQuestManager(ESubGame::Athena) : nullptr;
     if (!QuestManager) return;
     FGameplayTagContainer ContextTags;
