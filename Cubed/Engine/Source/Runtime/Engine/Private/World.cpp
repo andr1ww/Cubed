@@ -9,29 +9,33 @@
 bool World::Listen(UWorld* InWorld, FURL)
 {
     UE_LOG(LogTemp, Log, "World::Listen called!");
-    
-    static FWorldContext* (*GetWorldContextFromObject)(UEngine*, UWorld*) = decltype(GetWorldContextFromObject)(ImageBase + 0xD2A1E8);
-    FWorldContext* WorldContext = GetWorldContextFromObject(UFortEngine::GetEngine(), GetWorld());
-    static UNetDriver* (*CreateNetDriver_Local)(UEngine*, FWorldContext*, FName) = decltype(CreateNetDriver_Local)(ImageBase + 0x1794a5c);
-    FName GameNetDriver = UKismetStringLibrary::Conv_StringToName(L"GameNetDriver");
-    auto NetDriver = CreateNetDriver_Local(UFortEngine::GetEngine(), WorldContext, GameNetDriver);
-    if (!NetDriver) return false;
-    GetWorld()->NetDriver = NetDriver;
-    GetWorld()->NetDriver->World = GetWorld();
-    GetWorld()->NetDriver->NetDriverName = GameNetDriver;
 
-    FString Err;    
-    FURL URL;
-    URL.Port = 7777;
-
-    Runtime::Funcs::SetWorld(NetDriver, GetWorld());
-    if (Runtime::Funcs::InitListen(NetDriver, GetWorld(), URL, false, Err))
+    if (!GetWorld()->NetDriver)
     {
-        Runtime::Funcs::SetWorld(NetDriver, GetWorld());
+        static FWorldContext* (*GetWorldContextFromObject)(UEngine*, UWorld*) = decltype(GetWorldContextFromObject)(ImageBase + 0xD2A1E8);
+        FWorldContext* WorldContext = GetWorldContextFromObject(UFortEngine::GetEngine(), GetWorld());
+        static UNetDriver* (*CreateNetDriver_Local)(UEngine*, FWorldContext*, FName) = decltype(CreateNetDriver_Local)(ImageBase + 0x1794a5c);
+        FName GameNetDriver = UKismetStringLibrary::Conv_StringToName(L"GameNetDriver");
+        auto NetDriver = CreateNetDriver_Local(UFortEngine::GetEngine(), WorldContext, GameNetDriver);
+        if (!NetDriver) return false;
+        GetWorld()->NetDriver = NetDriver;
+        GetWorld()->NetDriver->World = GetWorld();
+        GetWorld()->NetDriver->NetDriverName = GameNetDriver;
         for (auto& Level : GetWorld()->LevelCollections) Level.NetDriver = NetDriver;
-        SetConsoleTitleA("Cubed | Ready on Port 7777 | Joinable = false");
-        return true;
-    } 
+
+        FString Err;    
+        FURL URL;
+        URL.Port = 7777;
+
+        Runtime::Funcs::SetWorld(NetDriver, GetWorld());
+        if (Runtime::Funcs::InitListen(NetDriver, GetWorld(), URL, false, Err))
+        {
+            Runtime::Funcs::SetWorld(NetDriver, GetWorld());
+            for (auto& Level : GetWorld()->LevelCollections) Level.NetDriver = NetDriver;
+            SetConsoleTitleA("Cubed | Ready on Port 7777 | Joinable = false");
+            return false;
+        }
+    }
     
     return false;
 }
@@ -84,7 +88,7 @@ void World::Setup()
     
     Hook->Address = ImageBase + 0x1797470;
     Hook->Detour = Listen;
-    UKismetHookingLibrary::Hook(Hook, EHook::Address);
+    UKismetHookingLibrary::Hook(Hook, Address);
 
     free(Hook);
 }

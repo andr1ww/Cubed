@@ -45,6 +45,13 @@ public:
             Hook(a1, EHook::Byte);
         }
     }
+
+    static void PatchMulti(uintptr_t ptr, const uint8_t* bytes, size_t size) {
+        DWORD oldProtect;
+        VirtualProtect((LPVOID)ptr, size, PAGE_EXECUTE_READWRITE, &oldProtect);
+        memcpy((void*)ptr, bytes, size);
+        VirtualProtect((LPVOID)ptr, size, oldProtect, &oldProtect);
+    }
     
     static uint8_t* AllocateNearbyPage(void* targetAddr)
     {

@@ -27,8 +27,8 @@ namespace Runtime {
         inline uint64_t EncryptionPatch = 0x66e410e;
         inline uint64_t ApplyCharacterCustomization = 0x526b2e4;
         inline uint64_t InternalTryActivateAbility = 0x3d555ec;
-        inline std::vector<uint64_t> NullFuncs = { 0x509bf28, 0x4A8F4F8 };
-        inline std::vector<uint64_t> RetTrueFuncs = { 0x50af34c, 0xd4e718, /*0x47E06A4*/ 0x3D27AC8, 0x4B21D38 };
+        inline std::vector<uint64_t> NullFuncs = { 0x4A8F4F8 };
+        inline std::vector<uint64_t> RetTrueFuncs = { 0xd4e718, /*0x47E06A4*/ 0x3D27AC8, 0x4B21D38, 0x1229364 };
     };
 
     namespace Vfts {

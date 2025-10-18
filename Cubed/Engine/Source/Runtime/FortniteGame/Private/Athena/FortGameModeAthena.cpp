@@ -109,9 +109,6 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
 
     if (!GameMode->bWorldIsReady)
         GameMode->bWorldIsReady = true;
-
-    if (!GetWorld()->NetDriver)
-        World::Listen(GetWorld(), {});
     
     if (GetWorld()->NetDriver)
         SetConsoleTitleA("Cubed | Ready on Port 7777 | Joinable = true");
@@ -363,6 +360,13 @@ __int64 FortGameModeAthena::InitializeFlightPath(
     return InitializeFlightPathOG(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11);
 }
 
+UClass** FortGameModeAthena::GetGameSessionClass(AFortGameModeAthena* GameMode, UClass** ClassRet)
+{
+    *ClassRet = AFortGameSessionDedicatedAthena::StaticClass();
+    GameMode->GameSessionClass = *ClassRet;
+    return ClassRet;
+}
+
 void FortGameModeAthena::Setup()
 {
     UHook* Hook = new UHook();
@@ -396,6 +400,10 @@ void FortGameModeAthena::Setup()
     Hook->Original = (void**)&OnAircraftExitedDropZoneOG;
     Hook->Detour = OnAircraftExitedDropZone;
     UKismetHookingLibrary::Hook(Hook, EHook::Address);
+
+    Hook->Address = ImageBase + 0x1172A0C;
+    Hook->Detour = GetGameSessionClass;
+    if (bGameSessions) UKismetHookingLibrary::Hook(Hook, EHook::Address);
     
     free(Hook);
 }

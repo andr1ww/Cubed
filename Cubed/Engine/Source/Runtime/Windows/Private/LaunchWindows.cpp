@@ -24,6 +24,27 @@
 #include "Engine/Source/Runtime/FortniteGame/Public/Kismet/FortKismetLibrary.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Quests/FortQuestManager.h"
 
+inline const wchar_t* (*GetOG)();
+const wchar_t* Get()
+{
+    static auto cmdLine = wstring(GetOG()) + L" -AllowAllPlaylistsInShipping -EnableMMS";
+    return cmdLine.c_str(); // -EnableMMS may work for backfill?
+}
+
+struct FServicePermissionsMcp {
+public:
+    char Unk_0[0x10];
+    class FString Id;
+};
+
+FServicePermissionsMcp* MatchmakingServicePerms(int64, int64)
+{
+    static FServicePermissionsMcp* ServicePerms = nullptr;
+    if (!ServicePerms)
+        ServicePerms = new FServicePermissionsMcp{ .Id = L"ec684b8c687f479fadea3cb2ad83f5c6" };
+    return ServicePerms;
+}
+
 static inline char (*GetStringOG)(__int64 a1, const wchar_t* Section, const wchar_t* Key, __int64* Value, __int64* Filename)  = nullptr;
 char GetStringINI(__int64 a1, const wchar_t* Section, const wchar_t* Key, __int64* Value, __int64* Filename) {
     if (Section && Key) {
@@ -50,10 +71,7 @@ void CreateAndConfigureNavigationSystem(UAthenaNavSystemConfig* This, UWorld* Wo
 }
 
 static void (*SendRequestNowOG)(void* Arg1, void* MCPData, int);
-static void SendRequestNow(void* Arg1, void* MCPData, int)
-{
-    return SendRequestNowOG(Arg1, MCPData, 3);
-}
+static void SendRequestNow(void* Arg1, void* MCPData, int) { return SendRequestNowOG(Arg1, MCPData, 3); }
 
 namespace SDK
 {
@@ -76,11 +94,7 @@ namespace SDK
 }
 
 uint32 RetNegativeOne() { return -1; }
-
-namespace Creative
-{
-    xmap<xstring, UFortCreativeRealEstatePlotItemDefinition*> PlotDefinitionsByMcpId = {};
-}
+namespace Creative { xmap<xstring, UFortCreativeRealEstatePlotItemDefinition*> PlotDefinitionsByMcpId = {}; }
 
 DWORD WINAPI Startup(LPVOID)
 {
@@ -128,6 +142,10 @@ DWORD WINAPI Startup(LPVOID)
         Hook->Byte = 0xC3;
         UKismetHookingLibrary::Hook(Hook, Byte);
     }
+
+    Runtime::Offsets::NullFuncs.push_back(0x509bf28);
+    Runtime::Offsets::RetTrueFuncs.push_back(0x50af34c);
+    // kickplayer ones ^ (dk why they wont work with gamesessions but WTV!)
     
     for (auto& Addr : Runtime::Offsets::NullFuncs)
     {
@@ -135,6 +153,18 @@ DWORD WINAPI Startup(LPVOID)
         Hook->Byte = 0xC3;
         UKismetHookingLibrary::Hook(Hook, Byte);
     }
+
+    UKismetHookingLibrary::NullCall(0x50A8E27);
+    UKismetHookingLibrary::PatchBytes(ImageBase + 0x5091E8F, { 0x75, 0x7F });
+
+    Hook->Address = ImageBase + 0x1116A28;
+    Hook->Original = (void**)&GetOG;
+    Hook->Detour = Get;
+    UKismetHookingLibrary::Hook(Hook, Address);
+
+    Hook->Address = ImageBase + 0x172394C;
+    Hook->Detour = MatchmakingServicePerms;
+    UKismetHookingLibrary::Hook(Hook, Address);
     
     for (auto& Addr : Runtime::Offsets::RetTrueFuncs)
     {
@@ -170,9 +200,10 @@ DWORD WINAPI Startup(LPVOID)
     
     *(bool *)(ImageBase + Runtime::Offsets::GIsClient) = false;
     *(bool *)(ImageBase + Runtime::Offsets::GIsClient + 1) = true;
+    *(bool *)(ImageBase + 0x9C0AF6B) = true;
 
     MH_EnableHook(MH_ALL_HOOKS);
-    UWorld::GetWorld()->OwningGameInstance->LocalPlayers.Remove(0);
+    if (!bGameSessions) UWorld::GetWorld()->OwningGameInstance->LocalPlayers.Remove(0);
     UGameplayStatics::OpenLevel(UWorld::GetWorld(), bCreative ? UKismetStringLibrary::Conv_StringToName(L"Creative_NoApollo_Terrain") : UKismetStringLibrary::Conv_StringToName(L"Apollo_Terrain"), true, FString());
 
     std::vector<std::wstring> Logs = {
