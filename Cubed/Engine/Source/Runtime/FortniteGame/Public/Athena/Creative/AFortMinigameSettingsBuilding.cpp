@@ -14,9 +14,7 @@ void FortMinigameSettingsBuilding::BeginPlay(AFortMinigameSettingsBuilding* the)
 void FortMinigameSettingsBuilding::Setup()
 {
     UHook* Hook = new UHook();
-
-
-
+    
     Hook->Address = ImageBase + 0x501CA94;
     Hook->Original = (void**)&BeginPlayOG;
     Hook->Detour = BeginPlay;

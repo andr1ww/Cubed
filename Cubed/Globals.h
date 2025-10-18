@@ -24,4 +24,8 @@ DEFINE_LOG_CATEGORY(LogGameMode);
 DEFINE_LOG_CATEGORY(LogGameState);
 DEFINE_LOG_CATEGORY(LogNet);
 
-constexpr bool bCreative = false;
+constexpr bool bCreative = true;
+namespace Creative
+{
+    extern xmap<xstring, UFortCreativeRealEstatePlotItemDefinition*> PlotDefinitionsByMcpId;
+}

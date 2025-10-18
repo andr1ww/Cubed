@@ -18,12 +18,9 @@ void FortAthenaCreativePortal::TeleportPlayerToLinkedVolumeHook(UObject* Context
 	Stack.StepCompiledIn(&Pawn);
 	Stack.StepCompiledIn(&bUseSpawnTags);
 	Stack.IncrementCode();
-
-
+	
 	if (!Pawn || !Pawn->Controller || !Portal->LinkedVolume)
 		return;
-
-
 
 	auto PC = Cast<AFortPlayerControllerAthena>(Pawn->Controller);
 
@@ -33,25 +30,19 @@ void FortAthenaCreativePortal::TeleportPlayerToLinkedVolumeHook(UObject* Context
 	auto LinkedVolume = Portal->GetLinkedVolume();
 	if (!LinkedVolume) return;
 
-	auto MG = PC->GetMinigame();
 	FVector Location;
 	FRotator Rotation;
-	bool bGround;
-
-
 	auto PS = Cast<AFortPlayerStateAthena>(PC->PlayerState);
-
 	Location = LinkedVolume->K2_GetActorLocation();
 	Rotation = LinkedVolume->K2_GetActorRotation();
 	Location.Z += 15500;
-
-
+	
 	PS->RespawnData.RespawnLocation = Location;
 	PC->ClientStartRespawnPreparation(Location, Rotation, 0, UKismetStringLibrary::Conv_StringToName(L"CreativePortal"), PC->ClientIslandTravelText);//ProcessEvent(fn1, &f);
 	//PC->ClientClearDeathNotification();
 	Pawn->K2_TeleportTo(Location, Rotation);
 	Portal->NotifyTeleportedPlayerPawn(Pawn, true);
-	
+	PC->MyFortPawn->BeginSkydiving(false);
 }
 
 void FortAthenaCreativePortal::Setup()

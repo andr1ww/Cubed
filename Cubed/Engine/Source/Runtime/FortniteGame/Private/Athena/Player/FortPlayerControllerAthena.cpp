@@ -117,8 +117,16 @@ void FortPlayerControllerAthena::ServerLoadPlotForPortal(AFortPlayerControllerAt
     Portal->GetLinkedVolume()->VolumeState = ESpatialLoadingState::Initializing;
     Portal->GetLinkedVolume()->OnRep_VolumeState();
     Portal->GetLinkedVolume()->ServerClearVolume();
+	
     auto LevelStreamComponent = (UPlaysetLevelStreamComponent*)Portal->GetLinkedVolume()->GetComponentByClass(UPlaysetLevelStreamComponent::StaticClass());
     UnLoadPlaysetOG(LevelStreamComponent);
+
+	auto LevelSaveComponent = (UFortLevelSaveComponent*)Portal->GetLinkedVolume()->GetComponentByClass(UFortLevelSaveComponent::StaticClass());
+	LevelSaveComponent->AccountIdOfOwner = PlayerState->UniqueId;
+	LevelSaveComponent->bIsLoaded = false;
+	LevelSaveComponent->OnRep_IsActive();
+	ResetLevelRecordOG(LevelSaveComponent);
+	LevelSaveComponent->StopPeriodicSaveTimer();
     
     Portal->OwningPlayer = PlayerState->UniqueId;
     Portal->OnRep_OwningPlayer();
@@ -129,15 +137,13 @@ void FortPlayerControllerAthena::ServerLoadPlotForPortal(AFortPlayerControllerAt
     Portal->bPortalOpen = false;
     Portal->OnRep_PortalOpen();
 
-    xstring PlotId = PlotItem->TemplateId.ToString().substr(
-        PlotItem->TemplateId.ToString().find(':') + 1
-    );
+	auto it = Creative::PlotDefinitionsByMcpId.find(PlotItemId.ToString());
+	if (it != Creative::PlotDefinitionsByMcpId.end() && it->second && it->second->BasePlayset)
+	{
+		LevelSaveComponent->bLoadPlaysetFromPlot = true;
 
-    auto PlotItemDefinition = StaticLoadObject<UFortCreativeRealEstatePlotItemDefinition>(
-        "/Game/Playgrounds/Items/Plots/" + PlotId + "." + PlotId);
-
-    if (!PlotItemDefinition)
-        return;
+		LoadPlaysetOG(LevelStreamComponent);
+	}
 
 	std::string QueueId = "PortalLoading_" + std::to_string(rand());
 	float currentTime = static_cast<float>(
@@ -149,61 +155,50 @@ std::chrono::duration<double>(
 	UTaskLibrary::Initialize(QueueId, currentTime, UTaskLibrary::ExecutionMode::SeparateThread);
         
     UTaskLibrary::QueueTask(QueueId, currentTime, 10.0f, [
-    	QueueId, PlotItemDefinition, Controller, Portal, PlayerState, PlotItemId]()
+    	QueueId, PlotItem, Controller, Portal, PlayerState, PlotItemId]()
     {
-        Portal->GetLinkedVolume()->VolumeState = ESpatialLoadingState::Ready;
-        Portal->GetLinkedVolume()->OnRep_VolumeState();
+	    Portal->GetLinkedVolume()->VolumeState = ESpatialLoadingState::Ready;
+		Portal->GetLinkedVolume()->OnRep_VolumeState();
             
-        auto TargetIsland = Controller->CreativeIslands.Search([PlotItemId](FCreativeIslandData& IslandData)
-            { return IslandData.McpId == PlotItemId; });
+		auto TargetIsland = Controller->CreativeIslands.Search([PlotItemId](FCreativeIslandData& IslandData)
+			{ return IslandData.McpId == PlotItemId; });
         
-        if (TargetIsland)
-        {
-            Portal->IslandInfo.AltTitle = TargetIsland->IslandName;
-            Portal->IslandInfo.CreatorName = TargetIsland->IslandName.GetStringRef();
-            Portal->IslandInfo.SupportCode = TargetIsland->PublishedIslandCode.ToString().empty() ? L"1111-1111-1111" : TargetIsland->PublishedIslandCode;
-        }
-        else
-        {
-            Portal->IslandInfo.CreatorName = PlayerState->GetPlayerName();
-            Portal->IslandInfo.SupportCode = L"Ok";
-        }
+		if (TargetIsland)
+		{
+			Portal->IslandInfo.AltTitle = TargetIsland->IslandName;
+			Portal->IslandInfo.CreatorName = TargetIsland->IslandName.GetStringRef();
+			Portal->IslandInfo.SupportCode = TargetIsland->PublishedIslandCode.ToString().empty() ? L"1111-1111-1111" : TargetIsland->PublishedIslandCode;
+		}
+		else
+		{
+			Portal->IslandInfo.CreatorName = PlayerState->GetPlayerName();
+			Portal->IslandInfo.SupportCode = L"Ok";
+		}
             
-        Portal->CachedEditIslandData = *TargetIsland;
-        Portal->IslandInfo.Version = 1.0f;
-        Portal->OnRep_IslandInfo();
+		Portal->CachedEditIslandData = *TargetIsland;
+		Portal->IslandInfo.Version = 1.0f;
+		Portal->OnRep_IslandInfo();
             
-        Portal->PlayersReady.Add(PlayerState->UniqueId);
-        Portal->OnRep_PlayersReady();
-            
-        Portal->bUserInitiatedLoad = true;
-        Portal->bInErrorState = false;
+		Portal->bUserInitiatedLoad = true;
+		Portal->bInErrorState = false;
 
-        Portal->bPortalOpen = true;
-        Portal->OnRep_PortalOpen();
+		Portal->bPortalOpen = true;
+		Portal->OnRep_PortalOpen();
             
-        Controller->OwnedPortal = Portal;
+		Controller->OwnedPortal = Portal;
             
-        auto LevelSaveComponent = (UFortLevelSaveComponent*)Portal->GetLinkedVolume()->GetComponentByClass(UFortLevelSaveComponent::StaticClass());
-        LevelSaveComponent->AccountIdOfOwner = PlayerState->UniqueId;
-        LevelSaveComponent->bIsLoaded = true;
-        LevelSaveComponent->OnRep_IsActive();
+		auto LevelSaveComponent = (UFortLevelSaveComponent*)Portal->GetLinkedVolume()->GetComponentByClass(UFortLevelSaveComponent::StaticClass());
+		LevelSaveComponent->AccountIdOfOwner = PlayerState->UniqueId;
+		LevelSaveComponent->bIsLoaded = true;
+		LevelSaveComponent->OnRep_IsActive();
+		LevelSaveComponent->StartPeriodicSaveTimer();
+		LevelSaveComponent->LoadedPlot = (UFortCreativeRealEstatePlotItem*)PlotItem->Instance;
             
-        Controller->CreativePlotLinkedVolume = Portal->GetLinkedVolume();
-        Controller->OnRep_CreativePlotLinkedVolume();
-            
-        static auto MinigameSettingsMachine = StaticLoadObject<UClass>("/Game/Athena/Items/Gameplay/MinigameSettingsControl/MinigameSettingsMachine.MinigameSettingsMachine_C");
-        auto Transform = Portal->GetLinkedVolume()->GetTransform();
-        GetWorld()->SpawnActor<AActor>(MinigameSettingsMachine, Transform.Translation, FRotator(), Portal->LinkedVolume);
-            
-        if (PlotItemDefinition->BasePlayset)
-        {
-            auto LevelStreamComponent = (UPlaysetLevelStreamComponent*)Portal->GetLinkedVolume()->GetComponentByClass(UPlaysetLevelStreamComponent::StaticClass());
-            LevelStreamComponent->SetPlayset(PlotItemDefinition->BasePlayset);
-            LoadPlaysetOG(LevelStreamComponent);
-        }
+		static auto MinigameSettingsMachine = StaticLoadObject<UClass>("/Game/Athena/Items/Gameplay/MinigameSettingsControl/MinigameSettingsMachine.MinigameSettingsMachine_C");
+		auto Transform = Portal->GetLinkedVolume()->GetTransform();
+		GetWorld()->SpawnActor<AActor>(MinigameSettingsMachine, Transform.Translation, FRotator(), Portal->LinkedVolume);
     	
-    	UTaskLibrary::Shutdown(QueueId);
+		UTaskLibrary::Shutdown(QueueId);
     });
 }
 

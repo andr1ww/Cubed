@@ -77,6 +77,11 @@ namespace SDK
 
 uint32 RetNegativeOne() { return -1; }
 
+namespace Creative
+{
+    xmap<xstring, UFortCreativeRealEstatePlotItemDefinition*> PlotDefinitionsByMcpId = {};
+}
+
 DWORD WINAPI Startup(LPVOID)
 {
     AllocConsole();

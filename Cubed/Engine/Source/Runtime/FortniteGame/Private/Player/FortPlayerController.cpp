@@ -220,7 +220,6 @@ void FortPlayerController::ServerLoadingScreenDropped(AFortPlayerControllerAthen
     if (bCreative)
     {
         auto CreativePortalManager = GS->CreativePortalManager;
-        xmap<xstring, UFortCreativeRealEstatePlotItemDefinition*> PlotDefinitionsByMcpId;
         
         auto State = Controller->CreativeModeProfile->InternalGetState();
         UE_LOG(LogServer, Log, "ItemContainerNum: %d", State->ItemsContainer.Items.Num());
@@ -242,7 +241,7 @@ void FortPlayerController::ServerLoadingScreenDropped(AFortPlayerControllerAthen
                         "/Game/Playgrounds/Items/Plots/" + PlotId + "." + PlotId);
                     if (!PlotItemDefinition) continue;
                     
-                    PlotDefinitionsByMcpId[McpItem->InstanceId.ToString()] = PlotItemDefinition;
+                    Creative::PlotDefinitionsByMcpId[McpItem->InstanceId.ToString()] = PlotItemDefinition;
 
                     AltName = PlotItemDefinition->GetDisplayName(true);
                     
@@ -369,8 +368,8 @@ void FortPlayerController::ServerLoadingScreenDropped(AFortPlayerControllerAthen
         auto OK = Portal->GetLinkedVolume()->GetTransform();
         GetWorld()->SpawnActor<AActor>(MinigameSettingsMachine, OK.Translation, FRotator(), Portal->LinkedVolume);
 
-        auto it = PlotDefinitionsByMcpId.find(TargetMcpId.ToString());
-        if (it != PlotDefinitionsByMcpId.end() && it->second && it->second->BasePlayset)
+        auto it = Creative::PlotDefinitionsByMcpId.find(TargetMcpId.ToString());
+        if (it != Creative::PlotDefinitionsByMcpId.end() && it->second && it->second->BasePlayset)
         {
             auto LevelStreamComponent = (UPlaysetLevelStreamComponent*)Portal->GetLinkedVolume()->GetComponentByClass(UPlaysetLevelStreamComponent::StaticClass());
             LevelStreamComponent->SetPlayset(it->second->BasePlayset);

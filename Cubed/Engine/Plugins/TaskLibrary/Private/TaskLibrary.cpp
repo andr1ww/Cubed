@@ -82,8 +82,8 @@ void UTaskLibrary::Shutdown(const std::string& QueueName) {
     auto& Queue = it->second;
     Queue.bShouldStop = true;
     
-    if (Queue.WorkerThread && Queue.WorkerThread->joinable()) {
-        Queue.WorkerThread->join();
+    if (Queue.WorkerThread) {
+        Queue.WorkerThread->detach();
     }
     
     Queue.Tasks.clear();
