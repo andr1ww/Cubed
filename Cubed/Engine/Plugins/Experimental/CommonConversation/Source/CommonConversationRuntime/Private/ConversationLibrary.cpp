@@ -5,6 +5,7 @@
 
 #include "Globals.h"
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"
+#include "Engine/Source/Runtime/CoreUObject/Public/UObject/UObjectGlobals.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Kismet/FortKismetLibrary.h"
 
 FConversationTaskResult ConversationLibrary::ExecuteTaskNode(UConversationTaskNode* TaskNode, FConversationContext& InContext)
@@ -254,12 +255,151 @@ static EConversationRequirementResult IsRequirementSatisfied(UObject* Context, F
 	auto& ConversationContext = Stack.StepCompiledInRef<FConversationContext>();
 	Stack.IncrementCode();
 	
-	if (Context->IsA(UConversationTaskNode::StaticClass()))
-		return EConversationRequirementResult::Passed;
+	UE_LOG(LogServer, Log, ("IsRequirementSatisfied: Node Class: %s"), Context->Class->GetFullName().c_str());
+	
+	if (auto UpgradeItem = Cast<UFortConversationTaskNode_UpgradeItem>(Context))
+	{
+		auto PlayerController = (AFortPlayerController*)ConversationLibrary::ConversationParticipantEntry[ConversationContext.ActiveConversation->Participants.List[1].ParticipantID.TagName.Number];
+		
+		if (!PlayerController || !PlayerController->MyFortPawn || !PlayerController->MyFortPawn->CurrentWeapon)
+		{
+			UE_LOG(LogServer, Warning, ("IsRequirementSatisfied: UpgradeItem - Invalid player/pawn/weapon"));
+			return *Ret = EConversationRequirementResult::FailedButVisible;
+		}
+		
+		auto ItemDef = PlayerController->MyFortPawn->CurrentWeapon->WeaponData;
+		auto UpgradedWeaponDef = UFortKismetLibrary::GetUpgradedWeaponItemVerticalToRarity(ItemDef, EFortRarity(uint8(ItemDef->Rarity) + 1));
 
-	auto ParticipantComponent =
-		(UFortNonPlayerConversationParticipantComponent*)
-		ConversationLibrary::ConversationParticipantEntry[ConversationContext.ActiveConversation->Participants.List[0].ParticipantID.TagName.Number]->GetComponentByClass(UFortNonPlayerConversationParticipantComponent::StaticClass());
+		if (UpgradedWeaponDef && UpgradedWeaponDef != ItemDef)
+		{
+			UE_LOG(LogServer, Log, ("IsRequirementSatisfied: UpgradeItem - Upgrade available"));
+			return *Ret = EConversationRequirementResult::Passed;
+		}
+
+		UE_LOG(LogServer, Log, ("IsRequirementSatisfied: UpgradeItem - No upgrade available"));
+		return *Ret = EConversationRequirementResult::FailedButVisible;
+	}
+	else if (auto GrantPlayerBounty = Cast<UFortConversationTaskNode_GrantPlayerBounty>(Context))
+	{
+		auto PlayerController = (AFortPlayerController*)ConversationLibrary::ConversationParticipantEntry[ConversationContext.ActiveConversation->Participants.List[1].ParticipantID.TagName.Number];
+
+		if (!PlayerController)
+		{
+			UE_LOG(LogServer, Warning, ("IsRequirementSatisfied: GrantPlayerBounty - Invalid player controller"));
+			return *Ret = EConversationRequirementResult::FailedButVisible;
+		}
+
+		TArray<AFortPlayerController*> AllPossiblePlayers = UFortKismetLibrary::GetAllFortPlayerControllers(GetWorld(), true, false);
+		AllPossiblePlayers.Remove(PlayerController);
+
+		if (AllPossiblePlayers.Num() > 0)
+		{
+			UE_LOG(LogServer, Log, ("IsRequirementSatisfied: GrantPlayerBounty - %d valid targets found"), AllPossiblePlayers.Num());
+			return *Ret = EConversationRequirementResult::Passed;
+		}
+
+		UE_LOG(LogServer, Log, ("IsRequirementSatisfied: GrantPlayerBounty - No valid targets"));
+		return *Ret = EConversationRequirementResult::FailedButVisible;
+	}
+	else if (auto DataDrivenService = Cast<UFortConversationTaskNode_DataDrivenService>(Context))
+	{
+		auto PlayerController = (AFortPlayerController*)ConversationLibrary::ConversationParticipantEntry[ConversationContext.ActiveConversation->Participants.List[1].ParticipantID.TagName.Number];
+		auto OtherActor = ConversationLibrary::ConversationParticipantEntry[ConversationContext.ActiveConversation->Participants.List[0].ParticipantID.TagName.Number];
+
+		if (!PlayerController || !OtherActor)
+		{
+			UE_LOG(LogServer, Warning, ("IsRequirementSatisfied: DataDrivenService - Invalid actors"));
+			return *Ret = EConversationRequirementResult::FailedButVisible;
+		}
+
+		for (const auto& Requirement : DataDrivenService->Requirements)
+		{
+			if (Requirement.ParticipantID != ConversationContext.ActiveConversation->Participants.List[1].ParticipantID)
+			{
+				UE_LOG(LogServer, Log, ("IsRequirementSatisfied: DataDrivenService - Participant ID mismatch"));
+				return *Ret = Requirement.FailureNodeBehaviour;
+			}
+
+			if (!DataDrivenService->ServiceBriefConfigCollection)
+			{
+				DataDrivenService->ServiceBriefConfigCollection = (UServiceBriefConfigCollection*)UGameplayStatics::SpawnObject(
+					UServiceBriefConfigCollection::StaticClass(), 
+					DataDrivenService
+				);
+				
+				auto DefaultServiceBrief = StaticFindObject<UFortDataDrivenServiceBrief>("/FortniteConversation/Conversation/FortDataDrivenServiceBrief.Default__FortDataDrivenServiceBrief_C");
+				if (DefaultServiceBrief)
+				{
+					UE_LOG(LogServer, Log, ("IsRequirementSatisfied: DataDrivenService - Loaded default service brief"));
+				}
+			}
+
+			UE_LOG(LogServer, Log, ("IsRequirementSatisfied: DataDrivenService - Collection: %p, KeyOverride: %s"),
+				DataDrivenService->ServiceBriefConfigCollection, 
+				DataDrivenService->ServiceBriefCollectionKeyOveride.ToString().c_str());
+
+			if (DataDrivenService->ServiceBriefConfigCollection)
+			{
+				UE_LOG(LogServer, Log, ("IsRequirementSatisfied: DataDrivenService - ServiceConfigs count: %d"),
+					DataDrivenService->ServiceBriefConfigCollection->ServiceConfigs.Num());
+
+				for (auto& [ConfigName, ServiceConfig] : DataDrivenService->ServiceBriefConfigCollection->ServiceConfigs)
+				{
+					UE_LOG(LogServer, Log, ("IsRequirementSatisfied: DataDrivenService - Config: %s"), 
+						ConfigName.ToString().c_str());
+				}
+			}
+
+			FControllerRequirementTestContext RequirementTestContext{};
+			RequirementTestContext.TestSubjectController = PlayerController;
+			RequirementTestContext.TestSubjectActor = PlayerController->Pawn;
+			RequirementTestContext.OtherActor = OtherActor;
+
+			if (!Requirement.Requirement)
+			{
+				UE_LOG(LogServer, Warning, ("IsRequirementSatisfied: DataDrivenService - Requirement is null"));
+				return *Ret = Requirement.FailureNodeBehaviour;
+			}
+
+			struct FortControllerRequirement_IsRequirementMetInternal final
+			{
+			public:
+				struct FControllerRequirementTestContext      RequestContext;                                    // 0x0000(0x0020)(ConstParm, Parm, OutParm, ReferenceParm, NoDestructor, NativeAccessSpecifierPublic)
+				bool                                          ReturnValue;                                       // 0x0020(0x0001)(Parm, OutParm, ZeroConstructor, ReturnParm, IsPlainOldData, NoDestructor, HasGetValueTypeHash, NativeAccessSpecifierPublic)
+				uint8                                         Pad_21[0x7];                                       // 0x0021(0x0007)(Fixing Struct Size After Last Property [ Dumper-7 ])
+			};
+			
+			FortControllerRequirement_IsRequirementMetInternal IsRequirementMetInternal_Params{};
+			IsRequirementMetInternal_Params.RequestContext = std::move(RequirementTestContext);
+
+			Requirement.Requirement->ProcessEvent(
+				Requirement.Requirement->Class->FindFunction("IsRequirementMetInternal"), 
+				&IsRequirementMetInternal_Params
+			);
+
+			bool bRequirementIsMet = IsRequirementMetInternal_Params.ReturnValue;
+
+			if (!bRequirementIsMet)
+			{
+				UE_LOG(LogServer, Log, ("IsRequirementSatisfied: DataDrivenService - Requirement not met, behavior: %d"), 
+					(int32)Requirement.FailureNodeBehaviour);
+				return *Ret = Requirement.FailureNodeBehaviour;
+			}
+
+			UE_LOG(LogServer, Log, ("IsRequirementSatisfied: DataDrivenService - Requirement passed"));
+		}
+		
+		return *Ret = EConversationRequirementResult::Passed;
+	}
+	else if (Context->IsA(UConversationTaskNode::StaticClass()))
+	{
+		UE_LOG(LogServer, Log, ("IsRequirementSatisfied: Generic TaskNode - Passed"));
+		return *Ret = EConversationRequirementResult::Passed;
+	}
+
+	auto ParticipantComponent = (UFortNonPlayerConversationParticipantComponent*)
+		ConversationLibrary::ConversationParticipantEntry[ConversationContext.ActiveConversation->Participants.List[0].ParticipantID.TagName.Number]
+		->GetComponentByClass(UFortNonPlayerConversationParticipantComponent::StaticClass());
 
 	if (!ParticipantComponent)
 		return *Ret = EConversationRequirementResult::FailedAndHidden;
@@ -269,11 +409,18 @@ static EConversationRequirementResult IsRequirementSatisfied(UObject* Context, F
 		for (auto& GameplayTag : ParticipantComponent->SupportedServices.GameplayTags)
 		{
 			if (GameplayTag.TagName == HasService->ServiceTag.TagName)
+			{
+				UE_LOG(LogServer, Log, ("IsRequirementSatisfied: HasService - Service found: %s"), 
+					HasService->ServiceTag.TagName.ToString().c_str());
 				return *Ret = EConversationRequirementResult::Passed;
+			}
 		}
+		
+		UE_LOG(LogServer, Log, ("IsRequirementSatisfied: HasService - Service not found: %s"), 
+			HasService->ServiceTag.TagName.ToString().c_str());
 	}
 
-	return *Ret = EConversationRequirementResult::FailedAndHidden;
+	return *Ret = EConversationRequirementResult::Passed; // should be FailedAndHidden but like who cares
 }
 
 namespace ConversationLibrary

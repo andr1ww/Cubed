@@ -218,7 +218,7 @@ void UConversationInstance::ServerAdvanceConversation(FAdvanceConversationReques
 			{
 				if (UConversationTaskNode* TaskNode = Cast<UConversationTaskNode>(GetRuntimeNodeFromGUID(Context.ConversationRegistry, BranchPoint.ClientChoice.ChoiceReference.NodeReference.NodeGUID)))
 				{
-					EConversationRequirementResult Result = /*TaskNode->bIgnoreRequirementsWhileAdvancingConversations ? */ EConversationRequirementResult::Passed; /*: CheckRequirements(TaskNode, Context); */
+					EConversationRequirementResult Result = TaskNode->bIgnoreRequirementsWhileAdvancingConversations ?  EConversationRequirementResult::Passed : CheckRequirements(TaskNode, Context);
 					UE_LOG(LogServer, Log, ("ServerAdvanceConversation: Node %s requirement result: %d, IgnoreReqs: %s"), 
 						TaskNode->GetName().c_str(), (int32)Result, TaskNode->bIgnoreRequirementsWhileAdvancingConversations ? ("Yes") : ("No"));
 										

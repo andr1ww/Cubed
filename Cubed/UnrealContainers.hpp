@@ -437,7 +437,15 @@ struct TGuardValue
 			//if (Data)
 			//	memset(Data, 0, NumElements * ElementSize);
 		}
+		inline bool Remove(const ArrayElementType& Element)
+		{
+			int32 Index = SearchIndex([Element](const ArrayElementType& CompareElement)
+				{
+					return Element == CompareElement;
+				});
 
+			return Remove(Index);
+		}
 	public:
 		inline int32 Num() const { return NumElements; }
 		inline int32 Max() const { return MaxElements; }

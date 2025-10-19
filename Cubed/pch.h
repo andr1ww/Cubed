@@ -36,6 +36,7 @@ using namespace std;
 #include "SDK/GameplayAbilities_structs.hpp"
 #include "SDK/GameplayAbilities_classes.hpp"
 #include "SDK/FortniteConversationRuntime_classes.hpp"
+#include "SDK/FortniteConversationUI_classes.hpp"
 #include <set>
 using namespace SDK;
 using namespace UC;
