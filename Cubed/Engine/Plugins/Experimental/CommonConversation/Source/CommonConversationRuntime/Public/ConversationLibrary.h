@@ -24,7 +24,8 @@ static T PickWeighted(vector<T>& Map, float (*RandFunc)(float), bool bCheckZero 
 
         return T();
     }
-    
+
+    static void RequestServerAbortConversation(UObject*, FFrame&);
     static UConversationInstance* StartConversation(UObject*, FFrame&, UConversationInstance**);
     FConversationTaskResult ExecuteTaskNodeWithSideEffects(UConversationTaskNode* Node, FConversationContext& Context);
     FConversationTaskResult ExecuteTaskNode(UConversationTaskNode* Node, FConversationContext& InContext);

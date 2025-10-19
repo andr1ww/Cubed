@@ -23,7 +23,6 @@ FConversationTaskResult ConversationLibrary::ExecuteTaskNode(UConversationTaskNo
 		if (ParticipantComponent)
 		{
 			FGameplayTag& ParticipantID = InContext.ActiveConversation->Participants.List[1].ParticipantID; // maybe List[1] ???
-
 			vector<FContextualMessageCandidate> Candidates;
 
 			for (FContextualMessageCandidate& ContextualMessage : SpeechNode->GeneralConfig.ContextualMessages)
@@ -78,9 +77,7 @@ FConversationTaskResult ConversationLibrary::ExecuteTaskNode(UConversationTaskNo
 				for (FContextualMessageCandidate& ContextualMessage : ConfigSearched->ContextualMessages)
 				{
 					if (ContextualMessage.ContextRequirements.Num() == 0)
-					{
 						Candidates.push_back(ContextualMessage);
-					}
 					else if (ContextualMessage.RequirementMatchPolicy == EContextRequirementMatchPolicy::RequireAny)
 					{
 						for (FFortConversationContextRequirement& ContextRequirement : ContextualMessage.ContextRequirements)
@@ -128,7 +125,7 @@ FConversationTaskResult ConversationLibrary::ExecuteTaskNode(UConversationTaskNo
 	}
 	else if (auto UpgradeItem = Cast<UFortConversationTaskNode_UpgradeItem>(TaskNode))
 	{
-		auto PlayerController = (AFortPlayerController*)InContext.ActiveConversation->Participants.List[1].Actor;
+		auto PlayerController = (AFortPlayerController*)ConversationParticipantEntry[InContext.ActiveConversation->Participants.List[1].ParticipantID.TagName.Number];
 		auto ItemDef = PlayerController->MyFortPawn->CurrentWeapon->WeaponData;
 
 		auto UpgradedWeaponDef = UFortKismetLibrary::GetUpgradedWeaponItemVerticalToRarity(ItemDef, EFortRarity(uint8(ItemDef->Rarity) + 1) /* crazy ass cast */);
@@ -145,8 +142,8 @@ FConversationTaskResult ConversationLibrary::ExecuteTaskNode(UConversationTaskNo
 	}
 	else if (auto DataDrivenService = Cast<UFortConversationTaskNode_DataDrivenService>(TaskNode))
 	{
-		auto PlayerController = (AFortPlayerController*)InContext.ActiveConversation->Participants.List[1].Actor;
-		auto OtherActor = InContext.ActiveConversation->Participants.List[0].Actor;
+		auto PlayerController = (AFortPlayerController*)ConversationParticipantEntry[InContext.ActiveConversation->Participants.List[1].ParticipantID.TagName.Number];
+		auto OtherActor = ConversationParticipantEntry[InContext.ActiveConversation->Participants.List[0].ParticipantID.TagName.Number];
 
 		for (const auto& EffectRecipientConfig : DataDrivenService->EffectRecipientConfigs)
 		{
@@ -248,7 +245,8 @@ static void ServerAdvanceConversationHook(UObject* Context, FFrame& Stack)
 	FAdvanceConversationRequest InChoicePicked;
 	Stack.StepCompiledIn(&InChoicePicked);
 	Stack.IncrementCode();
-	((UConversationParticipantComponent*)Context)->Auth_CurrentConversation->ServerAdvanceConversation(InChoicePicked);
+	if (auto Instance = ((UConversationParticipantComponent*)Context)->Auth_CurrentConversation)
+		Instance->ServerAdvanceConversation(InChoicePicked);
 }
 
 static EConversationRequirementResult IsRequirementSatisfied(UObject* Context, FFrame& Stack, EConversationRequirementResult* Ret)
@@ -261,7 +259,7 @@ static EConversationRequirementResult IsRequirementSatisfied(UObject* Context, F
 
 	auto ParticipantComponent =
 		(UFortNonPlayerConversationParticipantComponent*)
-		ConversationContext.ActiveConversation->Participants.List[0].Actor->GetComponentByClass(UFortNonPlayerConversationParticipantComponent::StaticClass());
+		ConversationLibrary::ConversationParticipantEntry[ConversationContext.ActiveConversation->Participants.List[0].ParticipantID.TagName.Number]->GetComponentByClass(UFortNonPlayerConversationParticipantComponent::StaticClass());
 
 	if (!ParticipantComponent)
 		return *Ret = EConversationRequirementResult::FailedAndHidden;
@@ -409,6 +407,13 @@ static FConversationTaskResult ExecuteTaskNodeWithSideEffectsHook(UConversationT
 	return ConversationLibrary::ExecuteTaskNodeWithSideEffects(TaskNode, InContext);
 }
 
+void ConversationLibrary::RequestServerAbortConversation(UObject* Context, FFrame& Stack)
+{
+	Stack.IncrementCode();
+	if (auto Instance = ((UConversationParticipantComponent*)Context)->Auth_CurrentConversation)
+		Instance->ServerAbortConversation();
+}
+
 void ConversationLibrary::Setup()
 {
     UHook* Hook = new UHook();
@@ -421,11 +426,19 @@ void ConversationLibrary::Setup()
 	Hook->Detour = ExecuteTaskNodeWithSideEffectsHook;
 	UKismetHookingLibrary::Hook(Hook, Address);
 
+	Hook->Path = "/Script/FortniteConversationRuntime.FortPlayerConversationComponent.RequestServerAbortConversation;";
+	Hook->Detour = RequestServerAbortConversation;
+	UKismetHookingLibrary::Hook(Hook, Exec);
+
 	Hook->Path = "/Script/CommonConversationRuntime.ConversationParticipantComponent.ServerAdvanceConversation";
 	Hook->Detour = ServerAdvanceConversationHook;
 	UKismetHookingLibrary::Hook(Hook, Exec);
 
 	Hook->Path = "/Script/CommonConversationRuntime.ConversationRequirementNode.IsRequirementSatisfied";
+	Hook->Detour = IsRequirementSatisfied;
+	UKismetHookingLibrary::Hook(Hook, Exec);
+	
+	Hook->Path = "/Script/CommonConversationRuntime.ConversationTaskNode.IsRequirementSatisfied";
 	Hook->Detour = IsRequirementSatisfied;
 	UKismetHookingLibrary::Hook(Hook, Exec);
 

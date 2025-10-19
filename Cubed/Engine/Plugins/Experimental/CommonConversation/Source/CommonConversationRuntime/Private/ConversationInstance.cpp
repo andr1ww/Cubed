@@ -80,11 +80,8 @@ void UConversationInstance::ServerAbortConversation()
 	UE_LOG(LogServer, Warning, ("ServerAbortConversation: Aborting conversation"));
 	
     if (!this)
-	{
-		UE_LOG(LogServer, Error, ("ServerAbortConversation: Instance is null!"));
-        return;
-	}
-
+		return;
+    	
     if (bConversationStarted)
     {
 		UE_LOG(LogServer, Log, ("ServerAbortConversation: Conversation was started, removing %d participants"), Participants.List.Num());
@@ -221,7 +218,7 @@ void UConversationInstance::ServerAdvanceConversation(FAdvanceConversationReques
 			{
 				if (UConversationTaskNode* TaskNode = Cast<UConversationTaskNode>(GetRuntimeNodeFromGUID(Context.ConversationRegistry, BranchPoint.ClientChoice.ChoiceReference.NodeReference.NodeGUID)))
 				{
-					EConversationRequirementResult Result = TaskNode->bIgnoreRequirementsWhileAdvancingConversations ? EConversationRequirementResult::Passed : CheckRequirements(TaskNode, Context);
+					EConversationRequirementResult Result = /*TaskNode->bIgnoreRequirementsWhileAdvancingConversations ? */ EConversationRequirementResult::Passed; /*: CheckRequirements(TaskNode, Context); */
 					UE_LOG(LogServer, Log, ("ServerAdvanceConversation: Node %s requirement result: %d, IgnoreReqs: %s"), 
 						TaskNode->GetName().c_str(), (int32)Result, TaskNode->bIgnoreRequirementsWhileAdvancingConversations ? ("Yes") : ("No"));
 										
@@ -244,7 +241,6 @@ void UConversationInstance::ServerAdvanceConversation(FAdvanceConversationReques
 			ServerAbortConversation();
 			return;
 		}
-
 		
 		const int32 StartingIndex = UKismetMathLibrary::RandomIntegerInRange(0, ValidDestinations.Num() - 1);
 		UE_LOG(LogServer, Log, ("ServerAdvanceConversation: Selected destination index: %d"), StartingIndex);
@@ -255,6 +251,48 @@ void UConversationInstance::ServerAdvanceConversation(FAdvanceConversationReques
 	else
 	{
 		UE_LOG(LogServer, Warning, ("ServerAdvanceConversation: Conversation not started or invalid current branch point"));
+	}
+}
+
+void GenerateChoicesForDestinations(FConversationBranchPointBuilder& BranchBuilder, FConversationContext& InContext, const TArray<FGuid>& CandidateDestinations)
+{
+	for (FGuid& DestinationGUID : CandidateDestinations)
+	{
+		if (UConversationTaskNode* DestinationTaskNode = Cast<UConversationTaskNode>(GetRuntimeNodeFromGUID(InContext.ConversationRegistry, DestinationGUID)))
+		{
+			TGuardValue<UObject*> Swapper(DestinationTaskNode->EvalWorldContextObj, UWorld::GetWorld());
+			
+			FConversationContext DestinationContext = InContext;
+			DestinationContext.TaskBeingConsidered = DestinationTaskNode;
+
+			const int32 StartingNumber = BranchBuilder.BranchPoints.Num();
+
+			if (auto LinkNode = Cast<UConversationLinkNode>(DestinationTaskNode))
+			{
+				TArray<FGuid> PotentialStartingPoints = InContext.ConversationRegistry->GetEntryNodeIDs(LinkNode->RemoteEntryTag);
+				TArray<FGuid> LegalStartingPoints = InContext.ActiveConversation->ConstructBranches(PotentialStartingPoints, EConversationRequirementResult::FailedButVisible);
+				InContext.ReturnScopeStack.Add(FConversationNodeHandle(LinkNode->Compiled_NodeGUID));
+				GenerateChoicesForDestinations(BranchBuilder, InContext, LegalStartingPoints);
+			}
+			
+			static void (*GatherStaticChoicesOG)(UConversationTaskNode* Node, FConversationBranchPointBuilder&, FConversationContext& InContext) = decltype(GatherStaticChoicesOG)(DestinationTaskNode->VTable[0x56]);
+			static void (*GatherDynamicChoicesOG)(UConversationTaskNode* Node, FConversationBranchPointBuilder&, FConversationContext& InContext) = decltype(GatherDynamicChoicesOG)(DestinationTaskNode->VTable[0x57]);
+			GatherStaticChoicesOG(DestinationTaskNode, BranchBuilder, InContext);
+			GatherDynamicChoicesOG(DestinationTaskNode, BranchBuilder, InContext);
+			
+		//	if (BranchBuilder.BranchPoints.Num() == StartingNumber)
+			{
+				const EConversationRequirementResult RequirementResult = /*CheckRequirements(DestinationTaskNode, InContext);*/EConversationRequirementResult::Passed;
+
+				if (RequirementResult == EConversationRequirementResult::Passed)
+				{
+					FClientConversationOptionEntry DefaultChoice;
+					DefaultChoice.ChoiceReference.NodeReference.NodeGUID = DestinationGUID;
+					DefaultChoice.ChoiceType = EConversationChoiceType::ServerOnly;
+					BranchBuilder.AddChoice(DestinationContext, DefaultChoice);
+				}
+			}
+		}
 	}
 }
 
@@ -278,12 +316,34 @@ void UConversationInstance::UpdateNextChoices(FConversationContext& Context)
 		UE_LOG(LogServer, Log, ("UpdateNextChoices: Found %d connected nodes"), CandidateDestinations.Num());
 
 		FConversationBranchPointBuilder BranchBuilder;
+		GenerateChoicesForDestinations(BranchBuilder, ChoiceContext, CandidateDestinations);
 		AllChoices = BranchBuilder.BranchPoints;
 		UE_LOG(LogServer, Log, ("UpdateNextChoices: Built %d branch points"), AllChoices.Num());
 	}
 	else
 	{
 		UE_LOG(LogServer, Warning, ("UpdateNextChoices: Current node is not a task node"));
+	}
+
+	CurrentUserChoices.ResetNum();
+	CurrentBranchPoints = AllChoices;
+
+	for (const FConversationBranchPoint& UserBranchPoint : CurrentBranchPoints)
+	{
+		if (UserBranchPoint.ClientChoice.ChoiceType != EConversationChoiceType::ServerOnly)
+			CurrentUserChoices.Add(UserBranchPoint.ClientChoice);
+	}
+
+	if (CurrentBranchPoints.Num() > 0 || ScopeStack.Num() > 0)
+	{
+		if (CurrentUserChoices.Num() == 0)
+		{
+			FClientConversationOptionEntry DefaultChoice;
+			DefaultChoice.ChoiceReference = FConversationChoiceReference();
+			DefaultChoice.ChoiceText = UKismetTextLibrary::Conv_StringToText(L"Continue");
+			DefaultChoice.ChoiceType = EConversationChoiceType::UserChoiceAvailable;
+			CurrentUserChoices.Add(DefaultChoice);
+		}
 	}
 }
 
@@ -336,6 +396,7 @@ void UConversationInstance::OnCurrentConversationNodeModified()
 			LastMessage.Message = TaskResult.Message;
 			LastMessage.CurrentNode = Context.ActiveConversation->CurrentBranchPoint.ClientChoice.ChoiceReference.NodeReference;
 			LastMessage.Participants = Participants;
+			LastMessage.Options = CurrentUserChoices;
 
 			ClientBranchPoints.Add(FCheckpoint(CurrentBranchPoint, ScopeStack));
 			UE_LOG(LogServer, Log, ("OnCurrentConversationNodeModified: Client branch points: %d"), ClientBranchPoints.Num());

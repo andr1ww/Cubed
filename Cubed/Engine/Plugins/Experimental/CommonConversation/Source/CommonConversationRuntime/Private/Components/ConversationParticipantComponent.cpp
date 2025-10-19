@@ -3,19 +3,16 @@
 void UConversationParticipantComponent::ServerNotifyConversationStarted(UConversationInstance* Conversation, FGameplayTag AsParticipant)
 {
     AActor* Owner = GetOwner();
-    if (Owner->GetLocalRole() == ENetRole::ROLE_Authority)
-    {
-        Auth_CurrentConversation = Conversation;
-        Auth_Conversations.Add(Conversation);
-        ClientUpdateParticipants(Auth_CurrentConversation->Participants);
+    Auth_CurrentConversation = Conversation;
+    Auth_Conversations.Add(Conversation);
+    ClientUpdateParticipants(Auth_CurrentConversation->Participants);
 
-        ConversationsActive++;
-        OnRep_ConversationsActive(ConversationsActive - 1);
-        ClientStartConversation(AsParticipant);
+    ConversationsActive++;
+    OnRep_ConversationsActive(ConversationsActive - 1);
+    ClientStartConversation(AsParticipant);
 
-        if (Owner->GetRemoteRole() == ENetRole::ROLE_AutonomousProxy)
-            ClientUpdateConversations(ConversationsActive);
-    }
+    if (Owner->GetRemoteRole() == ENetRole::ROLE_AutonomousProxy)
+        ClientUpdateConversations(ConversationsActive);
 }
 
 void UConversationParticipantComponent::ServerNotifyConversationEnded(UConversationInstance* Conversation)
@@ -32,7 +29,8 @@ void UConversationParticipantComponent::ServerNotifyConversationEnded(UConversat
             Auth_Conversations.Remove(ConversationIdx);
 
             ConversationsActive--;
-            
+            OnRep_ConversationsActive(ConversationsActive + 1);
+
             if (Owner->GetRemoteRole() == ENetRole::ROLE_AutonomousProxy)
                 ClientUpdateConversations(ConversationsActive);
         }
