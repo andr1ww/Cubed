@@ -415,6 +415,16 @@ static EConversationRequirementResult IsRequirementSatisfied(UObject* Context, F
 				return *Ret = EConversationRequirementResult::Passed;
 			}
 		}
+
+		for (auto& GameplayTag : ParticipantComponent->SupportedServices.ParentTags)
+		{
+			if (GameplayTag.TagName == HasService->ServiceTag.TagName)
+			{
+				UE_LOG(LogServer, Log, ("IsRequirementSatisfied: HasService - Service found: %s"), 
+					HasService->ServiceTag.TagName.ToString().c_str());
+				return *Ret = EConversationRequirementResult::Passed;
+			}
+		}
 		
 		UE_LOG(LogServer, Log, ("IsRequirementSatisfied: HasService - Service not found: %s"), 
 			HasService->ServiceTag.TagName.ToString().c_str());
