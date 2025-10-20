@@ -146,9 +146,11 @@ DWORD WINAPI Startup(LPVOID)
         Hook->Byte = 0xC3;
         UKismetHookingLibrary::Hook(Hook, Byte);
     }
-
+    
+    Runtime::Offsets::NullFuncs.push_back(0x29192EC);
     Runtime::Offsets::NullFuncs.push_back(0x509bf28);
     Runtime::Offsets::RetTrueFuncs.push_back(0x50af34c);
+    Runtime::Offsets::RetTrueFuncs.push_back(0x309EE30);
     // kickplayer ones ^ (dk why they wont work with gamesessions but WTV!)
     
     for (auto& Addr : Runtime::Offsets::NullFuncs)
@@ -157,6 +159,10 @@ DWORD WINAPI Startup(LPVOID)
         Hook->Byte = 0xC3;
         UKismetHookingLibrary::Hook(Hook, Byte);
     }
+
+    Hook->Address = ImageBase + Runtime::Offsets::EncryptionPatch;
+    Hook->Byte = 0x74;
+    UKismetHookingLibrary::Hook(Hook, Byte);
 
     UKismetHookingLibrary::NullCall(0x50A8E27);
     UKismetHookingLibrary::PatchBytes(ImageBase + 0x5091E8F, { 0x75, 0x7F });
