@@ -163,6 +163,7 @@
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Building\BuildingContainer.h" />
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Inventory\FortInventory.h" />
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Kismet\FortKismetLibrary.h" />
+    <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Online\FortGameSessionDedicated.h" />
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Player\FortPlayerController.h" />
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Player\FortPlayerPawn.h" />
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Quests\FortQuestManager.h" />
@@ -191,6 +192,7 @@
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Building\BuildingSMActor.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Inventory\FortInventory.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Kismet\FortKismetLibrary.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Online\FortGameSessionDedicated.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Player\FortPlayerController.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Player\FortPlayerPawn.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Quests\FortQuestManager.cpp" />

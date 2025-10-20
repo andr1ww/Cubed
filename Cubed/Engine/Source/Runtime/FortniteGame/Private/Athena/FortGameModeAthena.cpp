@@ -12,12 +12,12 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
     auto GameState = GetGameState();
     if (!GameState || !GameState->MapInfo) return false;
     
-    if (GameMode->CurrentPlaylistId == -1)
+    if (GameMode->CurrentPlaylistId == -1 && !bGameSessions)
     {
         auto Playlist = bCreative 
             ? UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_PlaygroundV2.Playlist_PlaygroundV2")
-            : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
-        //  : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
+            //: UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
+            : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
         if (!Playlist) return false;
 
         if (!bCreative)

@@ -423,7 +423,7 @@ static EConversationRequirementResult IsRequirementSatisfied(UObject* Context, F
 				UE_LOG(LogServer, Log, ("IsRequirementSatisfied: HasService - Service found: %s"), 
 					HasService->ServiceTag.TagName.ToString().c_str());
 				return *Ret = EConversationRequirementResult::Passed;
-			}
+			} 
 		}
 		
 		UE_LOG(LogServer, Log, ("IsRequirementSatisfied: HasService - Service not found: %s"), 

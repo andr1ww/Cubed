@@ -23,6 +23,7 @@
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/Creative/FortAthenaCreativePortal.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/Creative/AFortMinigameSettingsBuilding.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Kismet/FortKismetLibrary.h"
+#include "Engine/Source/Runtime/FortniteGame/Public/Online/FortGameSessionDedicated.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Quests/FortQuestManager.h"
 
 inline const wchar_t* (*GetOG)();
@@ -129,6 +130,7 @@ DWORD WINAPI Startup(LPVOID)
     FortAthenaSupplyDrop::Setup();
     FortKismetLibrary::Setup();
     ConversationLibrary::Setup();
+    FortGameSessionDedicated::Setup();
     
     UHook* Hook = new UHook();
     
