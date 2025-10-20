@@ -160,6 +160,8 @@ DWORD WINAPI Startup(LPVOID)
         UKismetHookingLibrary::Hook(Hook, Byte);
     }
 
+    UKismetHookingLibrary::PatchBytes(ImageBase + 0x12B7F2C, { 0x90, 0x90 });
+
     Hook->Address = ImageBase + Runtime::Offsets::EncryptionPatch;
     Hook->Byte = 0x74;
     UKismetHookingLibrary::Hook(Hook, Byte);
@@ -208,13 +210,12 @@ DWORD WINAPI Startup(LPVOID)
 
     free(Hook);
     
-    *(bool *)(ImageBase + Runtime::Offsets::GIsClient) = false;
-    *(bool *)(ImageBase + Runtime::Offsets::GIsClient + 1) = true;
-    *(bool *)(ImageBase + 0x9C0AF6B) = true;
+    *(bool*)(ImageBase + Runtime::Offsets::GIsClient) = false;
+    *(bool*)(ImageBase + Runtime::Offsets::GIsClient + 1) = true;
 
     MH_EnableHook(MH_ALL_HOOKS);
-    if (!bGameSessions) UWorld::GetWorld()->OwningGameInstance->LocalPlayers.Remove(0);
-    UGameplayStatics::OpenLevel(UWorld::GetWorld(), bCreative ? UKismetStringLibrary::Conv_StringToName(L"Creative_NoApollo_Terrain") : UKismetStringLibrary::Conv_StringToName(L"Apollo_Terrain"), true, FString());
+    if (!bGameSessions) GetWorld()->OwningGameInstance->LocalPlayers.Remove(0);
+    UGameplayStatics::OpenLevel(GetWorld(), bCreative ? UKismetStringLibrary::Conv_StringToName(L"Creative_NoApollo_Terrain") : UKismetStringLibrary::Conv_StringToName(L"Apollo_Terrain"), true, FString());
 
     std::vector<std::wstring> Logs = {
         L"LogFortUIDirector",
