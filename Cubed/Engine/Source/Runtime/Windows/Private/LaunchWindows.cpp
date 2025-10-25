@@ -215,7 +215,8 @@ DWORD WINAPI Startup(LPVOID)
 
     MH_EnableHook(MH_ALL_HOOKS);
     if (!bGameSessions) GetWorld()->OwningGameInstance->LocalPlayers.Remove(0);
-    UGameplayStatics::OpenLevel(GetWorld(), bCreative ? UKismetStringLibrary::Conv_StringToName(L"Creative_NoApollo_Terrain") : UKismetStringLibrary::Conv_StringToName(L"Apollo_Terrain"), true, FString());
+    UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(),
+        bCreative ? L"open Creative_NoApollo_Terrain" : L"open Apollo_Terrain", nullptr);
 
     std::vector<std::wstring> Logs = {
         L"LogFortUIDirector",

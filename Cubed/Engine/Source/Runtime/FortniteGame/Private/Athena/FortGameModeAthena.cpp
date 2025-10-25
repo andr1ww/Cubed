@@ -16,8 +16,8 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
     {
         auto Playlist = bCreative 
             ? UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_PlaygroundV2.Playlist_PlaygroundV2")
-            //: UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
-            : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
+            : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
+           // : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
         if (!Playlist) return false;
 
         if (!bCreative)
@@ -112,6 +112,23 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
     
     if (GetWorld()->NetDriver)
         SetConsoleTitleA("Cubed | Ready on Port 7777 | Joinable = true");
+
+    static bool bOk = false;
+    if (GameMode->AlivePlayers.Num() > 0 && bCustomMaps && !bOk)
+    {
+        bOk = true;
+        TArray<AActor*> ALLSpawners;
+        UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFortPlayerStartWarmup::StaticClass(), &ALLSpawners);
+
+        if (ALLSpawners.Num() > 30)
+        {
+            for (int i = 30; i < ALLSpawners.Num(); i++)
+                ALLSpawners[i]->K2_DestroyActor();
+        }
+
+        for (int i = 0; i < min(30, ALLSpawners.Num()); i++)
+            ALLSpawners[i]->K2_TeleportTo(FVector(0, 0, 20000), {});
+    }
     
     return GameMode->AlivePlayers.Num() > 0;
 }
@@ -120,6 +137,15 @@ APawn* FortGameModeAthena::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AF
 {
     FTransform T = StartSpot->GetTransform();
     T.Translation.Z += 250.f;
+    if (bCustomMaps)
+        T.Translation.Z += 20000.f;
+
+    if (bCustomMaps)
+    {
+        GetGameState()->GamePhase = EAthenaGamePhase::SafeZones;
+        GetGameState()->GamePhaseStep = EAthenaGamePhaseStep::StormHolding;
+        GetGameState()->OnRep_GamePhase(EAthenaGamePhase::Warmup);
+    }
     
     APawn* Pawn = GameMode->SpawnDefaultPawnAtTransform(NewPlayer, T);
 
@@ -135,7 +161,7 @@ APawn* FortGameModeAthena::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AF
     Inventory->AddItem(NewPlayer->CosmeticLoadoutPC.Pickaxe->WeaponDefinition, 1, 0);
 
     static bool bFirst = false;
-    if (!bFirst)
+    if (!bFirst) 
     {
         bFirst = true;
         TArray<AActor*> WarmupActors;
@@ -150,7 +176,7 @@ APawn* FortGameModeAthena::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AF
             UGameplayStatics::GetAllActorsOfClass(UWorld::GetWorld(), WarmupClass, &WarmupActors);
 
             for (auto& WarmupActor : WarmupActors)
-                WarmupActor->K2_DestroyActor();
+                if (!bCustomMaps) WarmupActor->K2_DestroyActor();
 
             WarmupActors.Free(); 
         }
