@@ -20,7 +20,7 @@ void FortAthenaAISpawnerDataComponents::OnPawnAISpawned(AFortAthenaAIBotControll
 
     for (auto& Dance : Dances) {
         if (IsValidPointer(Dance)) 
-            Controller->CosmeticLoadoutBC.Dances.Add(Dance);
+            if (!Dance->IsA(UAthenaSprayItemDefinition::StaticClass())) Controller->CosmeticLoadoutBC.Dances.Add(Dance);
     }
     
     auto PlayerState = Cast<AFortPlayerStateAthena>(Controller->PlayerState);
