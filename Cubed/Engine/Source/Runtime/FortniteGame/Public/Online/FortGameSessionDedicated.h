@@ -19,9 +19,18 @@ public:
     FName PlaylistName;
 };
 
+struct FMatchmakingDedicatedServerBackfillOptions // sizeof=0x68
+{                                       
+    int MinPlayersRequired;            
+    int MaxPlayerTarget;                
+    TArray<int32> PlayerGroupSizes;
+    TMap<FString,FString > Options;
+};
+
 namespace FortGameSessionDedicated
 {
     DefineOriginal(bool, HandleMatchAssignmentV2, __int64, FMatchmakingDedicatedServerMatchAssignment* MatchAssignment);
+    void GetServerBackfillOptionsV2(__int64 a1, FMatchmakingDedicatedServerBackfillOptions* OutOptions);
 
     void Setup();
 }

@@ -73,6 +73,12 @@ void CreateAndConfigureNavigationSystem(UAthenaNavSystemConfig* This, UWorld* Wo
     return CreateAndConfigureNavigationSystemOG(This, World);
 }
 
+static inline char (*sub_508CB04OG)(__int64 a1, char a2) = nullptr;
+char __fastcall sub_508CB04(__int64 a1, char a2)
+{
+    return sub_508CB04OG(a1, 0);
+}
+
 static void (*SendRequestNowOG)(void* Arg1, void* MCPData, int);
 static void SendRequestNow(void* Arg1, void* MCPData, int) { return SendRequestNowOG(Arg1, MCPData, 3); }
 
@@ -152,6 +158,7 @@ DWORD WINAPI Startup(LPVOID)
     Runtime::Offsets::NullFuncs.push_back(0x29192EC);
     Runtime::Offsets::NullFuncs.push_back(0x509bf28);
     Runtime::Offsets::RetTrueFuncs.push_back(0x50af34c);
+    Runtime::Offsets::RetTrueFuncs.push_back(0x509AFC0); // mms enable
     Runtime::Offsets::RetTrueFuncs.push_back(0x309EE30);
     // kickplayer ones ^ (dk why they wont work with gamesessions but WTV!)
     
@@ -209,8 +216,15 @@ DWORD WINAPI Startup(LPVOID)
     Hook->Original = (void**)&CreateAndConfigureNavigationSystemOG;
     Hook->Detour = CreateAndConfigureNavigationSystem;
     if (!bCreative) UKismetHookingLibrary::Hook(Hook, Address);
-
+    
     free(Hook);
+
+    if (bGameSessions)
+    {
+        // backfill related
+        UKismetHookingLibrary::PatchBytes(ImageBase + 0x42FC76B, { 0xEB, 0x3A });
+        UKismetHookingLibrary::PatchBytes(ImageBase + 0x50944CD, { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+    }
     
     *(bool*)(ImageBase + Runtime::Offsets::GIsClient) = false;
     *(bool*)(ImageBase + Runtime::Offsets::GIsClient + 1) = true;

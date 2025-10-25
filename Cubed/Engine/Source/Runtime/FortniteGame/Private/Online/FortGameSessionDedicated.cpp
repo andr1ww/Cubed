@@ -5,18 +5,21 @@
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"
 #include "Engine/Source/Runtime/CoreUObject/Public/UObject/UObjectGlobals.h"
 
+static UFortPlaylistAthena* Playlist = nullptr;
+
 bool FortGameSessionDedicated::HandleMatchAssignmentV2(__int64 a1, FMatchmakingDedicatedServerMatchAssignment* MatchAssignment)
 {
     auto GameInstance = Cast<UFortGameInstance>(UWorld::GetWorld()->OwningGameInstance);
     auto GameMode = Cast<AFortGameModeAthena>(UWorld::GetWorld()->AuthorityGameMode);
     auto GameState = Cast<AFortGameStateAthena>(GameMode->GameState);
     
-    UFortPlaylistAthena* Playlist = nullptr;
-    
     for (auto& PlaylistAthena : GameInstance->PlaylistManager->PreloadedPlaylists)
     {
         if (PlaylistAthena->PlaylistName == MatchAssignment->PlaylistName)
+        {
+            PlaylistAthena->MinBackfillMatchPlayers = 1;
             Playlist = PlaylistAthena;
+        }
     }
 
     if (MatchAssignment->PlaylistName.ToString().contains("PlaygroundV2"))
@@ -36,7 +39,9 @@ bool FortGameSessionDedicated::HandleMatchAssignmentV2(__int64 a1, FMatchmakingD
         GameMode->SpawningPolicyManager->GameModeAthena = GameMode;
         GameMode->SpawningPolicyManager->GameStateAthena = GameState;
     }
-        
+
+    Playlist->bEnableBackfillDuringWarmupPhase = true;
+    Playlist->bAllowBackfill = true;
     Playlist->GarbageCollectionFrequency = 99999999999999.f;
     GameState->CurrentPlaylistInfo.BasePlaylist = Playlist;
     GameState->CurrentPlaylistInfo.OverridePlaylist = Playlist;
@@ -109,8 +114,25 @@ bool FortGameSessionDedicated::HandleMatchAssignmentV2(__int64 a1, FMatchmakingD
 
     GameState->OnFinishedShowingAdditionalPlaylistLevel();
     GameState->OnRep_AdditionalPlaylistLevelsStreamed();
+
+    UKismetHookingLibrary::PatchBytes(ImageBase + 0x508CC01, { 0xC6, 0x45, 0xB0, 0x01 });
+    UKismetHookingLibrary::PatchBytes(ImageBase + 0x508CB3B, { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+    UKismetHookingLibrary::PatchBytes(ImageBase + 0x508CB4C, { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+    UKismetHookingLibrary::PatchBytes(ImageBase + 0x508CB5D, { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
     
     return HandleMatchAssignmentV2OG(a1, MatchAssignment);
+}
+
+void FortGameSessionDedicated::GetServerBackfillOptionsV2(__int64 a1, FMatchmakingDedicatedServerBackfillOptions* OutOptions)
+{
+    OutOptions->MinPlayersRequired = Playlist->MinBackfillMatchPlayers;
+    OutOptions->MaxPlayerTarget = Playlist->MaxPlayers - GetWorld()->NetDriver->ClientConnections.Num();
+
+    int NumTeams = (OutOptions->MaxPlayerTarget % 2 == 0) 
+            ? (OutOptions->MaxPlayerTarget / Playlist->MaxSquadSize) 
+            : ((OutOptions->MaxPlayerTarget + 1) / Playlist->MaxSquadSize);
+    for (int i = 0; i < NumTeams; i++)
+        OutOptions->PlayerGroupSizes.Add(Playlist->MaxSquadSize);
 }
 
 void FortGameSessionDedicated::Setup()
@@ -121,4 +143,10 @@ void FortGameSessionDedicated::Setup()
     Hook->Detour = HandleMatchAssignmentV2;
     Hook->Original = (void**)&HandleMatchAssignmentV2OG;
     UKismetHookingLibrary::Hook(Hook, Address);
+
+    Hook->Address = ImageBase + 0x509449C;
+    Hook->Detour = GetServerBackfillOptionsV2;
+    UKismetHookingLibrary::Hook(Hook, Address);
+
+    delete Hook;
 }
