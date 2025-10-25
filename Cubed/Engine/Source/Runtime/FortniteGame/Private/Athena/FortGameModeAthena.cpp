@@ -17,8 +17,8 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
     {
         auto Playlist = bCreative 
             ? UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_PlaygroundV2.Playlist_PlaygroundV2")
-          //  : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
-            : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
+            : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
+          //  : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
         if (!Playlist) return false;
 
         if (!bCreative)
@@ -69,7 +69,6 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
 
         if (AISettingsInstance) {
             GameMode->AISettings = AISettingsInstance;
-    
             GameMode->AISettings->AIServices.Free();
             GameMode->AISettings->AIServices.Add(StaticLoadObject<UClass>("/Game/Athena/AI/Phoebe/AIServices/BP_Phoebe_AIService_Loot.BP_Phoebe_AIService_Loot_C"));
             GameMode->AISettings->AIServices.Add(UAthenaAIServicePlayerBots::StaticClass());
@@ -159,7 +158,11 @@ APawn* FortGameModeAthena::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AF
         Inventory->AddItem(Item.Item, Item.Count, 0);
     }
 
+    auto InvComp = NewPlayer->InventoryServiceComponent;
     Inventory->AddItem(NewPlayer->CosmeticLoadoutPC.Pickaxe->WeaponDefinition, 1, 0);
+    Inventory->AddItem(InvComp->GetDefaultGlobalCurrencyItemDefinition(),
+        InvComp->GlobalCurrencyData.Currency.Count,
+        InvComp->GlobalCurrencyData.Currency.Count);
 
     static bool bFirst = false;
     if (!bFirst) 
@@ -386,6 +389,15 @@ void FortGameModeAthena::OnAircraftExitedDropZone(AFortGameModeAthena* GameMode,
     {
         if (Player->IsInAircraft())
             Player->GetAircraftComponent()->ServerAttemptAircraftJump({}); // we want this cause we do safezone stuff there
+    }
+
+    for (auto& Player : GameMode->AliveBots)
+    {
+        Player->PlayerBotPawn->K2_SetActorLocation(FortAthenaAircraft->K2_GetActorLocation(), false, nullptr, true);
+        Player->PlayerBotPawn->K2_SetActorRotation(FortAthenaAircraft->K2_GetActorRotation(), true);
+        Player->PlayerBotPawn->K2_TeleportTo(FortAthenaAircraft->K2_GetActorLocation(), FortAthenaAircraft->K2_GetActorRotation());
+        Player->ThankBusDriver();
+        Player->PlayerBotPawn->BeginSkydiving(true);
     }
     
     return OnAircraftExitedDropZoneOG(GameMode, FortAthenaAircraft);

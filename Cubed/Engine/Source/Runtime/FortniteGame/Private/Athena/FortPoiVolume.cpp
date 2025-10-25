@@ -24,7 +24,7 @@ void FortPoiVolume::PostInitializeComponents(AFortPoiVolume* Volume)
 
     Volume->BrushComponent->Brush = Volume->Brush;
     Volume->BrushComponent->BrushBodySetup = BodySetup;
-    
+
     if (Volume->Brush)
     {
         TArray<FVector>* Points = (TArray<FVector>*)(__int64(Volume->Brush) + 0x58);
@@ -54,6 +54,10 @@ void FortPoiVolume::PostInitializeComponents(AFortPoiVolume* Volume)
             Bounds[2] = Center.Z;
             *(float*)(__int64(Volume->BrushComponent) + 0x10C) = Extent.X;
             *(float*)(__int64(Volume->BrushComponent) + 0x110) = Extent.Y;
+
+            Volume->K2_SetActorLocation(FVector(Center.X, Center.Y, Center.Z), false, nullptr, false);
+            Volume->K2_SetActorRotation(FRotator(0, 0, 0), false);
+            Volume->K2_TeleportTo(FVector(Center.X, Center.Y, Center.Z), FRotator(0, 0, 0));
         }
     }
     

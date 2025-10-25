@@ -576,13 +576,22 @@ void FortPlayerControllerAthena::ServerCheat(AFortPlayerControllerAthena* Player
 	if (Message.contains("buildfree"))
 		PlayerController->bBuildFree = !PlayerController->bBuildFree;
 
+	if (Message.contains("randombot"))
+	{
+		auto Bot = GetGameMode()->AliveBots[rand() % GetGameMode()->AliveBots.Num()];
+		FRotator Rot = FRotator();
+		PlayerController->MyFortPawn->K2_SetActorLocation(Bot->PlayerBotPawn->K2_GetActorLocation(), false, nullptr, true);
+		PlayerController->MyFortPawn->K2_SetActorRotation(Rot, true);
+		PlayerController->MyFortPawn->K2_TeleportTo(Bot->PlayerBotPawn->K2_GetActorLocation(), Rot);
+	}
+
 	if (Message.contains("sendcoolmessage"))
 	{
 		auto NetDriver = GetWorld()->NetDriver;
 		xstring vERYcOOLmESSAGE;
 		for (int j = 1; j < args.size(); j++)
 		{
-			if (j > 1) vERYcOOLmESSAGE += " "; // Add space between words
+			if (j > 1) vERYcOOLmESSAGE += " "; 
 			vERYcOOLmESSAGE += args[j];
 		}
 		
