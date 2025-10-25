@@ -6,6 +6,7 @@
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"
 #include "Engine/Source/Runtime/CoreUObject/Public/UObject/UObjectGlobals.h"
 #include "Engine/Source/Runtime/Engine/Classes/Engine/World.h"
+#include "Engine/Source/Runtime/FortniteGame/Public/Quests/FortQuestManager.h"
 
 bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
 {
@@ -360,6 +361,23 @@ void FortGameModeAthena::StartNewSafeZonePhase(AFortGameModeAthena* GameMode, in
     SafeZoneIndicator->SafeZoneStartShrinkTime = UGameplayStatics::GetTimeSeconds(GetWorld()) + HoldDurations[GameMode->SafeZonePhase + 1];
     SafeZoneIndicator->SafeZoneFinishShrinkTime = SafeZoneIndicator->SafeZoneStartShrinkTime + Durations[GameMode->SafeZonePhase + 1];
     StartNewSafeZonePhaseOG(GameMode, NewSafeZonePhase);
+
+    if (GameMode->SafeZonePhase > 1)
+    {
+        for (auto& AlivePlayer : GameMode->AlivePlayers) {
+            if (!AlivePlayer)
+                continue;
+			
+            auto QuestManager = AlivePlayer->GetQuestManager(ESubGame::Athena);
+            FGameplayTagContainer ContextTags;
+            FGameplayTagContainer TargetTags;
+            FGameplayTagContainer SourceTags;
+            QuestManager->GetSourceAndContextTags(&SourceTags, &ContextTags);
+            ContextTags.AppendTags(GameState->CurrentPlaylistInfo.BasePlaylist->GameplayTagContainer);
+            FortQuestManager::SendStatEventWithTags(QuestManager, EFortQuestObjectiveStatEvent::StormPhase, NULL, TargetTags, SourceTags,
+                                  ContextTags, 1);
+        }
+    }
 }
 
 void FortGameModeAthena::OnAircraftExitedDropZone(AFortGameModeAthena* GameMode, AFortAthenaAircraft* FortAthenaAircraft)

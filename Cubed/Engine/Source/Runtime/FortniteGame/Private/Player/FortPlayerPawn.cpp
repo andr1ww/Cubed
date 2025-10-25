@@ -217,6 +217,7 @@ void FortPlayerPawn::UpdatePlayerDistanceTraveled(AFortPlayerPawn* Pawn, __int64
 {
     UpdatePlayerDistanceTraveledOG(Pawn, a2);
     auto Controller = (AFortPlayerControllerAthena*)Pawn->GetController();
+    if (!Controller) return;
     auto QuestManager = Controller ? Controller->GetQuestManager(ESubGame::Athena) : nullptr;
     if (!QuestManager) return;
     FGameplayTagContainer ContextTags;

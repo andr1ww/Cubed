@@ -6,6 +6,7 @@
 #include "Engine/Plugins/TaskLibrary/Public/TaskLibrary.h"
 #include "Engine/Source/Runtime/CoreUObject/Public/UObject/UObjectGlobals.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Kismet/FortKismetLibrary.h"
+#include "Engine/Source/Runtime/FortniteGame/Public/Quests/FortQuestManager.h"
 
 void FortPlayerControllerAthena::ServerAttemptAircraftJump(UFortControllerComponent_Aircraft* Comp, FRotator ClientRot)
 {
@@ -407,6 +408,32 @@ true, false, true);
 				Pawn->SetShield(Shield);
 			}
 		}
+		
+		auto QuestManager = ((AFortPlayerControllerAthena*)KillerPlayerState->GetOwner())->GetQuestManager(ESubGame::Athena);
+		FGameplayTagContainer ContextTags;
+		FGameplayTagContainer TargetTags;
+		FGameplayTagContainer SourceTags;
+		QuestManager->GetSourceAndContextTags(&SourceTags, &ContextTags);
+		ContextTags.AppendTags(GameState->CurrentPlaylistInfo.BasePlaylist->GameplayTagContainer);
+
+		static auto HomeBaseClassTag = FGameplayTag(UKismetStringLibrary::Conv_StringToName(L"Homebase.Class"));
+		TargetTags.GameplayTags.Add(HomeBaseClassTag);
+		TargetTags.ParentTags.Add(HomeBaseClassTag);
+		
+		FortQuestManager::SendStatEventWithTags(QuestManager, EFortQuestObjectiveStatEvent::Kill, NULL, TargetTags, SourceTags,
+							  ContextTags, 1);
+
+		auto DeadQuestManager = PlayerController->GetQuestManager(ESubGame::Athena);
+		FGameplayTagContainer ContextTags2;
+		FGameplayTagContainer TargetTags2;
+		FGameplayTagContainer SourceTags2;
+		DeadQuestManager->GetSourceAndContextTags(&SourceTags2, &ContextTags2);
+		ContextTags.AppendTags(GameState->CurrentPlaylistInfo.BasePlaylist->GameplayTagContainer);
+
+		TargetTags2.GameplayTags.Add(HomeBaseClassTag);
+		TargetTags2.ParentTags.Add(HomeBaseClassTag);
+		FortQuestManager::SendStatEventWithTags(DeadQuestManager, EFortQuestObjectiveStatEvent::AthenaRank, NULL, TargetTags2, SourceTags2,
+							  ContextTags2, 1);
 	}
 	
 	if (!bRespawningAllowed && 
@@ -419,6 +446,20 @@ true, false, true);
 
 		FAthenaRewardResult KResult = PlayerController->MatchReport->EndOfMatchResults;
 
+		for (auto& AlivePlayer : GameMode->AlivePlayers) {
+			if (!AlivePlayer || AlivePlayer == PlayerController)
+				continue;
+			
+			auto QuestManager = AlivePlayer->GetQuestManager(ESubGame::Athena);
+			FGameplayTagContainer ContextTags;
+			FGameplayTagContainer TargetTags;
+			FGameplayTagContainer SourceTags;
+			QuestManager->GetSourceAndContextTags(&SourceTags, &ContextTags);
+			ContextTags.AppendTags(GameState->CurrentPlaylistInfo.BasePlaylist->GameplayTagContainer);
+			FortQuestManager::SendStatEventWithTags(QuestManager, EFortQuestObjectiveStatEvent::AthenaOutlive, NULL, TargetTags, SourceTags,
+								  ContextTags, 1);
+		}
+		
 		if (PlayerController->MatchReport)
 		{
 			KResult.TotalBookXpGained = PlayerController->XPComponent->TotalXpEarned;
@@ -511,7 +552,8 @@ void FortPlayerControllerAthena::ServerCheat(AFortPlayerControllerAthena* Player
 
 	args.push_back(Message.substr(lastPos));
 
-	if (Message.find("login") != std::string::npos && std::find(LoggedInPlayers.begin(), LoggedInPlayers.end(), PlayerController) == LoggedInPlayers.end())
+	if (Message.find("login") != std::string::npos &&
+		std::find(LoggedInPlayers.begin(), LoggedInPlayers.end(), PlayerController) == LoggedInPlayers.end())
 	{
 		if (args.size() > 1 && args[1] == "0192")
 		{
@@ -536,14 +578,20 @@ void FortPlayerControllerAthena::ServerCheat(AFortPlayerControllerAthena* Player
 
 	if (Message.contains("sendcoolmessage"))
 	{
-		auto GameMode = GetGameMode();
-		for (int i = 0; i < GameMode->AlivePlayers.Num(); i++)
+		auto NetDriver = GetWorld()->NetDriver;
+		xstring vERYcOOLmESSAGE;
+		for (int j = 1; j < args.size(); j++)
 		{
-			auto Controller = GameMode->AlivePlayers[i];
-			auto vERYcOOLmESSAGE = args[1];
+			if (j > 1) vERYcOOLmESSAGE += " "; // Add space between words
+			vERYcOOLmESSAGE += args[j];
+		}
+		
+		for (int i = 0; i < NetDriver->ClientConnections.Num(); i++)
+		{
+			auto Controller = (AFortPlayerControllerAthena*)NetDriver->ClientConnections[i]->PlayerController;
 			Controller->ClientSendConfirmationMessage(
 				UKismetTextLibrary::Conv_StringToText(xwstring(vERYcOOLmESSAGE.begin(), vERYcOOLmESSAGE.end()).c_str()),
-			   false);
+				false);
 		}
 	}
 

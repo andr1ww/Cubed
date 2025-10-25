@@ -10,6 +10,9 @@ namespace FortControllerComponent_IndicatedActorManagement
         static void AddActorsToIndicatedList(UObject*, FFrame& Stack);
         static void AddActorsToStenciledList(UObject*, FFrame& Stack);
     }
-    
+
+    void AddActorsToIndicatedList(UFortControllerComponent_IndicatedActorManagement* Comp, FFrame& Stack);
+    void AddActorsToStenciledList(UFortControllerComponent_IndicatedActorManagement* Comp, FFrame& Stack);
+
     void Setup();
 }

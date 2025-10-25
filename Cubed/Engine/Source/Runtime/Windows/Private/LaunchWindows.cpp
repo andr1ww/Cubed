@@ -22,6 +22,7 @@
 #include "Engine/Source/Runtime/GameplayAbilities/Public/AbilitySystemComponent.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/Creative/FortAthenaCreativePortal.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/Creative/AFortMinigameSettingsBuilding.h"
+#include "Engine/Source/Runtime/FortniteGame/Public/Components/FortControllerComponent_IndicatedActorManagement.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Kismet/FortKismetLibrary.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Online/FortGameSessionDedicated.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Quests/FortQuestManager.h"
@@ -131,6 +132,7 @@ DWORD WINAPI Startup(LPVOID)
     FortKismetLibrary::Setup();
     ConversationLibrary::Setup();
     FortGameSessionDedicated::Setup();
+    FortControllerComponent_IndicatedActorManagement::Setup();
     
     UHook* Hook = new UHook();
     
