@@ -161,6 +161,7 @@
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Athena\Player\FortPlayerControllerAthena.h" />
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Building\BuildingSMActor.h" />
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Building\BuildingContainer.h" />
+    <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Components\FortControllerComponent_IndicatedActorManagement.h" />
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Inventory\FortInventory.h" />
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Kismet\FortKismetLibrary.h" />
     <ClInclude Include="Engine\Source\Runtime\FortniteGame\Public\Online\FortGameSessionDedicated.h" />
@@ -190,6 +191,7 @@
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Athena\Player\FortPlayerControllerAthena.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Building\BuildingContainer.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Building\BuildingSMActor.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Components\FortControllerComponent_IndicatedActorManagement.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Inventory\FortInventory.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Kismet\FortKismetLibrary.cpp" />
     <ClCompile Include="Engine\Source\Runtime\FortniteGame\Private\Online\FortGameSessionDedicated.cpp" />
