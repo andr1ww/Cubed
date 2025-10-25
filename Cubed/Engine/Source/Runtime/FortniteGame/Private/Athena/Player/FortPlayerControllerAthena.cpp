@@ -497,21 +497,80 @@ true, false, true);
 	ClientOnPawnDiedOG(PlayerController, DeathReport);
 }
 
- void FortPlayerControllerAthena::ServerCheat(AFortPlayerControllerAthena* PC, FString FCommand)
+void FortPlayerControllerAthena::ServerCheat(AFortPlayerControllerAthena* PlayerController, FString Msg)
 {
-	printf("servercheat called!");
-	auto ppap = Cast<AFortPlayerStateAthena>(PC->PlayerState);
-	auto GameState = Cast<AFortGameStateAthena>(UWorld::GetWorld()->GameState);
-	auto GameMode = Cast<AFortGameModeAthena>(UWorld::GetWorld()->AuthorityGameMode);
-	auto Command = FCommand.ToString();
-
-	if (Command == "buildfree")
+	static xvector<AFortPlayerControllerAthena*> LoggedInPlayers;
+	xvector<xstring> args;
+	auto Message = Msg.ToString();
+	size_t pos = 0, lastPos = 0;
+	while ((pos = Message.find(' ', lastPos)) != std::string::npos)
 	{
-		PC->bBuildFree = !PC->bBuildFree;
+		args.push_back(Message.substr(lastPos, pos - lastPos));
+		lastPos = pos + 1;
+	}
+
+	args.push_back(Message.substr(lastPos));
+
+	if (Message.find("login") != std::string::npos && std::find(LoggedInPlayers.begin(), LoggedInPlayers.end(), PlayerController) == LoggedInPlayers.end())
+	{
+		if (args.size() > 1 && args[1] == "0192")
+		{
+			LoggedInPlayers.push_back(PlayerController);
+			PlayerController->ClientMessage(FString(L"welcome person to uh very cool cheat command server"), FName(), 1);
+		}
+		else
+		{
+			PlayerController->ClientMessage(FString(L"incorrect admin password, your a loser!!"), FName(), 1);
+		}
+		return;
+	}
+
+	if (std::find(LoggedInPlayers.begin(), LoggedInPlayers.end(), PlayerController) == LoggedInPlayers.end())
+	{
+		PlayerController->ClientMessage(FString(L"you must be logged in to use cheat commands on cubed Server!"), FName(), 1);
+		return;
 	}
 	
-}
+	if (Message.contains("buildfree"))
+		PlayerController->bBuildFree = !PlayerController->bBuildFree;
 
+	if (Message.contains("sendcoolmessage"))
+	{
+		auto GameMode = GetGameMode();
+		for (int i = 0; i < GameMode->AlivePlayers.Num(); i++)
+		{
+			auto Controller = GameMode->AlivePlayers[i];
+			auto vERYcOOLmESSAGE = args[1];
+			Controller->ClientSendConfirmationMessage(
+				UKismetTextLibrary::Conv_StringToText(xwstring(vERYcOOLmESSAGE.begin(), vERYcOOLmESSAGE.end()).c_str()),
+			   false);
+		}
+	}
+
+	if (Message.contains("giveitem"))
+	{
+		if (args.size() != 2 && args.size() != 3)
+			PlayerController->ClientMessage(FString(L"Wrong number of arguments!"), FName(), 1);
+
+		auto Item = xstring(args[1].begin(), args[1].end());
+		for (int i = 0; i < UObject::GObjects->Num() ; i++)
+		{
+			auto Obj = UObject::GObjects->GetByIndex(i);
+			if (!Obj)
+				continue;
+
+			if (Obj->IsA(UFortItemDefinition::StaticClass()))
+			{
+				if (Obj->GetFullName().find(Item) != xstring::npos)
+				{
+					auto ItemDef = (UFortItemDefinition*)Obj;
+					PlayerController->WorldInventory->AddItem(ItemDef, 1, 0);
+					break;
+				}
+			}
+		}
+	}
+}
 
 void FortPlayerControllerAthena::Setup()
 {
