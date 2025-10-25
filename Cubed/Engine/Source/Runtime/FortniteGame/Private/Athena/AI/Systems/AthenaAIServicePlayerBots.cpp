@@ -19,7 +19,8 @@ void AthenaAIServicePlayerBots::InitializeMMRInfos()
     AIServicePlayerBots->CachedMMRSpawningInfo.SpawningInfos.Add(NewSpawningInfo);
     AIServicePlayerBots->GamePhaseToStartSpawning = EAthenaGamePhase::Warmup;
     AIServicePlayerBots->bWaitForNavmeshToBeLoaded = false;
-
+    *reinterpret_cast<bool*>(__int64(AIServicePlayerBots) + 0x688) = true; //bCanActivateBrain
+    
     static bool bSet = false;
     if (!bSet)
     {

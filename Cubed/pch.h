@@ -237,16 +237,19 @@ template <class X, class Y>
 using xmap = map<X, Y, less<X>, TMemoryAllocator<pair<const X, Y>>>;
 
 template<typename T>
-        __forceinline std::vector<T*> GetObjectsOfClass()
+__forceinline xvector<T*> GetObjectsOfClass()
 {
-        std::vector<T*> Objects;
+        xvector<T*> Objects;
         for (int i = 0; i < UObject::GObjects->Num(); i++)
         {
-                T* Object = reinterpret_cast<T*>(UObject::GObjects->GetByIndex(i));
-                if (!Object) continue;
+                auto Object = BasicFilesImpleUtils::GetObjectByIndex(i);
+
+                if (!Object)
+                        continue;
+                
                 if (Object->IsA(T::StaticClass()))
                 {
-                        Objects.push_back(Object);
+                        Objects.push_back((T*)Object);
                 }
         }
         return Objects;

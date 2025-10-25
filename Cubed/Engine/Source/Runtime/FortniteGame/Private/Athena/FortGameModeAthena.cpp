@@ -168,6 +168,9 @@ APawn* FortGameModeAthena::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AF
     if (!bFirst) 
     {
         bFirst = true;
+        GetGameState()->WarmupCountdownEndTime = GetGameState()->WarmupCountdownEndTime + 80.f;
+        GetGameMode()->WarmupCountdownDuration = GetGameState()->WarmupCountdownEndTime + 80.f;
+        
         TArray<AActor*> WarmupActors;
         std::vector<std::string> LootClasses = {
             "/Game/Athena/Environments/Blueprints/Tiered_Athena_FloorLoot_Warmup.Tiered_Athena_FloorLoot_Warmup_C",

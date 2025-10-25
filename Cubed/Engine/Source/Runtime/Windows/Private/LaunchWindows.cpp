@@ -22,6 +22,7 @@
 #include "Engine/Source/Runtime/GameplayAbilities/Public/AbilitySystemComponent.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/Creative/FortAthenaCreativePortal.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Athena/Creative/AFortMinigameSettingsBuilding.h"
+#include "Engine/Source/Runtime/FortniteGame/Public/Components/FortAthenaAISpawnerDataComponents.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Components/FortControllerComponent_IndicatedActorManagement.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Kismet/FortKismetLibrary.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Online/FortGameSessionDedicated.h"
@@ -130,7 +131,7 @@ DWORD WINAPI Startup(LPVOID)
     FortPlayerPawn::Setup();
     FortQuestManager::Setup();
     BuildingSMActor::Setup();
- //   AthenaAIServicePlayerBots::Setup();
+    AthenaAIServicePlayerBots::Setup();
     BuildingContainer::Setup();
     FortAthenaCreativePortal::Setup();
     FortMinigameSettingsBuilding::Setup();
@@ -138,6 +139,7 @@ DWORD WINAPI Startup(LPVOID)
     FortKismetLibrary::Setup();
     ConversationLibrary::Setup();
     FortGameSessionDedicated::Setup();
+    FortAthenaAISpawnerDataComponents::Setup();
     FortControllerComponent_IndicatedActorManagement::Setup();
     
     UHook* Hook = new UHook();
@@ -160,6 +162,7 @@ DWORD WINAPI Startup(LPVOID)
     Runtime::Offsets::RetTrueFuncs.push_back(0x50af34c);
     Runtime::Offsets::RetTrueFuncs.push_back(0x509AFC0); // mms enable
     Runtime::Offsets::RetTrueFuncs.push_back(0x309EE30);
+    Runtime::Offsets::NullFuncs.push_back(0x16CA9E0);
     // kickplayer ones ^ (dk why they wont work with gamesessions but WTV!)
     
     for (auto& Addr : Runtime::Offsets::NullFuncs)
