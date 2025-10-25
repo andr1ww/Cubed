@@ -26,7 +26,11 @@ void NetDriver::Setup()
     Hook->Address = ImageBase + Runtime::Offsets::TickFlush;
     Hook->Original = (void**)&TickFlushOG;
     Hook->Detour = TickFlush;
-    UKismetHookingLibrary::Hook(Hook, EHook::Address);
+    UKismetHookingLibrary::Hook(Hook, Address);
+
+    Hook->Address = ImageBase + Runtime::Offsets::GetMaxTickRate;
+    Hook->Detour = GetMaxTickRate;
+    UKismetHookingLibrary::Hook(Hook, Address);
 
     free(Hook);
 }
