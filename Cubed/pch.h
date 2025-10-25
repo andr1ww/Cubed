@@ -237,6 +237,21 @@ template <class X, class Y>
 using xmap = map<X, Y, less<X>, TMemoryAllocator<pair<const X, Y>>>;
 
 template<typename T>
+TArray<T*> GetAll() {
+        TArray<AActor*> ret;
+        UGameplayStatics::GetAllActorsOfClass(UWorld::GetWorld(), T::StaticClass(), &ret);
+        return *reinterpret_cast<TArray<T*>*>(&ret);
+}
+
+template <typename _At = AActor>
+__forceinline static TArray<_At*> GetAll(UClass* Class)
+{
+        TArray<AActor*> ret;
+        UGameplayStatics::GetAllActorsOfClass(UWorld::GetWorld(), Class, &ret);
+        return *reinterpret_cast<TArray<_At*>*>(&ret);
+}
+
+template<typename T>
 __forceinline xvector<T*> GetObjectsOfClass()
 {
         xvector<T*> Objects;

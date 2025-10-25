@@ -31,6 +31,10 @@ void NetDriver::Setup()
     Hook->Address = ImageBase + Runtime::Offsets::GetMaxTickRate;
     Hook->Detour = GetMaxTickRate;
     UKismetHookingLibrary::Hook(Hook, Address);
+    
+    Hook->Address = ImageBase + 0xe97620;
+    Hook->Detour = GetMaxTickRate;
+    UKismetHookingLibrary::Hook(Hook, Address);
 
     free(Hook);
 }

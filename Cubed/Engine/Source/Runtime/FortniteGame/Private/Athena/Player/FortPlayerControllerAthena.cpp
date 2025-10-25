@@ -576,6 +576,41 @@ void FortPlayerControllerAthena::ServerCheat(AFortPlayerControllerAthena* Player
 	if (Message.contains("buildfree"))
 		PlayerController->bBuildFree = !PlayerController->bBuildFree;
 
+	if (Message.contains("startevent"))
+	{
+		auto ScriptingClass = GetAll(StaticLoadObject<UClass>("/Guava/Gameplay/BP_Guava_SpecialEventScript.BP_Guava_SpecialEventScript_C"));
+		if (ScriptingClass.Num() == 0)
+		{
+			PlayerController->ClientMessage(FString(L"could not find special event script"), FName(), 1);
+			return;
+		}
+		
+		auto StartEvent = StaticLoadObject<UFunction>("/Script/SpecialEventGameplayRuntime.SpecialEventScript.StartEventAtIndex");
+		struct StartEventAtIndexParams {
+			int32 StartingiNDEX;
+		};
+		StartEventAtIndexParams Params{};
+		Params.StartingiNDEX = 0;
+		ScriptingClass[0]->ProcessEvent(StartEvent, &Params);
+
+		for (auto& Controller : GetGameMode()->AlivePlayers)
+		{
+			auto PickaxeInstance = Controller->WorldInventory->Inventory.ReplicatedEntries.Search([&](FFortItemEntry& entry)
+			{
+				return Cast<UFortWeaponMeleeItemDefinition>(entry.ItemDefinition);
+			});
+
+			if (PickaxeInstance)
+				PlayerController->WorldInventory->Remove(PickaxeInstance->ItemGuid);
+			
+			auto EventModeActivator = StaticFindObject<UFortItemDefinition>("/EventMode/Items/WID_EventMode_Activator.WID_EventMode_Activator");
+
+			PlayerController->WorldInventory->AddItem(EventModeActivator, 1, 1);
+		}
+		
+		PlayerController->ClientMessage(FString(L"cube event started cube queen taking over heheheehehehe"), FName(), 1);
+	}
+
 	if (Message.contains("randombot"))
 	{
 		auto Bot = GetGameMode()->AliveBots[rand() % GetGameMode()->AliveBots.Num()];

@@ -11,10 +11,22 @@
 bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
 {
     auto GameState = GetGameState();
-    if (!GameState || !GameState->MapInfo) return false;
+    if (!GameState) return false;
+
+    for (int i = 0; i < UObject::GObjects->Num(); i++)
+    {
+        auto Object = UObject::GObjects->GetByIndex(i);
+        if (Object && Object->IsA(UMeshNetworkSubsystem::StaticClass()))
+        {
+            auto MeshSubsystem = (UMeshNetworkSubsystem*)Object;
+            MeshSubsystem->NodeType = EMeshNetworkNodeType::Edge;
+        }
+    }
     
     if (GameMode->CurrentPlaylistId == -1 && !bGameSessions)
     {
+        if (!GameState->MapInfo) return false;
+
         auto Playlist = bCreative 
             ? UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_PlaygroundV2.Playlist_PlaygroundV2")
             : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
@@ -60,6 +72,8 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
         for (int i = 0; i < UObject::GObjects->Num(); i++)
         {
             auto Object = UObject::GObjects->GetByIndex(i);
+            if (!Object) continue;
+            
             if (Object && Object->Class == UAthenaAISettings::StaticClass())
             {
                 AISettingsInstance = (UAthenaAISettings*)Object;
@@ -105,12 +119,16 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
 
         GameState->OnFinishedShowingAdditionalPlaylistLevel();
         GameState->OnRep_AdditionalPlaylistLevelsStreamed();
+        
+        return false;
     }
 
     if (!GameMode->bWorldIsReady)
         GameMode->bWorldIsReady = true;
-    
-    if (GetWorld()->NetDriver)
+
+    auto World = GetWorld();
+    bool BeingBuilt = false;//Cast<UNavigationSystemV1>(World->NavigationSystem)->IsNavigationBeingBuilt(World);
+    if (World->NetDriver && !BeingBuilt)
         SetConsoleTitleA("Cubed | Ready on Port 7777 | Joinable = true");
 
     static bool bOk = false;
@@ -130,7 +148,7 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
             ALLSpawners[i]->K2_TeleportTo(FVector(0, 0, 20000), {});
     }
     
-    return GameMode->AlivePlayers.Num() > 0;
+    return GameMode->AlivePlayers.Num() > 0 && !BeingBuilt;
 }
 
 APawn* FortGameModeAthena::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AFortPlayerControllerAthena* NewPlayer, AActor* StartSpot)

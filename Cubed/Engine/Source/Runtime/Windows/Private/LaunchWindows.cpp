@@ -74,12 +74,6 @@ void CreateAndConfigureNavigationSystem(UAthenaNavSystemConfig* This, UWorld* Wo
     return CreateAndConfigureNavigationSystemOG(This, World);
 }
 
-static inline char (*sub_508CB04OG)(__int64 a1, char a2) = nullptr;
-char __fastcall sub_508CB04(__int64 a1, char a2)
-{
-    return sub_508CB04OG(a1, 0);
-}
-
 static void (*SendRequestNowOG)(void* Arg1, void* MCPData, int);
 static void SendRequestNow(void* Arg1, void* MCPData, int) { return SendRequestNowOG(Arg1, MCPData, 3); }
 
@@ -106,6 +100,8 @@ namespace SDK
 uint32 RetNegativeOne() { return -1; }
 namespace Creative { xmap<xstring, UFortCreativeRealEstatePlotItemDefinition*> PlotDefinitionsByMcpId = {}; }
 
+EMeshNetworkNodeType GetNodeType() { return EMeshNetworkNodeType::Edge; }
+
 DWORD WINAPI Startup(LPVOID)
 {
     AllocConsole();
@@ -131,7 +127,7 @@ DWORD WINAPI Startup(LPVOID)
     FortPlayerPawn::Setup();
     FortQuestManager::Setup();
     BuildingSMActor::Setup();
-    AthenaAIServicePlayerBots::Setup();
+  //  AthenaAIServicePlayerBots::Setup();
     BuildingContainer::Setup();
     FortAthenaCreativePortal::Setup();
     FortMinigameSettingsBuilding::Setup();
@@ -175,7 +171,7 @@ DWORD WINAPI Startup(LPVOID)
     UKismetHookingLibrary::PatchBytes(ImageBase + 0x12B7F2C, { 0x90, 0x90 });
 
     Hook->Address = ImageBase + Runtime::Offsets::EncryptionPatch;
-    Hook->Byte = 0x74;
+    Hook->Byte = 0x74; 
     UKismetHookingLibrary::Hook(Hook, Byte);
 
     UKismetHookingLibrary::NullCall(0x50A8E27);
@@ -219,6 +215,10 @@ DWORD WINAPI Startup(LPVOID)
     Hook->Original = (void**)&CreateAndConfigureNavigationSystemOG;
     Hook->Detour = CreateAndConfigureNavigationSystem;
     if (!bCreative) UKismetHookingLibrary::Hook(Hook, Address);
+
+    Hook->Address = ImageBase + 0x1FE669C;
+    Hook->Detour = GetNodeType;
+    UKismetHookingLibrary::Hook(Hook, Address);
     
     free(Hook);
 
