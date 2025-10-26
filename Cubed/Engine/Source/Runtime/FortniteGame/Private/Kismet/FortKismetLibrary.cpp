@@ -157,6 +157,8 @@ void AddLootTierData(UDataTable* DataTable)
 {
 	if (!DataTable || IsBadReadPtr(DataTable, 8) || !DataTable->Class)
 		return;
+	LootTierDatas.Add(DataTable);
+	return;
 	if (auto CompositeDataTable = Cast<UCompositeDataTable>(DataTable)) {
 		for (auto Table : CompositeDataTable->ParentTables) {
 			LootTierDatas.Add(Table);
@@ -171,6 +173,8 @@ void AddLootPackageData(UDataTable* DataTable)
 {
 	if (!DataTable || IsBadReadPtr(DataTable, 8) || !DataTable->Class)
 		return;
+	LootPackageDatas.Add(DataTable);
+	return;
 	if (auto CompositeDataTable = Cast<UCompositeDataTable>(DataTable)) {
 		for (auto Table : CompositeDataTable->ParentTables) {
 			LootPackageDatas.Add(Table);
@@ -199,20 +203,22 @@ void SetupLTDS()
 
 	for (UFortGameFeatureData* GameFeature : GameFeatures) 
 	{
-		AddLootTierData(GameFeature->DefaultLootTableData.LootTierData.Get());
-		AddLootPackageData(GameFeature->DefaultLootTableData.LootPackageData.Get());
 		for (auto Tag : Playlist->GameplayTagContainer.GameplayTags) 
 		{
 			auto OvverideLootTableDataIt = GameFeature->PlaylistOverrideLootTableData.Find(Tag, [](const FGameplayTag& Left, const FGameplayTag& Wright) {return Left == Wright; });
 
 			if (OvverideLootTableDataIt.IsValid()) 
-			{
+			{	
 				auto OvverideLootTableData = GameFeature->PlaylistOverrideLootTableData[OvverideLootTableDataIt.GetIndex()].Second;
+				auto LootPackageData = OvverideLootTableData.LootPackageData.Get();
+				auto LootTierData = OvverideLootTableData.LootTierData.Get();
 				AddLootPackageData(OvverideLootTableData.LootPackageData.Get());
+				AddLootTierData(LootTierData);
 			}
 		}
 	}
 }
+
 template <typename T>
 T* PickWeighted(TArray<T*> Array) {
 	float TotalWeight = std::accumulate(Array.begin(), Array.end(), 0.0f, [&](float acc, T*& p) { return acc + p->Weight; });
@@ -221,7 +227,7 @@ T* PickWeighted(TArray<T*> Array) {
 	for (auto Element : Array)
 	{
 		float Weight = Element->Weight;
-		if (Weight == 0)
+		if (Weight == 0.0f)
 			continue;
 
 		if (Number <= Weight) 

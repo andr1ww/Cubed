@@ -257,7 +257,8 @@ DWORD WINAPI Startup(LPVOID)
     MH_EnableHook(MH_ALL_HOOKS);
     if (!bGameSessions) GetWorld()->OwningGameInstance->LocalPlayers.Remove(0);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(),
-        bCreative || CustomMapsRuntime::IsPluginEnabled() ? L"open Creative_NoApollo_Terrain" : L"open Apollo_Terrain", nullptr);
+
+        bCreative || CustomMapsRuntime::IsPluginEnabled() ? L"open Creative_NoApollo_Terrain" : bImposters ? L"open Mole_UnderBase_Parent" : L"open Apollo_Terrain", nullptr);
 
     std::vector<std::wstring> Logs = {
         L"LogFortUIDirector",

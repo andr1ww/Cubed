@@ -24,13 +24,16 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
         }
     }
     
+    
     if (GameMode->CurrentPlaylistId == -1 && !bGameSessions)
     {
         if (!GameState->MapInfo) return false;
 
         auto Playlist = bCreative 
             ? UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_PlaygroundV2.Playlist_PlaygroundV2")
-            : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
+            : bImposters ? UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_MoleGame.Playlist_MoleGame")
+            : bPlayEvent ? UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_Guava.Playlist_Guava")
+            : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaulSolo.Playlist_DefaulSolo");
           //  : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
         if (!Playlist) return false;
 

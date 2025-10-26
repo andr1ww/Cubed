@@ -4,7 +4,7 @@
 
 inline xmap<xstring, bool> CustomMaps =
 {
-    {"Test1v1", true},
+    {"Test1v1", false},
     {"MartozMap", false},
 };
 

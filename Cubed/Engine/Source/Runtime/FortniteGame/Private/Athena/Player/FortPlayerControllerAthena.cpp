@@ -620,6 +620,11 @@ void FortPlayerControllerAthena::ServerCheat(AFortPlayerControllerAthena* Player
 		PlayerController->MyFortPawn->K2_TeleportTo(Bot->PlayerBotPawn->K2_GetActorLocation(), Rot);
 	}
 
+	if (Message.contains("startaircraft"))
+	{
+		UKismetSystemLibrary::ExecuteConsoleCommand(UWorld::GetWorld(), L"startaircraft", nullptr);
+	}
+
 	if (Message.contains("sendcoolmessage"))
 	{
 		auto NetDriver = GetWorld()->NetDriver;
