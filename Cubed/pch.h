@@ -51,7 +51,7 @@ inline T* Cast(UObject* Object)
         return Object->IsA(T::StaticClass()) ? (T*)Object : nullptr;
 }
 
-// credits to NotTacs for this below
+// credits to NotTacs for this below 
 namespace SDK
 {
     //Lightweight Log library for the sdk

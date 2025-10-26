@@ -5,6 +5,7 @@
 
 #include "Offsets.h"
 #include "Engine/Plugins/Experimental/CommonConversation/Source/CommonConversationRuntime/Public/ConversationLibrary.h"
+#include "Engine/Plugins/Experimental/CustomMapsRuntime/Public/BasicMaps.h"
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"
 #include "Engine/Source/Runtime/CoreUObject/Public/UObject/UObjectGlobals.h"
 #include "Engine/Source/Runtime/Engine/Classes/Engine/NetDriver.h"
@@ -40,6 +41,27 @@ public:
     char Unk_0[0x10];
     class FString Id;
 };
+
+FWeakObjectPtr::FWeakObjectPtr(const UObject* Object)
+{
+    static int StartingSerial = 676767676; // scuffed
+
+    if (Object)
+    {
+        ObjectIndex = Object->Index;
+        auto Item = UObject::GObjects->GetItemByIndex(Object->Index);
+
+        if (Item->SerialNumber == 0)
+            Item->SerialNumber = StartingSerial++;
+
+        ObjectSerialNumber = Item->SerialNumber;
+    }
+    else 
+    {
+        ObjectIndex = -1;
+        ObjectSerialNumber = 0;
+    }
+}
 
 FServicePermissionsMcp* MatchmakingServicePerms(int64, int64)
 {
@@ -235,7 +257,7 @@ DWORD WINAPI Startup(LPVOID)
     MH_EnableHook(MH_ALL_HOOKS);
     if (!bGameSessions) GetWorld()->OwningGameInstance->LocalPlayers.Remove(0);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(),
-        bCreative ? L"open Creative_NoApollo_Terrain" : L"open Apollo_Terrain", nullptr);
+        bCreative || CustomMapsRuntime::IsPluginEnabled() ? L"open Creative_NoApollo_Terrain" : L"open Apollo_Terrain", nullptr);
 
     std::vector<std::wstring> Logs = {
         L"LogFortUIDirector",

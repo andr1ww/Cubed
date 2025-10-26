@@ -472,6 +472,12 @@ public:
 	int32                                         ObjectIndex;                                       // 0x0000(0x0004)(NOT AUTO-GENERATED PROPERTY)
 	int32                                         ObjectSerialNumber;                                // 0x0004(0x0004)(NOT AUTO-GENERATED PROPERTY)
 
+	FWeakObjectPtr(int32 Index = 0, int32 SerialNumber = 0)
+		: ObjectIndex(Index), ObjectSerialNumber(SerialNumber)
+	{
+	}
+	
+	FWeakObjectPtr(const UObject* Object);
 public:
 	class UObject* Get() const;
 	class UObject* operator->() const;
@@ -485,6 +491,17 @@ template<typename UEType>
 class TWeakObjectPtr : public FWeakObjectPtr
 {
 public:
+	TWeakObjectPtr(int32 Index = 0, int32 SerialNumber = 0)
+	: FWeakObjectPtr(Index, SerialNumber)
+	{
+	}
+
+	TWeakObjectPtr(UEType* Obj)
+		: FWeakObjectPtr(Obj)
+	{
+	}
+
+	
 	UEType* Get() const
 	{
 		return static_cast<UEType*>(FWeakObjectPtr::Get());
@@ -567,6 +584,14 @@ public:
 	class TSoftObjectPtr : public FSoftObjectPtr
 	{
 	public:
+		TSoftObjectPtr() {}
+
+		TSoftObjectPtr(UEType* Obj)
+		{
+			WeakPtr = FWeakObjectPtr(Obj);
+			ObjectID.AssetPathName = FName(0);
+		}
+		
 		UEType* Get() const
 		{
 			return static_cast<UEType*>(InternalObjectGet((FSoftObjectPtr *) this, UEType::StaticClass()));
@@ -585,6 +610,14 @@ public:
 	class TSoftClassPtr : public FSoftObjectPtr
 	{
 	public:
+		TSoftClassPtr() {}
+
+		TSoftClassPtr(UClass* Obj)
+		{
+			WeakPtr = FWeakObjectPtr(Obj);
+			ObjectID.AssetPathName = FName(0);
+		}
+		
 		UClass *Get() const
 		{
 			return static_cast<UClass*>(InternalObjectGet((FSoftObjectPtr *) this, UClass::StaticClass()));

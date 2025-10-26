@@ -3,6 +3,7 @@
 
 #include "Globals.h"
 #include "Offsets.h"
+#include "Engine/Plugins/Experimental/CustomMapsRuntime/Public/BasicMaps.h"
 #include "Engine/Plugins/HookingLibrary/Public/HookingLibrary.h"
 #include "Engine/Source/Runtime/CoreUObject/Public/UObject/UObjectGlobals.h"
 #include "Engine/Source/Runtime/Engine/Classes/Engine/World.h"
@@ -33,7 +34,7 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
           //  : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
         if (!Playlist) return false;
 
-        if (!bCreative)
+        if (!bCreative && !CustomMapsRuntime::IsPluginEnabled())
         {
             GameMode->AIDirector = GetWorld()->SpawnActor<AAthenaAIDirector>(AAthenaAIDirector::StaticClass(), { 0, 0, -99999 }, {});
             if (!GameMode->AIDirector) return false;
@@ -44,6 +45,19 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
             GameMode->SpawningPolicyManager = GetWorld()->SpawnActor<AFortAthenaSpawningPolicyManager>(AFortAthenaSpawningPolicyManager::StaticClass(), { 0, 0, -99999 }, {});
             GameMode->SpawningPolicyManager->GameModeAthena = GameMode;
             GameMode->SpawningPolicyManager->GameStateAthena = GameState;
+        }
+        
+        if (CustomMapsRuntime::IsPluginEnabled() && CustomMapsRuntime::GetEnabledMap() == "Test1v1")
+        {
+            auto CreativePlaylist = UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_PlaygroundV2.Playlist_PlaygroundV2");
+            auto InfiniteResourcesMutator = GetWorld()->SpawnActor<AFortAthenaMutator_InfiniteResources>(
+                AFortAthenaMutator_InfiniteResources::StaticClass(), { 0,0,-99999 }, {}, GameMode);
+            
+            TSoftClassPtr<UClass> MutatorClassPtr = InfiniteResourcesMutator->Class;
+            CreativePlaylist->ModifierList[0]->Mutators.Add(MutatorClassPtr);
+            
+            for (auto& Modifier : CreativePlaylist->ModifierList) 
+                Playlist->ModifierList.Add(Modifier);
         }
         
         Playlist->GarbageCollectionFrequency = 99999999999999.f;
@@ -120,6 +134,24 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
         GameState->OnFinishedShowingAdditionalPlaylistLevel();
         GameState->OnRep_AdditionalPlaylistLevelsStreamed();
         
+        if (CustomMapsRuntime::IsPluginEnabled() && CustomMapsRuntime::GetEnabledMap() == "Test1v1")
+        {
+            auto InfiniteResourcesMutator = GetWorld()->SpawnActor<AFortAthenaMutator_InfiniteResources>(
+                AFortAthenaMutator_InfiniteResources::StaticClass(), { 0,0,-99999 }, {}, GameMode);
+
+            TSoftClassPtr<UClass> MutatorClassPtr = InfiniteResourcesMutator->Class;
+            InfiniteResourcesMutator->bReplicates = true;
+            InfiniteResourcesMutator->UpdateResourceIcons();
+            InfiniteResourcesMutator->OnRep_bInfiniteResources();
+            InfiniteResourcesMutator->bInfiniteResources = true;
+            GameMode->MutatorListComponent->Mutators.Add(InfiniteResourcesMutator);
+            GameMode->MutatorListComponent->MutatorDefs.Add(MutatorClassPtr);
+            GameMode->MutatorListComponent->RegisterMinigameMutators();
+            GameState->MutatorListComponent->Mutators.Add(InfiniteResourcesMutator);
+            GameState->MutatorListComponent->MutatorDefs.Add(MutatorClassPtr);
+            GameState->MutatorListComponent->RegisterMinigameMutators();
+        }
+        
         return false;
     }
 
@@ -132,7 +164,7 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
         SetConsoleTitleA("Cubed | Ready on Port 7777 | Joinable = true");
 
     static bool bOk = false;
-    if (GameMode->AlivePlayers.Num() > 0 && bCustomMaps && !bOk)
+    if (GameMode->AlivePlayers.Num() > 0 && CustomMapsRuntime::IsPluginEnabled() && !bOk)
     {
         bOk = true;
         TArray<AActor*> ALLSpawners;
@@ -155,10 +187,10 @@ APawn* FortGameModeAthena::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AF
 {
     FTransform T = StartSpot->GetTransform();
     T.Translation.Z += 250.f;
-    if (bCustomMaps)
+    if (CustomMapsRuntime::IsPluginEnabled())
         T.Translation.Z += 20000.f;
 
-    if (bCustomMaps)
+    if (CustomMapsRuntime::IsPluginEnabled())
     {
         GetGameState()->GamePhase = EAthenaGamePhase::SafeZones;
         GetGameState()->GamePhaseStep = EAthenaGamePhaseStep::StormHolding;
@@ -166,6 +198,10 @@ APawn* FortGameModeAthena::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AF
     }
     
     APawn* Pawn = GameMode->SpawnDefaultPawnAtTransform(NewPlayer, T);
+
+    auto MyFortPawn = Cast<AFortPlayerPawnAthena>(Pawn);
+    MyFortPawn->bIsInAnyStorm = false; //Same for respawning!
+    MyFortPawn->OnRep_IsInAnyStorm();
 
     AFortInventory* Inventory = NewPlayer->WorldInventory;
     for (int i = 0; i < GameMode->StartingItems.Num(); i++)
@@ -201,12 +237,12 @@ APawn* FortGameModeAthena::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AF
             UGameplayStatics::GetAllActorsOfClass(UWorld::GetWorld(), WarmupClass, &WarmupActors);
 
             for (auto& WarmupActor : WarmupActors)
-                if (!bCustomMaps) WarmupActor->K2_DestroyActor();
+                if (!CustomMapsRuntime::IsPluginEnabled()) WarmupActor->K2_DestroyActor();
 
             WarmupActors.Free(); 
         }
         
-        if (bCreative)
+        if (bCreative || CustomMapsRuntime::IsPluginEnabled())
         {
             if (UCurveTable* AthenaGameDataTable = Cast<AFortGameStateAthena>(GameMode->GameState)->AthenaGameDataTable)
             {
@@ -258,6 +294,9 @@ void FortGameModeAthena::HandleStartingNewPlayer(AFortGameModeAthena* GameMode, 
     PlayerState->SeasonLevelUIDisplay = NewPlayer->XPComponent->CurrentLevel;
     PlayerState->OnRep_SeasonLevelUIDisplay();
 
+    if (CustomMapsRuntime::IsPluginEnabled() && CustomMapsRuntime::GetEnabledMap() == "Test1v1")
+        NewPlayer->bBuildFree = true;
+    
     if (!NewPlayer->MatchReport)
         NewPlayer->MatchReport = (UAthenaPlayerMatchReport*)UGameplayStatics::SpawnObject(UAthenaPlayerMatchReport::StaticClass(), NewPlayer);
 
@@ -384,6 +423,9 @@ void FortGameModeAthena::StartNewSafeZonePhase(AFortGameModeAthena* GameMode, in
     auto SafeZoneIndicator = GameMode->SafeZoneIndicator;
     SafeZoneIndicator->SafeZoneStartShrinkTime = UGameplayStatics::GetTimeSeconds(GetWorld()) + HoldDurations[GameMode->SafeZonePhase + 1];
     SafeZoneIndicator->SafeZoneFinishShrinkTime = SafeZoneIndicator->SafeZoneStartShrinkTime + Durations[GameMode->SafeZonePhase + 1];
+    if (CustomMapsRuntime::IsPluginEnabled())
+        SafeZoneIndicator->SafeZoneStartShrinkTime += 12600.f;
+    
     StartNewSafeZonePhaseOG(GameMode, NewSafeZonePhase);
 
     if (GameMode->SafeZonePhase > 1)
@@ -427,7 +469,7 @@ void FortGameModeAthena::OnAircraftExitedDropZone(AFortGameModeAthena* GameMode,
 void FortGameModeAthena::StartAircraftPhase(AFortGameModeAthena* GameMode, char a2)
 {
     StartAircraftPhaseOG(GameMode, a2);
-    if (!bCreative)
+    if (!bCreative || !CustomMapsRuntime::IsPluginEnabled())
     {
         auto GameState = GetGameState();
 
