@@ -31,10 +31,12 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
 
         auto Playlist = bCreative 
             ? UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_PlaygroundV2.Playlist_PlaygroundV2")
-            : bImposters ? UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_MoleGame.Playlist_MoleGame")
+            : bImposters ? UObject::FindObject<UFortPlaylistAthena>("Fort"
+                                                                    ""
+                                                                    "PlaylistAthena Playlist_MoleGame.Playlist_MoleGame")
             : bPlayEvent ? UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_Guava.Playlist_Guava")
-            : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaulSolo.Playlist_DefaulSolo");
-          //  : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
+            : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
+          // : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
         if (!Playlist) return false;
 
         if (!bCreative && !CustomMapsRuntime::IsPluginEnabled())
@@ -276,7 +278,8 @@ APawn* FortGameModeAthena::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AF
     return Pawn;
 }
 
-void FortGameModeAthena::HandleStartingNewPlayer(AFortGameModeAthena* GameMode, AFortPlayerControllerAthena* NewPlayer) {
+void FortGameModeAthena::HandleStartingNewPlayer(AFortGameModeAthena* GameMode, AFortPlayerControllerAthena* NewPlayer)
+{
     auto PlayerState = Cast<AFortPlayerStateAthena>(NewPlayer->PlayerState);
     auto GameState = GetGameState();
 
@@ -348,6 +351,8 @@ void FortGameModeAthena::HandleStartingNewPlayer(AFortGameModeAthena* GameMode, 
             }
         }
     }
+
+    CustomMapsRuntime::SetupMap();
 }
 
 void FortGameModeAthena::StartNewSafeZonePhase(AFortGameModeAthena* GameMode, int NewSafeZonePhase)
