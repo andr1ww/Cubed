@@ -227,20 +227,16 @@ std::chrono::duration<double>(
     });
 }
 
-void FortPlayerControllerAthena::ClientOnPawnDied(AFortPlayerControllerAthena* PlayerController, FFortPlayerDeathReport& DeathReport)
+void FortPlayerControllerAthena::OnPawnDied(AFortPlayerControllerAthena* PlayerController, AFortPlayerPawnAthena* KilledPawn, double Damage, const FGameplayTagContainer* InTags, const FGameplayEffectContextHandle* EffectContext, AController* EventInstigator, AActor* DamageCauser, AController* DBNOFinisher)
 {
-	if (!PlayerController)
-		return ClientOnPawnDiedOG(PlayerController, DeathReport);
-
-	auto GameMode = (AFortGameModeAthena*)UWorld::GetWorld()->AuthorityGameMode;
-	auto GameState = (AFortGameStateAthena*)UWorld::GetWorld()->GameState;
-	auto PlayerState = (AFortPlayerStateAthena*)PlayerController->PlayerState;
+	auto GameMode = Cast<AFortGameModeAthena>(GetWorld()->AuthorityGameMode);
+	auto GameState = Cast<AFortGameStateAthena>(GetWorld()->GameState);
+	auto PlayerState = Cast<AFortPlayerStateAthena>(PlayerController->PlayerState);
+	if (!PlayerState || !GameState || !GameMode)
+		return OnPawnDiedOG(PlayerController, KilledPawn, Damage, InTags, EffectContext, EventInstigator, DamageCauser, DBNOFinisher);
 	
-	if (!PlayerState || !GameState || !GameMode) return;
-
-	auto KillerPlayerState = (AFortPlayerStateAthena*)DeathReport.KillerPlayerState;
-	auto KillerPawn = Cast<AFortPlayerPawnAthena>(DeathReport.KillerPawn);
-	auto VictimPawn = (AFortPlayerPawnAthena*)PlayerController->MyFortPawn;
+	auto KillerPlayerState = EventInstigator ? Cast<AFortPlayerStateAthena>(EventInstigator->PlayerState) : PlayerState;
+	auto KillerPawn = EventInstigator ? Cast<AFortPlayerPawnAthena>(((AFortPlayerController*)KillerPlayerState->GetOwner())->MyFortPawn) : KilledPawn;
 
 	TArray<FFortQuestObjectiveCompletion> Advance;
 	TArray<FAthenaAccolades> Accolades;
@@ -256,27 +252,24 @@ void FortPlayerControllerAthena::ClientOnPawnDied(AFortPlayerControllerAthena* P
 		true, true, Accolades, ShuffledLoadoutUsed,
 		0, ShuffledLoadoutUsed, ShuffledLoadoutUsed, secondaryXp,
 		GrantedItems, GrantedTransientQuests, PlaylistId, SeasonItemStates,
-		UGameplayStatics::GetTimeSeconds(GetWorld()) + PlayerState->TimeOfPawnCreation,
+		PlayerState->SecondsAlive,
 		{});
 	
-	FVector DeathLocation = VictimPawn ? VictimPawn->K2_GetActorLocation() : FVector{0,0,0};
-
-	if (!KillerPlayerState && VictimPawn)
-		KillerPlayerState = Cast<AFortPlayerStateAthena>(Cast<AFortPlayerControllerAthena>(VictimPawn->Controller)->PlayerState);
+	FVector DeathLocation = KilledPawn ? KilledPawn->K2_GetActorLocation() : FVector{0,0,0};
 	
 	PlayerState->PawnDeathLocation = DeathLocation;
 	PlayerState->DeathInfo.bDBNO = false;
 	PlayerState->DeathInfo.DeathLocation = DeathLocation;
-	PlayerState->DeathInfo.DeathTags = DeathReport.Tags;
-	PlayerState->DeathInfo.DeathCause = AFortPlayerStateAthena::ToDeathCause(DeathReport.Tags, false);
+	PlayerState->DeathInfo.DeathTags = *InTags;
+	PlayerState->DeathInfo.DeathCause = AFortPlayerStateAthena::ToDeathCause(*InTags, false);
 	PlayerState->DeathInfo.Downer = KillerPlayerState;
 	PlayerState->DeathInfo.FinisherOrDowner = KillerPlayerState;
 	EDeathCause CachedDeathCause = PlayerState->DeathInfo.DeathCause;
 	
-	if (VictimPawn) {
+	if (KilledPawn) {
 		PlayerState->DeathInfo.Distance = (PlayerState->DeathInfo.DeathCause != EDeathCause::FallDamage) 
-			? (KillerPawn && KillerPawn->Class->GetFunction("Actor", "GetDistanceTo") ? KillerPawn->GetDistanceTo(VictimPawn) : 0.0f)
-			: VictimPawn->LastFallDistance;
+			? (KillerPawn && KillerPawn->Class->GetFunction("Actor", "GetDistanceTo") ? KillerPawn->GetDistanceTo(KilledPawn) : 0.0f)
+			: KilledPawn->LastFallDistance;
 	}
 	
 	PlayerState->DeathInfo.bInitialized = true;
@@ -344,10 +337,10 @@ true, false, true);
 			if (MemberController != PlayerController && !MemberController->bMarkedAlive) {
 				((void (*)(AFortGameModeAthena*, AFortPlayerController*, APlayerState*, AFortPawn*, UFortWeaponItemDefinition*, EDeathCause, char))(ImageBase + 0x4A81A2C))
 					(GameMode, PlayerController, KillerPlayerState, KillerPawn, 
-					 DeathReport.DamageCauser->Index ? Cast<AFortWeapon>(DeathReport.DamageCauser)->WeaponData : nullptr, 
+					 DamageCauser->Index ? Cast<AFortWeapon>(DamageCauser)->WeaponData : nullptr, 
 					 PlayerState->DeathInfo.DeathCause, 0);
 				PlayerController->bMarkedAlive = false;
-				return ClientOnPawnDiedOG(PlayerController, DeathReport);
+				return OnPawnDiedOG(PlayerController, KilledPawn, Damage, InTags, EffectContext, EventInstigator, DamageCauser, DBNOFinisher);
 			}
 		}
 	}
@@ -441,7 +434,7 @@ true, false, true);
 	{
 		((void (*)(AFortGameModeAthena*, AFortPlayerController*, APlayerState*, AFortPawn*, UFortWeaponItemDefinition*, EDeathCause, char))(ImageBase + 0x4A81A2C))
 			(GameMode, PlayerController, KillerPlayerState, KillerPawn, 
-			 DeathReport.DamageCauser ? Cast<AFortWeapon>(DeathReport.DamageCauser) ? Cast<AFortWeapon>(DeathReport.DamageCauser)->WeaponData : nullptr : nullptr, 
+			 DamageCauser ? Cast<AFortWeapon>(DamageCauser) ? Cast<AFortWeapon>(DamageCauser)->WeaponData : nullptr : nullptr, 
 			 PlayerState->DeathInfo.DeathCause, 0);
 
 		FAthenaRewardResult KResult = PlayerController->MatchReport->EndOfMatchResults;
@@ -502,7 +495,7 @@ true, false, true);
 				WinnerPlayerState->Place = 1;
 				WinnerPlayerState->OnRep_Place();
 
-				auto WinnerWeapon = DeathReport.DamageCauser ? Cast<AFortWeapon>(DeathReport.DamageCauser) ? Cast<AFortWeapon>(DeathReport.DamageCauser)->WeaponData : nullptr : nullptr;
+				auto WinnerWeapon = DamageCauser ? Cast<AFortWeapon>(DamageCauser) ? Cast<AFortWeapon>(DamageCauser)->WeaponData : nullptr : nullptr;
             
 				LastAliveController->PlayWinEffects(WinnerPawn, WinnerWeapon, CachedDeathCause, false);
 				LastAliveController->ClientNotifyWon(WinnerPawn, WinnerWeapon, CachedDeathCause);
@@ -534,8 +527,8 @@ true, false, true);
 			}
 		}
 	}
-	
-	ClientOnPawnDiedOG(PlayerController, DeathReport);
+
+	return OnPawnDiedOG(PlayerController, KilledPawn, Damage, InTags, EffectContext, EventInstigator, DamageCauser, DBNOFinisher);
 }
 
 void FortPlayerControllerAthena::ServerCheat(AFortPlayerControllerAthena* PlayerController, FString Msg)
@@ -698,9 +691,9 @@ void FortPlayerControllerAthena::Setup()
 	Hook->Detour = ServerLoadPlotForPortal;
 	UKismetHookingLibrary::Hook(Hook, EHook::Exec);
 
-	Hook->Address = ImageBase + 0x5711728; // OnPawnDied = 0x4AEF140 (proper func)
-	Hook->Original = (void**)&ClientOnPawnDiedOG;
-	Hook->Detour = ClientOnPawnDied;
+	Hook->Address = ImageBase + 0x4AEF140; // OnPawnDied = 0x4AEF140 (proper func)
+	Hook->Original = (void**)&OnPawnDiedOG;
+	Hook->Detour = OnPawnDied;
 	UKismetHookingLibrary::Hook(Hook, EHook::Address);
 
 	free(Hook);

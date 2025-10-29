@@ -10,6 +10,7 @@ namespace FortPlayerControllerAthena
     DefineOriginal(void, ClientOnPawnDied, AFortPlayerControllerAthena* Controller, FFortPlayerDeathReport& DeathReport);
     void ServerLoadPlotForPortal(AFortPlayerControllerAthena* Controller, FFrame& Stack);
     DefineOriginal(void, ServerAttemptInteract, UFortControllerComponent_Interaction* Comp, AActor* ReceivingActor, UPrimitiveComponent* InteractComponent, ETInteractionType InteractType, UObject* OptionalData, EInteractionBeingAttempted InteractionBeingAttempted);
+    DefineOriginal(void, OnPawnDied, AFortPlayerControllerAthena* PlayerController, AFortPlayerPawnAthena* KilledPawn, double Damage, const FGameplayTagContainer* InTags, const FGameplayEffectContextHandle* EffectContext, AController* EventInstigator, AActor* DamageCauser, AController* DBNOFinisher);
     
     void ServerCheat(AFortPlayerControllerAthena* PC, FString FCommand);
 
