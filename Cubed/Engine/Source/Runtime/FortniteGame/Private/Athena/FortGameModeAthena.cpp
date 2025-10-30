@@ -205,9 +205,12 @@ APawn* FortGameModeAthena::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AF
     APawn* Pawn = GameMode->SpawnDefaultPawnAtTransform(NewPlayer, T);
 
     auto MyFortPawn = Cast<AFortPlayerPawnAthena>(Pawn);
-    MyFortPawn->bIsInAnyStorm = false; //Same for respawning!
-    MyFortPawn->OnRep_IsInAnyStorm();
-
+    if (MyFortPawn)
+    {
+        MyFortPawn->bIsInAnyStorm = false; //Same for respawning!
+        MyFortPawn->OnRep_IsInAnyStorm();
+    }
+    
     AFortInventory* Inventory = NewPlayer->WorldInventory;
     for (int i = 0; i < GameMode->StartingItems.Num(); i++)
     {
