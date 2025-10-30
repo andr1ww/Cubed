@@ -253,11 +253,11 @@ DWORD WINAPI Startup(LPVOID)
     
     *(bool*)(ImageBase + Runtime::Offsets::GIsClient) = false;
     *(bool*)(ImageBase + Runtime::Offsets::GIsClient + 1) = true;
-
+    
     MH_EnableHook(MH_ALL_HOOKS);
     if (!bGameSessions) GetWorld()->OwningGameInstance->LocalPlayers.Remove(0);
     UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(),
-        bCreative || CustomMapsRuntime::IsPluginEnabled() ? L"open Creative_NoApollo_Terrain" : bImposters ? L"open Mole_UnderBase_Parent?game=mole" : L"open Apollo_Terrain", nullptr);
+        bCreative || CustomMapsRuntime::IsPluginEnabled() ? L"open Creative_NoApollo_Terrain" : bImposters ? L"open MoleGame_Layout" : L"open Apollo_Terrain", nullptr);
 
     std::vector<std::wstring> Logs = {
         L"LogFortUIDirector",

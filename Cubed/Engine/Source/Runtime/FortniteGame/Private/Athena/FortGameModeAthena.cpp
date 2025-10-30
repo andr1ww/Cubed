@@ -24,21 +24,18 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
         }
     }
     
-    
     if (GameMode->CurrentPlaylistId == -1 && !bGameSessions)
     {
-        if (!GameState->MapInfo) return false;
+        if (!bImposters && !GameState->MapInfo) return false;
 
         auto Playlist = bCreative 
             ? UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_PlaygroundV2.Playlist_PlaygroundV2")
-            : bImposters ? UObject::FindObject<UFortPlaylistAthena>("Fort"
-                                                                    ""
-                                                                    "PlaylistAthena Playlist_MoleGame.Playlist_MoleGame")
+            : bImposters ? UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_MoleGame.Playlist_MoleGame")
             : bPlayEvent ? UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_Guava.Playlist_Guava")
           //  : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
            : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
         if (!Playlist) return false;
-
+        
         if (!bCreative && !CustomMapsRuntime::IsPluginEnabled())
         {
             GameMode->AIDirector = GetWorld()->SpawnActor<AAthenaAIDirector>(AAthenaAIDirector::StaticClass(), { 0, 0, -99999 }, {});
@@ -283,79 +280,89 @@ APawn* FortGameModeAthena::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AF
 
 void FortGameModeAthena::HandleStartingNewPlayer(AFortGameModeAthena* GameMode, AFortPlayerControllerAthena* NewPlayer)
 {
-    auto PlayerState = Cast<AFortPlayerStateAthena>(NewPlayer->PlayerState);
-    auto GameState = GetGameState();
-
-    PlayerState->SquadId = PlayerState->TeamIndex - 3;
-    PlayerState->OnRep_SquadId();
-    
-    FGameMemberInfo Member;
-    Member.MostRecentArrayReplicationKey = -1;
-    Member.ReplicationID = -1;
-    Member.ReplicationKey = -1;
-    Member.TeamIndex = PlayerState->TeamIndex; 
-    Member.SquadId = PlayerState->SquadId;
-    Member.MemberUniqueId = PlayerState->UniqueId;
-
-    GameState->GameMemberInfoArray.Members.Add(Member);
-    GameState->GameMemberInfoArray.MarkItemDirty(Member);
-
-    PlayerState->SeasonLevelUIDisplay = NewPlayer->XPComponent->CurrentLevel;
-    PlayerState->OnRep_SeasonLevelUIDisplay();
-
-    if (CustomMapsRuntime::IsPluginEnabled() && CustomMapsRuntime::GetEnabledMap() == "Test1v1")
-        NewPlayer->bBuildFree = true;
-    
-    if (!NewPlayer->MatchReport)
-        NewPlayer->MatchReport = (UAthenaPlayerMatchReport*)UGameplayStatics::SpawnObject(UAthenaPlayerMatchReport::StaticClass(), NewPlayer);
-
-    static TArray<ABuildingProp_ConversationCompatible*> ConversationProps;
-    if (ConversationProps.Num() == 0)
+    if (!bImposters)
     {
-        static TArray<AActor*> Actors;
-        UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABuildingProp_ConversationCompatible::StaticClass(), &Actors);
-        for (auto& Actor : Actors)
+        auto PlayerState = Cast<AFortPlayerStateAthena>(NewPlayer->PlayerState);
+        auto GameState = GetGameState();
+
+        if (PlayerState)
         {
-            ABuildingProp_ConversationCompatible* ConversationProp = Cast<ABuildingProp_ConversationCompatible>(Actor);
-            if (ConversationProp)
-                ConversationProps.Add(ConversationProp);
+            PlayerState->SquadId = PlayerState->TeamIndex - 3;
+            PlayerState->OnRep_SquadId();
+    
+            FGameMemberInfo Member;
+            Member.MostRecentArrayReplicationKey = -1;
+            Member.ReplicationID = -1;
+            Member.ReplicationKey = -1;
+            Member.TeamIndex = PlayerState->TeamIndex; 
+            Member.SquadId = PlayerState->SquadId;
+            Member.MemberUniqueId = PlayerState->UniqueId;
+
+            GameState->GameMemberInfoArray.Members.Add(Member);
+            GameState->GameMemberInfoArray.MarkItemDirty(Member);
+
+            PlayerState->SeasonLevelUIDisplay = NewPlayer->XPComponent->CurrentLevel;
+            PlayerState->OnRep_SeasonLevelUIDisplay();
         }
-    }
+
+        if (CustomMapsRuntime::IsPluginEnabled() && CustomMapsRuntime::GetEnabledMap() == "Test1v1")
+            NewPlayer->bBuildFree = true;
     
-    for (ABuildingProp_ConversationCompatible* ConversationProp : ConversationProps)
-    {
-        if (!ConversationProp) continue;
-    
-        auto* ParticipantComponent = reinterpret_cast<UFortNonPlayerConversationParticipantComponent*>(
-            ConversationProp->GetComponentByClass(UFortNonPlayerConversationParticipantComponent::StaticClass()));
-    
-        if (!ParticipantComponent) continue;
-    
-        if (ParticipantComponent->ServiceProviderIDTag.TagName == FName(0))
-            ParticipantComponent->ServiceProviderIDTag.TagName = ParticipantComponent->ConversationEntryTag.TagName;
-    
-        if (ParticipantComponent->SupportedSales.Num() < 1 && ParticipantComponent->SalesInventory)
+        if (!NewPlayer->MatchReport)
+            NewPlayer->MatchReport = (UAthenaPlayerMatchReport*)UGameplayStatics::SpawnObject(UAthenaPlayerMatchReport::StaticClass(), NewPlayer);
+
+        static TArray<ABuildingProp_ConversationCompatible*> ConversationProps;
+        if (ConversationProps.Num() == 0)
         {
-            for (const auto& [RowName, RowPtr] : ParticipantComponent->SalesInventory->RowMap)
+            static TArray<AActor*> Actors;
+            UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABuildingProp_ConversationCompatible::StaticClass(), &Actors);
+            for (auto& Actor : Actors)
             {
-                auto* Row = reinterpret_cast<FNPCSaleInventoryRow*>(RowPtr);
-                if (RowName.IsValid() && Row && Row->NPC.TagName == ParticipantComponent->ServiceProviderIDTag.TagName)
-                    ParticipantComponent->SupportedSales.Add(*Row);
+                ABuildingProp_ConversationCompatible* ConversationProp = Cast<ABuildingProp_ConversationCompatible>(Actor);
+                if (ConversationProp)
+                    ConversationProps.Add(ConversationProp);
             }
         }
     
-        if (ParticipantComponent->SupportedServices.GameplayTags.Num() < 1 && ParticipantComponent->Services)
+        for (ABuildingProp_ConversationCompatible* ConversationProp : ConversationProps)
         {
-            for (const auto& [RowName, RowPtr] : ParticipantComponent->Services->RowMap)
+            if (!ConversationProp) continue;
+    
+            auto* ParticipantComponent = reinterpret_cast<UFortNonPlayerConversationParticipantComponent*>(
+                ConversationProp->GetComponentByClass(UFortNonPlayerConversationParticipantComponent::StaticClass()));
+    
+            if (!ParticipantComponent) continue;
+    
+            if (ParticipantComponent->ServiceProviderIDTag.TagName == FName(0))
+                ParticipantComponent->ServiceProviderIDTag.TagName = ParticipantComponent->ConversationEntryTag.TagName;
+    
+            if (ParticipantComponent->SupportedSales.Num() < 1 && ParticipantComponent->SalesInventory)
             {
-                auto* Row = reinterpret_cast<FNPCDynamicServiceRow*>(RowPtr);
-                if (RowName.IsValid() && Row && Row->NPC == ParticipantComponent->ServiceProviderIDTag)
-                    ParticipantComponent->SupportedServices.GameplayTags.Add(Row->ServiceTag);
+                for (const auto& [RowName, RowPtr] : ParticipantComponent->SalesInventory->RowMap)
+                {
+                    auto* Row = reinterpret_cast<FNPCSaleInventoryRow*>(RowPtr);
+                    if (RowName.IsValid() && Row && Row->NPC.TagName == ParticipantComponent->ServiceProviderIDTag.TagName)
+                        ParticipantComponent->SupportedSales.Add(*Row);
+                }
+            }
+    
+            if (ParticipantComponent->SupportedServices.GameplayTags.Num() < 1 && ParticipantComponent->Services)
+            {
+                for (const auto& [RowName, RowPtr] : ParticipantComponent->Services->RowMap)
+                {
+                    auto* Row = reinterpret_cast<FNPCDynamicServiceRow*>(RowPtr);
+                    if (RowName.IsValid() && Row && Row->NPC == ParticipantComponent->ServiceProviderIDTag)
+                        ParticipantComponent->SupportedServices.GameplayTags.Add(Row->ServiceTag);
+                }
             }
         }
+
+        CustomMapsRuntime::SetupMap();
+    } else {
+        GameMode->DefaultPawnClass = APlayerPawn_Athena_Generic_C::StaticClass();
     }
 
-    CustomMapsRuntime::SetupMap();
+    return HandleStartingNewPlayerOG(GameMode, NewPlayer);
 }
 
 void FortGameModeAthena::StartNewSafeZonePhase(AFortGameModeAthena* GameMode, int NewSafeZonePhase)
@@ -548,17 +555,18 @@ void FortGameModeAthena::Setup()
     UHook* Hook = new UHook();
 
     Hook->Address = Runtime::Vfts::ReadyToStartMatch;
-    Hook->Class = AFortGameModeAthena::StaticClass();
+    Hook->Class = AGameModeBase::StaticClass();
     Hook->Detour = ReadyToStartMatch;
-    UKismetHookingLibrary::Hook(Hook, EHook::VFT);
+    UKismetHookingLibrary::Hook(Hook, EveryVFT);
 
     Hook->Address = Runtime::Vfts::SpawnDefaultPawnFor;
     Hook->Class = AGameModeBase::StaticClass();
     Hook->Detour = SpawnDefaultPawnFor;
-    UKismetHookingLibrary::Hook(Hook, EHook::EveryVFT);
+    UKismetHookingLibrary::Hook(Hook, EveryVFT);
 
     Hook->Address = Runtime::Vfts::HandleStartingNewPlayer;
     Hook->Class = AGameModeBase::StaticClass();
+    Hook->Original = (void**)&HandleStartingNewPlayerOG;
     Hook->Detour = HandleStartingNewPlayer;
     UKismetHookingLibrary::Hook(Hook, EHook::EveryVFT);
 
