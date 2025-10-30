@@ -26,14 +26,14 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
     
     if (GameMode->CurrentPlaylistId == -1 && !bGameSessions)
     {
-        if (!bImposters && !GameState->MapInfo) return false;
+        if (!GameState->MapInfo) return false;
 
         auto Playlist = bCreative 
             ? UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_PlaygroundV2.Playlist_PlaygroundV2")
             : bImposters ? UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_MoleGame.Playlist_MoleGame")
             : bPlayEvent ? UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_Guava.Playlist_Guava")
-          //  : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
-           : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
+            : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
+          // : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
         if (!Playlist) return false;
         
         if (!bCreative && !CustomMapsRuntime::IsPluginEnabled())
@@ -208,7 +208,29 @@ APawn* FortGameModeAthena::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AF
         MyFortPawn->OnRep_IsInAnyStorm();
     }
     
-    AFortInventory* Inventory = NewPlayer->WorldInventory;
+    AFortInventory* Inventory = NewPlayer->IsA(AFortAthenaAIBotController::StaticClass()) ? ((AFortAthenaAIBotController*)NewPlayer)->Inventory : NewPlayer->WorldInventory;
+    if (!Inventory)
+    {
+        auto AIController = Cast<AFortAthenaAIBotController>(NewPlayer);
+        if (AIController)
+        {
+            if (AIController->Inventory = GetWorld()->SpawnActor<AFortInventory>(AFortInventory::StaticClass(), {}, {}, AIController))
+            {
+                AIController->Inventory->Owner = AIController;
+                AIController->Inventory->OnRep_Owner();
+            }
+        } else
+        {
+            if (NewPlayer->WorldInventory = GetWorld()->SpawnActor<AFortInventory>(AFortInventory::StaticClass(), {}, {}, NewPlayer))
+            {
+                NewPlayer->WorldInventory->Owner = NewPlayer;
+                NewPlayer->WorldInventory->OnRep_Owner();
+            }
+        }
+
+        Inventory = NewPlayer->IsA(AFortAthenaAIBotController::StaticClass()) ? ((AFortAthenaAIBotController*)NewPlayer)->Inventory : NewPlayer->WorldInventory;
+    }
+    
     for (int i = 0; i < GameMode->StartingItems.Num(); i++)
     {
         auto Item = GameMode->StartingItems[i];
@@ -216,13 +238,16 @@ APawn* FortGameModeAthena::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AF
         
         Inventory->AddItem(Item.Item, Item.Count, 0);
     }
-
-    auto InvComp = NewPlayer->InventoryServiceComponent;
-    Inventory->AddItem(NewPlayer->CosmeticLoadoutPC.Pickaxe->WeaponDefinition, 1, 0);
-    Inventory->AddItem(InvComp->GetDefaultGlobalCurrencyItemDefinition(),
-        InvComp->GlobalCurrencyData.Currency.Count,
-        InvComp->GlobalCurrencyData.Currency.Count);
-
+    
+    if (!NewPlayer->IsA(AFortAthenaAIBotController::StaticClass()))
+    {
+        auto InvComp = NewPlayer->InventoryServiceComponent;
+        Inventory->AddItem(NewPlayer->CosmeticLoadoutPC.Pickaxe->WeaponDefinition, 1, 0);
+        Inventory->AddItem(InvComp->GetDefaultGlobalCurrencyItemDefinition(),
+            InvComp->GlobalCurrencyData.Currency.Count,
+            InvComp->GlobalCurrencyData.Currency.Count);
+    }
+    
     static bool bFirst = false;
     if (!bFirst) 
     {
@@ -358,11 +383,46 @@ void FortGameModeAthena::HandleStartingNewPlayer(AFortGameModeAthena* GameMode, 
         }
 
         CustomMapsRuntime::SetupMap();
-    } else {
-        GameMode->DefaultPawnClass = APlayerPawn_Athena_Generic_C::StaticClass();
-    }
 
-    return HandleStartingNewPlayerOG(GameMode, NewPlayer);
+        static bool bSpawnedAis = false;
+        
+        if (!bSpawnedAis)
+        {
+            bSpawnedAis = true;
+            auto AiSys = (UAthenaAISystem*)GetWorld()->AISystem;
+            AiSys->SpawnAI("BabaYaga");
+            AiSys->SpawnAI("BigMouth");
+            AiSys->SpawnAI("DarkJonesy");
+            AiSys->SpawnAI("CerealBox"); // fabio
+            AiSys->SpawnAI("Kor");
+            AiSys->SpawnAI("Dusk");
+            AiSys->SpawnAI("Torin");
+            AiSys->SpawnAI("GrimFable");
+            AiSys->SpawnAI("KitBash");
+            AiSys->SpawnAI("MadCap");
+            AiSys->SpawnAI("Nitehare");
+            AiSys->SpawnAI("Penny");
+            AiSys->SpawnAI("Pitstop");
+            AiSys->SpawnAI("Charlotte");
+            AiSys->SpawnAI("Raven");
+            AiSys->SpawnAI("ScubaJonesy");
+            AiSys->SpawnAI("CubeAssassin");
+            AiSys->SpawnAI("Wrath");
+            AiSys->SpawnAI("Dire");
+            AiSys->SpawnAI("Ragsy");
+            AiSys->SpawnAI("Ember");
+            AiSys->SpawnAI("Brat");
+            AiSys->SpawnAI("Sledgehammer");
+            AiSys->SpawnAI("ShadowOps");
+            AiSys->SpawnAI("BistroAstronaut");
+            AiSys->SpawnAI("Kakashi");
+            AiSys->SpawnAI("RustLord");
+        }
+        
+    } else {    
+        GameMode->DefaultPawnClass = APlayerPawn_Athena_Generic_C::StaticClass();
+        return HandleStartingNewPlayerOG(GameMode, NewPlayer);
+    }
 }
 
 void FortGameModeAthena::StartNewSafeZonePhase(AFortGameModeAthena* GameMode, int NewSafeZonePhase)
@@ -555,7 +615,7 @@ void FortGameModeAthena::Setup()
     UHook* Hook = new UHook();
 
     Hook->Address = Runtime::Vfts::ReadyToStartMatch;
-    Hook->Class = AGameModeBase::StaticClass();
+    Hook->Class = AFortGameMode::StaticClass();
     Hook->Detour = ReadyToStartMatch;
     UKismetHookingLibrary::Hook(Hook, EveryVFT);
 
@@ -566,7 +626,6 @@ void FortGameModeAthena::Setup()
 
     Hook->Address = Runtime::Vfts::HandleStartingNewPlayer;
     Hook->Class = AGameModeBase::StaticClass();
-    Hook->Original = (void**)&HandleStartingNewPlayerOG;
     Hook->Detour = HandleStartingNewPlayer;
     UKismetHookingLibrary::Hook(Hook, EHook::EveryVFT);
 

@@ -35,6 +35,7 @@ using namespace std;
 #include "SDK/FortniteGame_classes.hpp"
 #include "SDK/GameplayAbilities_structs.hpp"
 #include "SDK/GameplayAbilities_classes.hpp"
+#include "SDK/LagerRuntime_classes.hpp"
 #include "SDK/PlayerPawn_Athena_classes.hpp"
 #include "SDK/FortniteConversationRuntime_classes.hpp"
 #include "SDK/FortniteConversationUI_classes.hpp"

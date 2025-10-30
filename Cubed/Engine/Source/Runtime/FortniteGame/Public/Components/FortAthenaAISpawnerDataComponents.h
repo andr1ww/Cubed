@@ -8,8 +8,15 @@ namespace FortAthenaAISpawnerDataComponents
         AFortPlayerPawn *Pawn);
 
     DefineOriginal(void, OnSpawned_InventoryBase,
-        UFortAthenaAISpawnerDataComponent_AIBotCosmeticBase* Base,
+        UFortAthenaAISpawnerDataComponent_AIBotInventory* Base,
         AFortPlayerPawn *Pawn);
 
+    DefineOriginal(void, OnSpawned_CosmeticLoadout,
+    UFortAthenaAISpawnerDataComponent_CosmeticLoadout* Base,
+    AFortPlayerPawn *Pawn);
+    
+    DefineOriginal(void, OnSpawned_Conversation, UFortAthenaAISpawnerDataComponent_AIBotConversation*, AFortAIPawn*);
+
+    
     void Setup();
 }

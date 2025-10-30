@@ -28,7 +28,7 @@ static void Update(AFortInventory* Inventory, FFortItemEntry *Entry)
 class UObject* AFortInventory::AddItem(UFortItemDefinition* Def, int32 Count, int LoadedAmmo, int32 Level)
 {
     UFortWorldItem *Item = (UFortWorldItem *)Def->CreateTemporaryItemInstanceBP(Count, Level);
-    if (!Item) return nullptr;
+    if (!Item || !GetOwner()) return nullptr;
     auto Controller = Cast<AFortPlayerController>(GetOwner());
     
     Item->ItemEntry.LoadedAmmo = LoadedAmmo;
