@@ -13,6 +13,11 @@ namespace FortPlayerPawn
     DefineOriginal(void, EndSkydiving, AFortPlayerPawn* Pawn);
     DefineOriginal(void, UpdatePlayerDistanceTraveled, AFortPlayerPawn* Pawn, __int64 a2);
     void ServerReviveFromDBNO(AFortPlayerPawn* Pawn, AFortPlayerController* EventInstigator);
+    void InitializeDeathInfoOnPawnDeath(
+        AFortPlayerPawnAthena* Pawn,
+        const FGameplayTagContainer *InTags,
+        AController *EventInstigator,
+        AController *DBNOFinisher);
     
     void Setup();
 }

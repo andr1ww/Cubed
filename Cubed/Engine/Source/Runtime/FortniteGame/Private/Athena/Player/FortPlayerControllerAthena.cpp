@@ -410,6 +410,7 @@ void FortPlayerControllerAthena::OnPawnDied(AFortPlayerControllerAthena* PlayerC
 	
 	PlayerState->DeathInfo.bInitialized = true;
 	PlayerState->OnRep_DeathInfo();
+	PlayerState->ForceNetUpdate(); // its what InitializeDeathInfo does
 	
 	bool bRespawningAllowed = GameState && PlayerState ? GameState->IsRespawningAllowed(PlayerState) : false;
 
@@ -432,7 +433,7 @@ void FortPlayerControllerAthena::OnPawnDied(AFortPlayerControllerAthena* PlayerC
 		KillerPlayerState->OnRep_TeamKillScore();
 		KillerPlayerState->ClientReportTeamKill(KillerPlayerState->TeamKillScore);
 		
-		for (auto Member : ((AFortPlayerStateAthena*)KillerPlayerState)->PlayerTeam->TeamMembers) {
+		for (auto Member : KillerPlayerState->PlayerTeam->TeamMembers) {
 			if ((AFortPlayerStateAthena*)Member->PlayerState != KillerPlayerState) {
 				((AFortPlayerStateAthena*)Member->PlayerState)->TeamKillScore++;
 				((AFortPlayerStateAthena*)Member->PlayerState)->OnRep_TeamKillScore();
