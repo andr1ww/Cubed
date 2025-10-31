@@ -181,7 +181,6 @@ DWORD WINAPI Startup(LPVOID)
     Runtime::Offsets::RetTrueFuncs.push_back(0x509AFC0); // mms enable
     Runtime::Offsets::RetTrueFuncs.push_back(0x309EE30);
     Runtime::Offsets::NullFuncs.push_back(0x16CA9E0);
-    Runtime::Offsets::RetTrueFuncs.push_back(0x1FF2A44);
     // kickplayer ones ^ (dk why they wont work with gamesessions but WTV!)
     
     for (auto& Addr : Runtime::Offsets::NullFuncs)

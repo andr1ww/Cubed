@@ -215,9 +215,9 @@ void FortPlayerPawn::EndSkydiving(AFortPlayerPawn* Pawn)
 
 void FortPlayerPawn::UpdatePlayerDistanceTraveled(AFortPlayerPawn* Pawn, __int64 a2)
 {
-    if (!Pawn) return;
+    if (!IsValidPointer(Pawn)) return;
     UpdatePlayerDistanceTraveledOG(Pawn, a2);
-    auto Controller = (AFortPlayerControllerAthena*)Pawn->GetController();
+    auto Controller = (AFortPlayerControllerAthena*)Pawn->Controller;
     if (!IsValidPointer(Controller)) return;
     auto QuestManager = Controller ? Controller->GetQuestManager(ESubGame::Athena) : nullptr;
     if (!QuestManager) return;
@@ -315,7 +315,7 @@ void FortPlayerPawn::Setup()
     Hook->Address = ImageBase + 0x51FCFFC;
     Hook->Original = (void**)&UpdatePlayerDistanceTraveledOG;
     Hook->Detour = UpdatePlayerDistanceTraveled;
-    UKismetHookingLibrary::Hook(Hook, EHook::Address);
+   // UKismetHookingLibrary::Hook(Hook, EHook::Address);
     
     delete Hook;
 }

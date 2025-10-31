@@ -360,11 +360,15 @@ void FortPlayerControllerAthena::ServerCheat(AFortPlayerControllerAthena* Player
 
 void FortPlayerControllerAthena::OnPawnDied(AFortPlayerControllerAthena* PlayerController, AFortPlayerPawnAthena* KilledPawn, double Damage, const FGameplayTagContainer* InTags, const FGameplayEffectContextHandle* EffectContext, AController* EventInstigator, AActor* DamageCauser, AController* DBNOFinisher)
 {
+	OnPawnDiedOG(PlayerController, KilledPawn, Damage, InTags, EffectContext, EventInstigator, DamageCauser, DBNOFinisher);
+	static void (*SetMatchPlacement)(AFortPlayerControllerAthena*, int) =
+		decltype(SetMatchPlacement)(ImageBase + 0x4AFD094);
+	
 	auto GameMode = Cast<AFortGameModeAthena>(GetWorld()->AuthorityGameMode);
 	auto GameState = Cast<AFortGameStateAthena>(GetWorld()->GameState);
 	auto PlayerState = Cast<AFortPlayerStateAthena>(PlayerController->PlayerState);
 	if (!PlayerState || !GameState || !GameMode)
-		return OnPawnDiedOG(PlayerController, KilledPawn, Damage, InTags, EffectContext, EventInstigator, DamageCauser, DBNOFinisher);
+		return;
 	
 	auto KillerPlayerState = EventInstigator ? Cast<AFortPlayerStateAthena>(EventInstigator->PlayerState) : PlayerState;
 	auto KillerPawn = EventInstigator ? Cast<AFortPlayerPawnAthena>(((AFortPlayerController*)KillerPlayerState->GetOwner())->MyFortPawn) : KilledPawn;
@@ -393,10 +397,10 @@ void FortPlayerControllerAthena::OnPawnDied(AFortPlayerControllerAthena* PlayerC
 	PlayerState->DeathInfo.bDBNO = WasDBNOOnDeath;
 	PlayerState->DeathInfo.DeathLocation = DeathLocation;
 	PlayerState->DeathInfo.DeathTags = *InTags;
+	PlayerState->DeathInfo.VictimTags = KilledPawn->GameplayTags;
 	PlayerState->DeathInfo.DeathCause = AFortPlayerStateAthena::ToDeathCause(*InTags, WasDBNOOnDeath);
 	PlayerState->DeathInfo.Downer = WasDBNOOnDeath ? KillerPlayerState : nullptr;
 	PlayerState->DeathInfo.FinisherOrDowner = KillerPlayerState;
-	EDeathCause CachedDeathCause = PlayerState->DeathInfo.DeathCause;
 	
 	if (KilledPawn) {
 		PlayerState->DeathInfo.Distance = (PlayerState->DeathInfo.DeathCause != EDeathCause::FallDamage) 
@@ -411,12 +415,11 @@ void FortPlayerControllerAthena::OnPawnDied(AFortPlayerControllerAthena* PlayerC
 
 	if (PlayerState->DeathInfo.bDBNO)
 	{
-		((void (*)(AFortGameModeAthena*, AFortPlayerController*, APlayerState*, AFortPawn*, UFortWeaponItemDefinition*, EDeathCause, char))(ImageBase + 0x4A81A2C))
+		((void (*)(AFortGameModeAthena*, AFortPlayerController*, APlayerState*, AFortPawn*, UFortWeaponItemDefinition*, EDeathCause, bool))(ImageBase + 0x4A81A2C))
 	(GameMode, PlayerController, KillerPlayerState, KillerPawn, 
 	 DamageCauser ? Cast<AFortWeapon>(DamageCauser) ? Cast<AFortWeapon>(DamageCauser)->WeaponData : nullptr : nullptr, 
 	 PlayerState->DeathInfo.DeathCause, 0);
 		PlayerController->bMarkedAlive = false;
-		return OnPawnDiedOG(PlayerController, KilledPawn, Damage, InTags, EffectContext, EventInstigator, DamageCauser, DBNOFinisher);
 	}
 
 	if (!KillerPlayerState) KillerPlayerState = PlayerState;
@@ -533,8 +536,7 @@ void FortPlayerControllerAthena::OnPawnDied(AFortPlayerControllerAthena* PlayerC
 			PlayerController->MatchReport->EndOfMatchResults = KResult;
 			PlayerController->ClientSendEndBattleRoyaleMatchForPlayer(true, PlayerController->MatchReport->EndOfMatchResults);
 
-			PlayerState->Place = GameState->PlayersLeft + 1;
-			PlayerState->OnRep_Place();
+			SetMatchPlacement(PlayerController, GameState->PlayersLeft + 1);
 
 			FAthenaMatchStats& Stats = PlayerController->MatchReport->MatchStats;
 			FAthenaMatchTeamStats& TeamStats = PlayerController->MatchReport->TeamStats;
@@ -565,14 +567,13 @@ void FortPlayerControllerAthena::OnPawnDied(AFortPlayerControllerAthena* PlayerC
 			AFortPlayerPawn* WinnerPawn = LastAliveController->MyFortPawn;
         
 			if (WinnerPlayerState && WinnerPawn) {
-				WinnerPlayerState->Place = 1;
-				WinnerPlayerState->OnRep_Place();
+				SetMatchPlacement(LastAliveController, 1);
 
 				auto WinnerWeapon = DamageCauser ? Cast<AFortWeapon>(DamageCauser) ? Cast<AFortWeapon>(DamageCauser)->WeaponData : nullptr : nullptr;
             
-				LastAliveController->PlayWinEffects(WinnerPawn, WinnerWeapon, CachedDeathCause, false);
-				LastAliveController->ClientNotifyWon(WinnerPawn, WinnerWeapon, CachedDeathCause);
-				LastAliveController->ClientNotifyTeamWon(WinnerPawn, WinnerWeapon, CachedDeathCause);
+				LastAliveController->PlayWinEffects(WinnerPawn, WinnerWeapon, PlayerState->DeathInfo.DeathCause, false);
+				LastAliveController->ClientNotifyWon(WinnerPawn, WinnerWeapon, PlayerState->DeathInfo.DeathCause);
+				LastAliveController->ClientNotifyTeamWon(WinnerPawn, WinnerWeapon, PlayerState->DeathInfo.DeathCause);
 
 				if (PlayerController->MatchReport)
 				{
@@ -600,8 +601,6 @@ void FortPlayerControllerAthena::OnPawnDied(AFortPlayerControllerAthena* PlayerC
 			}
 		}
 	}
-
-	return OnPawnDiedOG(PlayerController, KilledPawn, Damage, InTags, EffectContext, EventInstigator, DamageCauser, DBNOFinisher);
 }
 
 void FortPlayerControllerAthena::DropItemsOnPawnDestruction(AFortPlayerControllerAthena* PlayerController, long long, const FGameplayTagContainer* ContextTags, AFortPlayerPawnAthena* DestructionPawn)
