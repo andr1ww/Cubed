@@ -187,22 +187,8 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
 
 APawn* FortGameModeAthena::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AFortPlayerControllerAthena* NewPlayer, AActor* StartSpot)
 {
-    FTransform T = StartSpot->GetTransform();
-    T.Translation.Z += 250.f;
-    T.Translation.X += UKismetMathLibrary::RandomIntegerInRange(350, 1250); 
-    T.Translation.Y += UKismetMathLibrary::RandomIntegerInRange(350, 1250);
-    
-    if (CustomMapsRuntime::IsPluginEnabled())
-        T.Translation.Z += 20000.f;
-
-    if (CustomMapsRuntime::IsPluginEnabled())
-    {
-        GetGameState()->GamePhase = EAthenaGamePhase::SafeZones;
-        GetGameState()->GamePhaseStep = EAthenaGamePhaseStep::StormHolding;
-        GetGameState()->OnRep_GamePhase(EAthenaGamePhase::Warmup);
-    }
-    
-    APawn* Pawn = GameMode->SpawnDefaultPawnAtTransform(NewPlayer, T);
+    static auto FortGMSpawnDefaultPawnFor = (AFortPlayerPawnAthena * (*)(AFortGameModeAthena*, AFortPlayerControllerAthena*, AActor*)) AFortGameMode::GetDefaultObj()->VTable[0xca];
+    AFortPlayerPawnAthena* Pawn = FortGMSpawnDefaultPawnFor(GameMode, NewPlayer, StartSpot);
 
     auto MyFortPawn = Cast<AFortPlayerPawnAthena>(Pawn);
     if (MyFortPawn)
@@ -633,7 +619,7 @@ void FortGameModeAthena::Setup()
     UKismetHookingLibrary::Hook(Hook, EveryVFT);
 
     Hook->Address = Runtime::Vfts::SpawnDefaultPawnFor;
-    Hook->Class = AGameModeBase::StaticClass();
+    Hook->Class = AFortGameModeAthena::StaticClass();
     Hook->Detour = SpawnDefaultPawnFor;
     UKismetHookingLibrary::Hook(Hook, EveryVFT);
 

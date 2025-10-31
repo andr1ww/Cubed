@@ -244,7 +244,7 @@ DWORD WINAPI Startup(LPVOID)
 
     Hook->Address = Memcury::Scanner::FindPattern("75 02 33 F6 41 BE ? ? ? ? 48 85 F6 74 17 48 8D 93").Get();
     Hook->Byte = 0x74;
-    UKismetHookingLibrary::Hook(Hook, Byte);
+   // UKismetHookingLibrary::Hook(Hook, Byte);
     
     free(Hook);
 
