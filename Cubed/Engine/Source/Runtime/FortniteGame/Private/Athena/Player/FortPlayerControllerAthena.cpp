@@ -387,22 +387,14 @@ void FortPlayerControllerAthena::OnPawnDied(AFortPlayerControllerAthena* PlayerC
 		{});
 	
 	FVector DeathLocation = KilledPawn ? KilledPawn->K2_GetActorLocation() : FVector{0,0,0};
-
-	if (KilledPawn)
-	{
-		UE_LOG(LogServer, Log, "IsDBNO: %d", KilledPawn ? KilledPawn->IsDBNO() : false);
-		UE_LOG(LogServer, Log, "WasDBNOOnDeath 2: %d", KilledPawn->WasDBNOOnDeath());
-		UE_LOG(LogServer, Log, "IsResurrectionEnabled: %d", GameState->IsResurrectionEnabled(KilledPawn));
-	}
 	
-	bool bIsDBNO = KilledPawn && KilledPawn->bWasDBNOOnDeath ? KilledPawn->WasDBNOOnDeath() : GameState->IsResurrectionEnabled(KilledPawn);
-	UE_LOG(LogServer, Log, "Final IsDBNO: %d", bIsDBNO);
+	bool WasDBNOOnDeath = KilledPawn && KilledPawn->WasDBNOOnDeath() ? true : GameState->IsResurrectionEnabled(KilledPawn);
 	PlayerState->PawnDeathLocation = DeathLocation;
-	PlayerState->DeathInfo.bDBNO = bIsDBNO;
+	PlayerState->DeathInfo.bDBNO = WasDBNOOnDeath;
 	PlayerState->DeathInfo.DeathLocation = DeathLocation;
 	PlayerState->DeathInfo.DeathTags = *InTags;
-	PlayerState->DeathInfo.DeathCause = AFortPlayerStateAthena::ToDeathCause(*InTags, bIsDBNO);
-	PlayerState->DeathInfo.Downer = bIsDBNO ? KillerPlayerState : nullptr;
+	PlayerState->DeathInfo.DeathCause = AFortPlayerStateAthena::ToDeathCause(*InTags, WasDBNOOnDeath);
+	PlayerState->DeathInfo.Downer = WasDBNOOnDeath ? KillerPlayerState : nullptr;
 	PlayerState->DeathInfo.FinisherOrDowner = KillerPlayerState;
 	EDeathCause CachedDeathCause = PlayerState->DeathInfo.DeathCause;
 	
@@ -420,9 +412,9 @@ void FortPlayerControllerAthena::OnPawnDied(AFortPlayerControllerAthena* PlayerC
 	if (PlayerState->DeathInfo.bDBNO)
 	{
 		((void (*)(AFortGameModeAthena*, AFortPlayerController*, APlayerState*, AFortPawn*, UFortWeaponItemDefinition*, EDeathCause, char))(ImageBase + 0x4A81A2C))
-			(GameMode, PlayerController, KillerPlayerState, KillerPawn, 
-			 DamageCauser->Index ? Cast<AFortWeapon>(DamageCauser)->WeaponData : nullptr, 
-			 PlayerState->DeathInfo.DeathCause, 0);
+	(GameMode, PlayerController, KillerPlayerState, KillerPawn, 
+	 DamageCauser ? Cast<AFortWeapon>(DamageCauser) ? Cast<AFortWeapon>(DamageCauser)->WeaponData : nullptr : nullptr, 
+	 PlayerState->DeathInfo.DeathCause, 0);
 		PlayerController->bMarkedAlive = false;
 		return OnPawnDiedOG(PlayerController, KilledPawn, Damage, InTags, EffectContext, EventInstigator, DamageCauser, DBNOFinisher);
 	}
@@ -620,7 +612,7 @@ void FortPlayerControllerAthena::DropItemsOnPawnDestruction(AFortPlayerControlle
 	bool bRespawningAllowed = GameState && PlayerState ? GameState->IsRespawningAllowed(PlayerState) : false;
 
 	if (!bRespawningAllowed && 
-		PlayerController->WorldInventory && PlayerController->MyFortPawn)
+		PlayerController->WorldInventory && DestructionPawn)
 	{
 		static UClass* Types[] = {
 			UFortResourceItemDefinition::StaticClass(),
@@ -629,7 +621,7 @@ void FortPlayerControllerAthena::DropItemsOnPawnDestruction(AFortPlayerControlle
 			UFortAmmoItemDefinition::StaticClass()
 		};
 		
-		auto Location = PlayerController->MyFortPawn->K2_GetActorLocation();
+		auto Location = DestructionPawn->K2_GetActorLocation();
 		bool bFoundMats = false;
 		
 		for (auto& entry : PlayerController->WorldInventory->Inventory.ReplicatedEntries) {
@@ -649,7 +641,7 @@ void FortPlayerControllerAthena::DropItemsOnPawnDestruction(AFortPlayerControlle
 			if (bAllowedType)
 			{
 				FortKismetLibrary::SpawnPickup(Location, entry, 
-	EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, PlayerController->MyFortPawn, -1,
+	EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, DestructionPawn, -1,
 	true, false, true);
 			}
 		}
@@ -660,15 +652,15 @@ void FortPlayerControllerAthena::DropItemsOnPawnDestruction(AFortPlayerControlle
 			static auto Metal = StaticFindObject<UFortWorldItemDefinition>("/Game/Items/ResourcePickups/MetalItemData.MetalItemData");
 
 			FortKismetLibrary::SpawnPickup(Location, FortKismetLibrary::ConstructItemEntry(Wood, 50, 0), 
-EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, PlayerController->MyFortPawn, -1,
+EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, DestructionPawn, -1,
 true, false, true);
 
 			FortKismetLibrary::SpawnPickup(Location, FortKismetLibrary::ConstructItemEntry(Stone, 50, 0), 
-EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, PlayerController->MyFortPawn, -1,
+EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, DestructionPawn, -1,
 true, false, true);
 
 			FortKismetLibrary::SpawnPickup(Location, FortKismetLibrary::ConstructItemEntry(Metal, 50, 0), 
-EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, PlayerController->MyFortPawn, -1,
+EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, DestructionPawn, -1,
 true, false, true);
 		}
 	}

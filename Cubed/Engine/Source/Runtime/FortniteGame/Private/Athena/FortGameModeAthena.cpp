@@ -332,7 +332,13 @@ void FortGameModeAthena::HandleStartingNewPlayer(AFortGameModeAthena* GameMode, 
             PlayerState->SeasonLevelUIDisplay = NewPlayer->XPComponent->CurrentLevel;
             PlayerState->OnRep_SeasonLevelUIDisplay();
 
-            auto NotifyGameMemberAdded = (void(*)(AFortGameStateAthena*, uint8_t, uint8_t, FUniqueNetIdRepl*))(ImageBase + 0x13E64EC);
+            // not sure how useful the func below will be?
+            static auto HandleGameMemberAdded = (void(*)(AFortPlayerControllerAthena *Controller,uint8_t InSquadId, uint8_t InTeamIndex, AFortPlayerStateAthena *AthenaPS))(ImageBase + 0x4AE8BC0);
+            if (HandleGameMemberAdded)
+                HandleGameMemberAdded(NewPlayer, Member.SquadId, Member.TeamIndex, PlayerState);
+
+            // this func does team and squad arrays properly i think?
+            static auto NotifyGameMemberAdded = (void(*)(AFortGameStateAthena*, uint8_t, uint8_t, FUniqueNetIdRepl*))(ImageBase + 0x13E64EC);
             if (NotifyGameMemberAdded)
                 NotifyGameMemberAdded(GameState, Member.SquadId, Member.TeamIndex, &Member.MemberUniqueId);
         }
