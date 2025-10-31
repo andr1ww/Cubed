@@ -42,6 +42,7 @@ bool FortGameSessionDedicated::HandleMatchAssignmentV2(__int64 a1, FMatchmakingD
 
     Playlist->bEnableBackfillDuringWarmupPhase = true;
     Playlist->bAllowBackfill = true;
+//    Playlist->bAutoAcquireSpawnChip = true;
     Playlist->GarbageCollectionFrequency = 99999999999999.f;
     GameState->CurrentPlaylistInfo.BasePlaylist = Playlist;
     GameState->CurrentPlaylistInfo.OverridePlaylist = Playlist;

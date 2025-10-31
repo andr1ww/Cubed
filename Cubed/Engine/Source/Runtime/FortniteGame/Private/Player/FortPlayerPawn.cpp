@@ -215,9 +215,10 @@ void FortPlayerPawn::EndSkydiving(AFortPlayerPawn* Pawn)
 
 void FortPlayerPawn::UpdatePlayerDistanceTraveled(AFortPlayerPawn* Pawn, __int64 a2)
 {
+    if (!Pawn) return;
     UpdatePlayerDistanceTraveledOG(Pawn, a2);
     auto Controller = (AFortPlayerControllerAthena*)Pawn->GetController();
-    if (!Controller) return;
+    if (!IsValidPointer(Controller)) return;
     auto QuestManager = Controller ? Controller->GetQuestManager(ESubGame::Athena) : nullptr;
     if (!QuestManager) return;
     FGameplayTagContainer ContextTags;

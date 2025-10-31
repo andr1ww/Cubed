@@ -11,7 +11,7 @@ namespace FortPlayerControllerAthena
     void ServerLoadPlotForPortal(AFortPlayerControllerAthena* Controller, FFrame& Stack);
     DefineOriginal(void, ServerAttemptInteract, UFortControllerComponent_Interaction* Comp, AActor* ReceivingActor, UPrimitiveComponent* InteractComponent, ETInteractionType InteractType, UObject* OptionalData, EInteractionBeingAttempted InteractionBeingAttempted);
     DefineOriginal(void, OnPawnDied, AFortPlayerControllerAthena* PlayerController, AFortPlayerPawnAthena* KilledPawn, double Damage, const FGameplayTagContainer* InTags, const FGameplayEffectContextHandle* EffectContext, AController* EventInstigator, AActor* DamageCauser, AController* DBNOFinisher);
-    
+    void DropItemsOnPawnDestruction(AFortPlayerControllerAthena* Controller, __int64, const FGameplayTagContainer* ContextTags, AFortPlayerPawnAthena* DestructionPawn);
     void ServerCheat(AFortPlayerControllerAthena* PC, FString FCommand);
 
     void Setup();

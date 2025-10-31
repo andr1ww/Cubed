@@ -227,310 +227,6 @@ std::chrono::duration<double>(
     });
 }
 
-void FortPlayerControllerAthena::OnPawnDied(AFortPlayerControllerAthena* PlayerController, AFortPlayerPawnAthena* KilledPawn, double Damage, const FGameplayTagContainer* InTags, const FGameplayEffectContextHandle* EffectContext, AController* EventInstigator, AActor* DamageCauser, AController* DBNOFinisher)
-{
-	auto GameMode = Cast<AFortGameModeAthena>(GetWorld()->AuthorityGameMode);
-	auto GameState = Cast<AFortGameStateAthena>(GetWorld()->GameState);
-	auto PlayerState = Cast<AFortPlayerStateAthena>(PlayerController->PlayerState);
-	if (!PlayerState || !GameState || !GameMode)
-		return OnPawnDiedOG(PlayerController, KilledPawn, Damage, InTags, EffectContext, EventInstigator, DamageCauser, DBNOFinisher);
-	
-	auto KillerPlayerState = EventInstigator ? Cast<AFortPlayerStateAthena>(EventInstigator->PlayerState) : PlayerState;
-	auto KillerPawn = EventInstigator ? Cast<AFortPlayerPawnAthena>(((AFortPlayerController*)KillerPlayerState->GetOwner())->MyFortPawn) : KilledPawn;
-
-	TArray<FFortQuestObjectiveCompletion> Advance;
-	TArray<FAthenaAccolades> Accolades;
-	TArray<FString> ShuffledLoadoutUsed;
-	TArray<FSecondaryXpGained> secondaryXp;
-	TArray<FFortCreateItemDetail> GrantedItems;
-	TArray<FFortTransientQuestGrant> GrantedTransientQuests;
-	TArray<FAthenaSeasonItemMCPState> SeasonItemStates; 
-	static auto PlaylistId = UKismetStringLibrary::Conv_NameToString(GameState->CurrentPlaylistInfo.BasePlaylist->PlaylistName);
-	
-	PlayerController->AthenaProfile->EndBattleRoyaleGameV2(Advance, PlaylistId, PlayerController->MatchReport->MatchStats,
-		100, 0, 0, 0, 1.1f,
-		true, true, Accolades, ShuffledLoadoutUsed,
-		0, ShuffledLoadoutUsed, ShuffledLoadoutUsed, secondaryXp,
-		GrantedItems, GrantedTransientQuests, PlaylistId, SeasonItemStates,
-		PlayerState->SecondsAlive,
-		{});
-	
-	FVector DeathLocation = KilledPawn ? KilledPawn->K2_GetActorLocation() : FVector{0,0,0};
-	
-	PlayerState->PawnDeathLocation = DeathLocation;
-	PlayerState->DeathInfo.bDBNO = false;
-	PlayerState->DeathInfo.DeathLocation = DeathLocation;
-	PlayerState->DeathInfo.DeathTags = *InTags;
-	PlayerState->DeathInfo.DeathCause = AFortPlayerStateAthena::ToDeathCause(*InTags, false);
-	PlayerState->DeathInfo.Downer = KillerPlayerState;
-	PlayerState->DeathInfo.FinisherOrDowner = KillerPlayerState;
-	EDeathCause CachedDeathCause = PlayerState->DeathInfo.DeathCause;
-	
-	if (KilledPawn) {
-		PlayerState->DeathInfo.Distance = (PlayerState->DeathInfo.DeathCause != EDeathCause::FallDamage) 
-			? (KillerPawn && KillerPawn->Class->GetFunction("Actor", "GetDistanceTo") ? KillerPawn->GetDistanceTo(KilledPawn) : 0.0f)
-			: KilledPawn->LastFallDistance;
-	}
-	
-	PlayerState->DeathInfo.bInitialized = true;
-	PlayerState->OnRep_DeathInfo();
-	
-	bool bRespawningAllowed = GameState && PlayerState ? GameState->IsRespawningAllowed(PlayerState) : false;
-
-	if (!bRespawningAllowed && 
-		PlayerController->WorldInventory && PlayerController->MyFortPawn)
-	{
-		static UClass* Types[] = {
-			UFortResourceItemDefinition::StaticClass(),
-			UFortWeaponRangedItemDefinition::StaticClass(),
-			UFortConsumableItemDefinition::StaticClass(),
-			UFortAmmoItemDefinition::StaticClass()
-		};
-		
-		auto Location = PlayerController->MyFortPawn->K2_GetActorLocation();
-		bool bFoundMats = false;
-		
-		for (auto& entry : PlayerController->WorldInventory->Inventory.ReplicatedEntries) {
-			auto ItemDef = entry.ItemDefinition;
-			if (ItemDef->IsA(UFortWeaponMeleeItemDefinition::StaticClass())) continue;
-			
-			bool bAllowedType = false;
-			for (auto Type : Types) {
-				if (ItemDef->IsA(Type)) {
-					bAllowedType = true;
-					if (!bFoundMats && Type == UFortResourceItemDefinition::StaticClass())
-						bFoundMats = true;
-					break;
-				}
-			}
-			
-			if (bAllowedType)
-			{
-				FortKismetLibrary::SpawnPickup(Location, entry, 
-	EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, PlayerController->MyFortPawn, -1,
-	true, false, true);
-			}
-		}
-		
-		if (!bFoundMats) {
-			static auto Wood = StaticFindObject<UFortWorldItemDefinition>("/Game/Items/ResourcePickups/WoodItemData.WoodItemData");
-			static auto Stone = StaticFindObject<UFortWorldItemDefinition>("/Game/Items/ResourcePickups/StoneItemData.StoneItemData");
-			static auto Metal = StaticFindObject<UFortWorldItemDefinition>("/Game/Items/ResourcePickups/MetalItemData.MetalItemData");
-
-			FortKismetLibrary::SpawnPickup(Location, FortKismetLibrary::ConstructItemEntry(Wood, 50, 0), 
-EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, PlayerController->MyFortPawn, -1,
-true, false, true);
-
-			FortKismetLibrary::SpawnPickup(Location, FortKismetLibrary::ConstructItemEntry(Stone, 50, 0), 
-EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, PlayerController->MyFortPawn, -1,
-true, false, true);
-
-			FortKismetLibrary::SpawnPickup(Location, FortKismetLibrary::ConstructItemEntry(Metal, 50, 0), 
-EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, PlayerController->MyFortPawn, -1,
-true, false, true);
-		}
-	}
-
-	if (PlayerState->PlayerTeam->TeamMembers.Num() > 1 && PlayerState->DeathInfo.bDBNO) {
-		for (auto& Member : PlayerState->PlayerTeam->TeamMembers) {
-			auto MemberController = (AFortPlayerControllerAthena*)Member;
-			if (MemberController != PlayerController && !MemberController->bMarkedAlive) {
-				((void (*)(AFortGameModeAthena*, AFortPlayerController*, APlayerState*, AFortPawn*, UFortWeaponItemDefinition*, EDeathCause, char))(ImageBase + 0x4A81A2C))
-					(GameMode, PlayerController, KillerPlayerState, KillerPawn, 
-					 DamageCauser->Index ? Cast<AFortWeapon>(DamageCauser)->WeaponData : nullptr, 
-					 PlayerState->DeathInfo.DeathCause, 0);
-				PlayerController->bMarkedAlive = false;
-				return OnPawnDiedOG(PlayerController, KilledPawn, Damage, InTags, EffectContext, EventInstigator, DamageCauser, DBNOFinisher);
-			}
-		}
-	}
-
-	if (!KillerPlayerState) KillerPlayerState = PlayerState;
-	if (!KillerPawn) KillerPawn = PlayerController->MyFortPawn ? Cast<AFortPlayerPawnAthena>(PlayerController->MyFortPawn) : nullptr;
-
-	if (KillerPlayerState && KillerPawn && KillerPawn->Controller && KillerPawn->Controller != PlayerController) {
-		KillerPlayerState->KillScore++;
-		KillerPlayerState->OnRep_Kills();
-		KillerPlayerState->TeamKillScore++;
-		KillerPlayerState->OnRep_TeamKillScore();
-		KillerPlayerState->ClientReportTeamKill(KillerPlayerState->TeamKillScore);
-		
-		for (auto Member : ((AFortPlayerStateAthena*)KillerPlayerState)->PlayerTeam->TeamMembers) {
-			if ((AFortPlayerStateAthena*)Member->PlayerState != KillerPlayerState) {
-				((AFortPlayerStateAthena*)Member->PlayerState)->TeamKillScore++;
-				((AFortPlayerStateAthena*)Member->PlayerState)->OnRep_TeamKillScore();
-				((AFortPlayerStateAthena*)Member->PlayerState)->ClientReportTeamKill(((AFortPlayerStateAthena*)Member->PlayerState)->TeamKillScore);
-			}
-		}
-		
-		KillerPlayerState->ClientReportKill(PlayerState);
-		if (auto CPlayerController = Cast<AFortPlayerControllerAthena>(KillerPlayerState->GetOwner())) {
-			if (CPlayerController->MatchReport)
-				CPlayerController->MatchReport->MatchStats.Stats[3] = KillerPlayerState->KillScore;
-		}
-
-		static auto PlaylistName = GameState->CurrentPlaylistInfo.BasePlaylist->PlaylistName.ToString();
-		
-		if (PlaylistName.contains("BlueCheese") && KillerPawn && KillerPawn != PlayerController->MyFortPawn) {
-			static FGameplayTag EarnedElim = { UKismetStringLibrary::Conv_StringToName(L"Event.EarnedElimination") };
-			FGameplayEventData Data{};
-			Data.EventTag = EarnedElim;
-			Data.ContextHandle = KillerPlayerState->AbilitySystemComponent->MakeEffectContext();
-			Data.Instigator = KillerPlayerState->GetOwner();
-			Data.Target = PlayerState;
-			Data.TargetData = UAbilitySystemBlueprintLibrary::AbilityTargetDataFromActor(PlayerState);
-
-			UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(((AFortPlayerController*)KillerPawn->GetController())->MyFortPawn, EarnedElim, Data);
-
-			auto Pawn = KillerPlayerState->GetCurrentPawn();
-			if (Pawn && !Pawn->IsActorBeingDestroyed()) {
-				auto Health = Pawn->GetHealth();
-				auto Shield = Pawn->GetShield();
-
-				if (Health >= 100.0f) {
-					Shield = Shield + 50.0f;
-				} else if (Health + 50.0f > 100.0f) {
-					float HealthOverflow = (Health + 50.0f) - 100.0f;
-					Health = 100.0f;
-					Shield = Shield + HealthOverflow;
-				} else {
-					Health += 50.0f;
-				}
-    
-				Pawn->SetHealth(Health);
-				Pawn->SetShield(Shield);
-			}
-		}
-		
-		auto QuestManager = ((AFortPlayerControllerAthena*)KillerPlayerState->GetOwner())->GetQuestManager(ESubGame::Athena);
-		FGameplayTagContainer ContextTags;
-		FGameplayTagContainer TargetTags;
-		FGameplayTagContainer SourceTags;
-		QuestManager->GetSourceAndContextTags(&SourceTags, &ContextTags);
-		ContextTags.AppendTags(GameState->CurrentPlaylistInfo.BasePlaylist->GameplayTagContainer);
-
-		static auto HomeBaseClassTag = FGameplayTag(UKismetStringLibrary::Conv_StringToName(L"Homebase.Class"));
-		TargetTags.GameplayTags.Add(HomeBaseClassTag);
-		TargetTags.ParentTags.Add(HomeBaseClassTag);
-		
-		FortQuestManager::SendStatEventWithTags(QuestManager, EFortQuestObjectiveStatEvent::Kill, NULL, TargetTags, SourceTags,
-							  ContextTags, 1);
-
-		auto DeadQuestManager = PlayerController->GetQuestManager(ESubGame::Athena);
-		FGameplayTagContainer ContextTags2;
-		FGameplayTagContainer TargetTags2;
-		FGameplayTagContainer SourceTags2;
-		DeadQuestManager->GetSourceAndContextTags(&SourceTags2, &ContextTags2);
-		ContextTags.AppendTags(GameState->CurrentPlaylistInfo.BasePlaylist->GameplayTagContainer);
-
-		TargetTags2.GameplayTags.Add(HomeBaseClassTag);
-		TargetTags2.ParentTags.Add(HomeBaseClassTag);
-		FortQuestManager::SendStatEventWithTags(DeadQuestManager, EFortQuestObjectiveStatEvent::AthenaRank, NULL, TargetTags2, SourceTags2,
-							  ContextTags2, 1);
-	}
-	
-	if (!bRespawningAllowed && 
-		(PlayerController->MyFortPawn ? !PlayerController->MyFortPawn->IsDBNO() : true))
-	{
-		((void (*)(AFortGameModeAthena*, AFortPlayerController*, APlayerState*, AFortPawn*, UFortWeaponItemDefinition*, EDeathCause, char))(ImageBase + 0x4A81A2C))
-			(GameMode, PlayerController, KillerPlayerState, KillerPawn, 
-			 DamageCauser ? Cast<AFortWeapon>(DamageCauser) ? Cast<AFortWeapon>(DamageCauser)->WeaponData : nullptr : nullptr, 
-			 PlayerState->DeathInfo.DeathCause, 0);
-
-		FAthenaRewardResult KResult = PlayerController->MatchReport->EndOfMatchResults;
-
-		for (auto& AlivePlayer : GameMode->AlivePlayers) {
-			if (!AlivePlayer || AlivePlayer == PlayerController)
-				continue;
-			
-			auto QuestManager = AlivePlayer->GetQuestManager(ESubGame::Athena);
-			FGameplayTagContainer ContextTags;
-			FGameplayTagContainer TargetTags;
-			FGameplayTagContainer SourceTags;
-			QuestManager->GetSourceAndContextTags(&SourceTags, &ContextTags);
-			ContextTags.AppendTags(GameState->CurrentPlaylistInfo.BasePlaylist->GameplayTagContainer);
-			FortQuestManager::SendStatEventWithTags(QuestManager, EFortQuestObjectiveStatEvent::AthenaOutlive, NULL, TargetTags, SourceTags,
-								  ContextTags, 1);
-		}
-		
-		if (PlayerController->MatchReport)
-		{
-			KResult.TotalBookXpGained = PlayerController->XPComponent->TotalXpEarned;
-			KResult.TotalSeasonXpGained = PlayerController->XPComponent->TotalXpEarned;
-			PlayerController->MatchReport->EndOfMatchResults = KResult;
-			PlayerController->ClientSendEndBattleRoyaleMatchForPlayer(true, PlayerController->MatchReport->EndOfMatchResults);
-
-			PlayerState->Place = GameState->PlayersLeft + 1;
-			PlayerState->OnRep_Place();
-
-			FAthenaMatchStats& Stats = PlayerController->MatchReport->MatchStats;
-			FAthenaMatchTeamStats& TeamStats = PlayerController->MatchReport->TeamStats;
-
-			if (PlayerState && PlayerState->KillScore && PlayerState->SquadId) {
-				Stats.Stats[3] = PlayerState->KillScore;
-				Stats.Stats[8] = PlayerState->SquadId;
-				PlayerController->ClientSendMatchStatsForPlayer(Stats);
-			}
-
-			TeamStats.Place = PlayerState->Place;
-			TeamStats.TotalPlayers = GameState->TotalPlayers;
-			PlayerController->ClientSendTeamStatsForPlayer(TeamStats);
-		}
-		
-		int AlivePlayersCount = 0;
-		AFortPlayerControllerAthena* LastAliveController = nullptr;
-
-		for (auto& AlivePC : GameMode->AlivePlayers) {
-			if (AlivePC && AlivePC != PlayerController && AlivePC->MyFortPawn && !AlivePC->MyFortPawn->IsDBNO()) {
-				AlivePlayersCount++;
-				LastAliveController = AlivePC;
-			}
-		}
-
-		if (AlivePlayersCount == 1 && LastAliveController) {
-			AFortPlayerStateAthena* WinnerPlayerState = (AFortPlayerStateAthena*)LastAliveController->PlayerState;
-			AFortPlayerPawn* WinnerPawn = LastAliveController->MyFortPawn;
-        
-			if (WinnerPlayerState && WinnerPawn) {
-				WinnerPlayerState->Place = 1;
-				WinnerPlayerState->OnRep_Place();
-
-				auto WinnerWeapon = DamageCauser ? Cast<AFortWeapon>(DamageCauser) ? Cast<AFortWeapon>(DamageCauser)->WeaponData : nullptr : nullptr;
-            
-				LastAliveController->PlayWinEffects(WinnerPawn, WinnerWeapon, CachedDeathCause, false);
-				LastAliveController->ClientNotifyWon(WinnerPawn, WinnerWeapon, CachedDeathCause);
-				LastAliveController->ClientNotifyTeamWon(WinnerPawn, WinnerWeapon, CachedDeathCause);
-
-				if (PlayerController->MatchReport)
-				{
-					KResult.TotalBookXpGained = LastAliveController->XPComponent->TotalXpEarned;
-					KResult.TotalSeasonXpGained = LastAliveController->XPComponent->TotalXpEarned;
-					LastAliveController->MatchReport->EndOfMatchResults = KResult;
-				}
-				LastAliveController->ClientSendEndBattleRoyaleMatchForPlayer(true, LastAliveController->MatchReport->EndOfMatchResults);
-
-				FAthenaMatchStats& WinnerStats = LastAliveController->MatchReport->MatchStats;
-				FAthenaMatchTeamStats& WinnerTeamStats = LastAliveController->MatchReport->TeamStats;
-
-				WinnerStats.Stats[3] = WinnerPlayerState->KillScore;
-				WinnerStats.Stats[8] = WinnerPlayerState->SquadId;
-				LastAliveController->ClientSendMatchStatsForPlayer(WinnerStats);
-
-				WinnerTeamStats.Place = WinnerPlayerState->Place;
-				WinnerTeamStats.TotalPlayers = GameState->TotalPlayers;
-				LastAliveController->ClientSendTeamStatsForPlayer(WinnerTeamStats);
-
-				GameState->WinningTeam = WinnerPlayerState->TeamIndex;
-				GameState->OnRep_WinningTeam();
-				GameState->WinningPlayerState = WinnerPlayerState;
-				GameState->OnRep_WinningPlayerState();
-			}
-		}
-	}
-
-	return OnPawnDiedOG(PlayerController, KilledPawn, Damage, InTags, EffectContext, EventInstigator, DamageCauser, DBNOFinisher);
-}
-
 void FortPlayerControllerAthena::ServerCheat(AFortPlayerControllerAthena* PlayerController, FString Msg)
 {
 	static xvector<AFortPlayerControllerAthena*> LoggedInPlayers;
@@ -662,6 +358,322 @@ void FortPlayerControllerAthena::ServerCheat(AFortPlayerControllerAthena* Player
 	}
 }
 
+void FortPlayerControllerAthena::OnPawnDied(AFortPlayerControllerAthena* PlayerController, AFortPlayerPawnAthena* KilledPawn, double Damage, const FGameplayTagContainer* InTags, const FGameplayEffectContextHandle* EffectContext, AController* EventInstigator, AActor* DamageCauser, AController* DBNOFinisher)
+{
+	auto GameMode = Cast<AFortGameModeAthena>(GetWorld()->AuthorityGameMode);
+	auto GameState = Cast<AFortGameStateAthena>(GetWorld()->GameState);
+	auto PlayerState = Cast<AFortPlayerStateAthena>(PlayerController->PlayerState);
+	if (!PlayerState || !GameState || !GameMode)
+		return OnPawnDiedOG(PlayerController, KilledPawn, Damage, InTags, EffectContext, EventInstigator, DamageCauser, DBNOFinisher);
+	
+	auto KillerPlayerState = EventInstigator ? Cast<AFortPlayerStateAthena>(EventInstigator->PlayerState) : PlayerState;
+	auto KillerPawn = EventInstigator ? Cast<AFortPlayerPawnAthena>(((AFortPlayerController*)KillerPlayerState->GetOwner())->MyFortPawn) : KilledPawn;
+
+	TArray<FFortQuestObjectiveCompletion> Advance;
+	TArray<FAthenaAccolades> Accolades;
+	TArray<FString> ShuffledLoadoutUsed;
+	TArray<FSecondaryXpGained> secondaryXp;
+	TArray<FFortCreateItemDetail> GrantedItems;
+	TArray<FFortTransientQuestGrant> GrantedTransientQuests;
+	TArray<FAthenaSeasonItemMCPState> SeasonItemStates; 
+	static auto PlaylistId = UKismetStringLibrary::Conv_NameToString(GameState->CurrentPlaylistInfo.BasePlaylist->PlaylistName);
+	
+	PlayerController->AthenaProfile->EndBattleRoyaleGameV2(Advance, PlaylistId, PlayerController->MatchReport->MatchStats,
+		100, 0, 0, 0, 1.1f,
+		true, true, Accolades, ShuffledLoadoutUsed,
+		0, ShuffledLoadoutUsed, ShuffledLoadoutUsed, secondaryXp,
+		GrantedItems, GrantedTransientQuests, PlaylistId, SeasonItemStates,
+		PlayerState->SecondsAlive,
+		{});
+	
+	FVector DeathLocation = KilledPawn ? KilledPawn->K2_GetActorLocation() : FVector{0,0,0};
+
+	if (KilledPawn)
+	{
+		UE_LOG(LogServer, Log, "IsDBNO: %d", KilledPawn ? KilledPawn->IsDBNO() : false);
+		UE_LOG(LogServer, Log, "WasDBNOOnDeath 2: %d", KilledPawn->WasDBNOOnDeath());
+		UE_LOG(LogServer, Log, "IsResurrectionEnabled: %d", GameState->IsResurrectionEnabled(KilledPawn));
+	}
+	
+	bool bIsDBNO = KilledPawn && KilledPawn->bWasDBNOOnDeath ? KilledPawn->WasDBNOOnDeath() : GameState->IsResurrectionEnabled(KilledPawn);
+	UE_LOG(LogServer, Log, "Final IsDBNO: %d", bIsDBNO);
+	PlayerState->PawnDeathLocation = DeathLocation;
+	PlayerState->DeathInfo.bDBNO = bIsDBNO;
+	PlayerState->DeathInfo.DeathLocation = DeathLocation;
+	PlayerState->DeathInfo.DeathTags = *InTags;
+	PlayerState->DeathInfo.DeathCause = AFortPlayerStateAthena::ToDeathCause(*InTags, bIsDBNO);
+	PlayerState->DeathInfo.Downer = bIsDBNO ? KillerPlayerState : nullptr;
+	PlayerState->DeathInfo.FinisherOrDowner = KillerPlayerState;
+	EDeathCause CachedDeathCause = PlayerState->DeathInfo.DeathCause;
+	
+	if (KilledPawn) {
+		PlayerState->DeathInfo.Distance = (PlayerState->DeathInfo.DeathCause != EDeathCause::FallDamage) 
+			? (KillerPawn && KillerPawn->Class->GetFunction("Actor", "GetDistanceTo") ? KillerPawn->GetDistanceTo(KilledPawn) : 0.0f)
+			: KilledPawn->LastFallDistance;
+	}
+	
+	PlayerState->DeathInfo.bInitialized = true;
+	PlayerState->OnRep_DeathInfo();
+	
+	bool bRespawningAllowed = GameState && PlayerState ? GameState->IsRespawningAllowed(PlayerState) : false;
+
+	if (PlayerState->DeathInfo.bDBNO)
+	{
+		((void (*)(AFortGameModeAthena*, AFortPlayerController*, APlayerState*, AFortPawn*, UFortWeaponItemDefinition*, EDeathCause, char))(ImageBase + 0x4A81A2C))
+			(GameMode, PlayerController, KillerPlayerState, KillerPawn, 
+			 DamageCauser->Index ? Cast<AFortWeapon>(DamageCauser)->WeaponData : nullptr, 
+			 PlayerState->DeathInfo.DeathCause, 0);
+		PlayerController->bMarkedAlive = false;
+		return OnPawnDiedOG(PlayerController, KilledPawn, Damage, InTags, EffectContext, EventInstigator, DamageCauser, DBNOFinisher);
+	}
+
+	if (!KillerPlayerState) KillerPlayerState = PlayerState;
+	if (!KillerPawn) KillerPawn = PlayerController->MyFortPawn ? Cast<AFortPlayerPawnAthena>(PlayerController->MyFortPawn) : nullptr;
+
+	if (KillerPlayerState && KillerPawn && KillerPawn->Controller && KillerPawn->Controller != PlayerController) {
+		KillerPlayerState->KillScore++;
+		KillerPlayerState->OnRep_Kills();
+		KillerPlayerState->TeamKillScore++;
+		KillerPlayerState->OnRep_TeamKillScore();
+		KillerPlayerState->ClientReportTeamKill(KillerPlayerState->TeamKillScore);
+		
+		for (auto Member : ((AFortPlayerStateAthena*)KillerPlayerState)->PlayerTeam->TeamMembers) {
+			if ((AFortPlayerStateAthena*)Member->PlayerState != KillerPlayerState) {
+				((AFortPlayerStateAthena*)Member->PlayerState)->TeamKillScore++;
+				((AFortPlayerStateAthena*)Member->PlayerState)->OnRep_TeamKillScore();
+				((AFortPlayerStateAthena*)Member->PlayerState)->ClientReportTeamKill(((AFortPlayerStateAthena*)Member->PlayerState)->TeamKillScore);
+			}
+		}
+		
+		KillerPlayerState->ClientReportKill(PlayerState);
+		if (auto CPlayerController = Cast<AFortPlayerControllerAthena>(KillerPlayerState->GetOwner())) {
+			if (CPlayerController->MatchReport)
+				CPlayerController->MatchReport->MatchStats.Stats[3] = KillerPlayerState->KillScore;
+		}
+
+		static auto PlaylistName = GameState->CurrentPlaylistInfo.BasePlaylist->PlaylistName.ToString();
+		
+		if (PlaylistName.contains("BlueCheese") && KillerPawn && KillerPawn != PlayerController->MyFortPawn) {
+			static FGameplayTag EarnedElim = { UKismetStringLibrary::Conv_StringToName(L"Event.EarnedElimination") };
+			FGameplayEventData Data{};
+			Data.EventTag = EarnedElim;
+			Data.ContextHandle = KillerPlayerState->AbilitySystemComponent->MakeEffectContext();
+			Data.Instigator = KillerPlayerState->GetOwner();
+			Data.Target = PlayerState;
+			Data.TargetData = UAbilitySystemBlueprintLibrary::AbilityTargetDataFromActor(PlayerState);
+
+			UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(((AFortPlayerController*)KillerPawn->GetController())->MyFortPawn, EarnedElim, Data);
+
+			auto Pawn = KillerPlayerState->GetCurrentPawn();
+			if (Pawn && !Pawn->IsActorBeingDestroyed()) {
+				auto Health = Pawn->GetHealth();
+				auto Shield = Pawn->GetShield();
+
+				if (Health >= 100.0f) {
+					Shield = Shield + 50.0f;
+				} else if (Health + 50.0f > 100.0f) {
+					float HealthOverflow = (Health + 50.0f) - 100.0f;
+					Health = 100.0f;
+					Shield = Shield + HealthOverflow;
+				} else {
+					Health += 50.0f;
+				}
+    
+				Pawn->SetHealth(Health);
+				Pawn->SetShield(Shield);
+			}
+		}
+		
+		auto QuestManager = ((AFortPlayerControllerAthena*)KillerPlayerState->GetOwner())->GetQuestManager(ESubGame::Athena);
+		FGameplayTagContainer ContextTags;
+		FGameplayTagContainer TargetTags;
+		FGameplayTagContainer SourceTags;
+		QuestManager->GetSourceAndContextTags(&SourceTags, &ContextTags);
+		ContextTags.AppendTags(GameState->CurrentPlaylistInfo.BasePlaylist->GameplayTagContainer);
+
+		static auto HomeBaseClassTag = FGameplayTag(UKismetStringLibrary::Conv_StringToName(L"Homebase.Class"));
+		TargetTags.GameplayTags.Add(HomeBaseClassTag);
+		TargetTags.ParentTags.Add(HomeBaseClassTag);
+		
+		FortQuestManager::SendStatEventWithTags(QuestManager, EFortQuestObjectiveStatEvent::Kill, NULL, TargetTags, SourceTags,
+							  ContextTags, 1);
+
+		auto DeadQuestManager = PlayerController->GetQuestManager(ESubGame::Athena);
+		FGameplayTagContainer ContextTags2;
+		FGameplayTagContainer TargetTags2;
+		FGameplayTagContainer SourceTags2;
+		DeadQuestManager->GetSourceAndContextTags(&SourceTags2, &ContextTags2);
+		ContextTags.AppendTags(GameState->CurrentPlaylistInfo.BasePlaylist->GameplayTagContainer);
+
+		TargetTags2.GameplayTags.Add(HomeBaseClassTag);
+		TargetTags2.ParentTags.Add(HomeBaseClassTag);
+		FortQuestManager::SendStatEventWithTags(DeadQuestManager, EFortQuestObjectiveStatEvent::AthenaRank, NULL, TargetTags2, SourceTags2,
+							  ContextTags2, 1);
+	}
+	
+	if (!bRespawningAllowed && !PlayerState->DeathInfo.bDBNO)
+	{
+		((void (*)(AFortGameModeAthena*, AFortPlayerController*, APlayerState*, AFortPawn*, UFortWeaponItemDefinition*, EDeathCause, char))(ImageBase + 0x4A81A2C))
+			(GameMode, PlayerController, KillerPlayerState, KillerPawn, 
+			 DamageCauser ? Cast<AFortWeapon>(DamageCauser) ? Cast<AFortWeapon>(DamageCauser)->WeaponData : nullptr : nullptr, 
+			 PlayerState->DeathInfo.DeathCause, 0);
+
+		FAthenaRewardResult KResult = PlayerController->MatchReport->EndOfMatchResults;
+
+		for (auto& AlivePlayer : GameMode->AlivePlayers) {
+			if (!AlivePlayer || AlivePlayer == PlayerController)
+				continue;
+			
+			auto QuestManager = AlivePlayer->GetQuestManager(ESubGame::Athena);
+			FGameplayTagContainer ContextTags;
+			FGameplayTagContainer TargetTags;
+			FGameplayTagContainer SourceTags;
+			QuestManager->GetSourceAndContextTags(&SourceTags, &ContextTags);
+			ContextTags.AppendTags(GameState->CurrentPlaylistInfo.BasePlaylist->GameplayTagContainer);
+			FortQuestManager::SendStatEventWithTags(QuestManager, EFortQuestObjectiveStatEvent::AthenaOutlive, NULL, TargetTags, SourceTags,
+								  ContextTags, 1); 
+		}
+		
+		if (PlayerController->MatchReport)
+		{
+			KResult.TotalBookXpGained = PlayerController->XPComponent->TotalXpEarned;
+			KResult.TotalSeasonXpGained = PlayerController->XPComponent->TotalXpEarned;
+			PlayerController->MatchReport->EndOfMatchResults = KResult;
+			PlayerController->ClientSendEndBattleRoyaleMatchForPlayer(true, PlayerController->MatchReport->EndOfMatchResults);
+
+			PlayerState->Place = GameState->PlayersLeft + 1;
+			PlayerState->OnRep_Place();
+
+			FAthenaMatchStats& Stats = PlayerController->MatchReport->MatchStats;
+			FAthenaMatchTeamStats& TeamStats = PlayerController->MatchReport->TeamStats;
+
+			if (PlayerState && PlayerState->KillScore && PlayerState->SquadId) {
+				Stats.Stats[3] = PlayerState->KillScore;
+				Stats.Stats[8] = PlayerState->SquadId;
+				PlayerController->ClientSendMatchStatsForPlayer(Stats);
+			}
+
+			TeamStats.Place = PlayerState->Place;
+			TeamStats.TotalPlayers = GameState->TotalPlayers;
+			PlayerController->ClientSendTeamStatsForPlayer(TeamStats);
+		}
+		
+		int AlivePlayersCount = 0;
+		AFortPlayerControllerAthena* LastAliveController = nullptr;
+
+		for (auto& AlivePC : GameMode->AlivePlayers) {
+			if (AlivePC && AlivePC != PlayerController && AlivePC->MyFortPawn && !AlivePC->MyFortPawn->IsDBNO()) {
+				AlivePlayersCount++;
+				LastAliveController = AlivePC;
+			}
+		}
+
+		if (AlivePlayersCount == 1 && LastAliveController) {
+			AFortPlayerStateAthena* WinnerPlayerState = (AFortPlayerStateAthena*)LastAliveController->PlayerState;
+			AFortPlayerPawn* WinnerPawn = LastAliveController->MyFortPawn;
+        
+			if (WinnerPlayerState && WinnerPawn) {
+				WinnerPlayerState->Place = 1;
+				WinnerPlayerState->OnRep_Place();
+
+				auto WinnerWeapon = DamageCauser ? Cast<AFortWeapon>(DamageCauser) ? Cast<AFortWeapon>(DamageCauser)->WeaponData : nullptr : nullptr;
+            
+				LastAliveController->PlayWinEffects(WinnerPawn, WinnerWeapon, CachedDeathCause, false);
+				LastAliveController->ClientNotifyWon(WinnerPawn, WinnerWeapon, CachedDeathCause);
+				LastAliveController->ClientNotifyTeamWon(WinnerPawn, WinnerWeapon, CachedDeathCause);
+
+				if (PlayerController->MatchReport)
+				{
+					KResult.TotalBookXpGained = LastAliveController->XPComponent->TotalXpEarned;
+					KResult.TotalSeasonXpGained = LastAliveController->XPComponent->TotalXpEarned;
+					LastAliveController->MatchReport->EndOfMatchResults = KResult;
+				}
+				LastAliveController->ClientSendEndBattleRoyaleMatchForPlayer(true, LastAliveController->MatchReport->EndOfMatchResults);
+
+				FAthenaMatchStats& WinnerStats = LastAliveController->MatchReport->MatchStats;
+				FAthenaMatchTeamStats& WinnerTeamStats = LastAliveController->MatchReport->TeamStats;
+
+				WinnerStats.Stats[3] = WinnerPlayerState->KillScore;
+				WinnerStats.Stats[8] = WinnerPlayerState->SquadId;
+				LastAliveController->ClientSendMatchStatsForPlayer(WinnerStats);
+
+				WinnerTeamStats.Place = WinnerPlayerState->Place;
+				WinnerTeamStats.TotalPlayers = GameState->TotalPlayers;
+				LastAliveController->ClientSendTeamStatsForPlayer(WinnerTeamStats);
+
+				GameState->WinningTeam = WinnerPlayerState->TeamIndex;
+				GameState->OnRep_WinningTeam();
+				GameState->WinningPlayerState = WinnerPlayerState;
+				GameState->OnRep_WinningPlayerState();
+			}
+		}
+	}
+
+	return OnPawnDiedOG(PlayerController, KilledPawn, Damage, InTags, EffectContext, EventInstigator, DamageCauser, DBNOFinisher);
+}
+
+void FortPlayerControllerAthena::DropItemsOnPawnDestruction(AFortPlayerControllerAthena* PlayerController, long long, const FGameplayTagContainer* ContextTags, AFortPlayerPawnAthena* DestructionPawn)
+{
+	auto GameState = Cast<AFortGameStateAthena>(GetWorld()->GameState);
+	auto PlayerState = Cast<AFortPlayerStateAthena>(PlayerController->PlayerState);
+	
+	bool bRespawningAllowed = GameState && PlayerState ? GameState->IsRespawningAllowed(PlayerState) : false;
+
+	if (!bRespawningAllowed && 
+		PlayerController->WorldInventory && PlayerController->MyFortPawn)
+	{
+		static UClass* Types[] = {
+			UFortResourceItemDefinition::StaticClass(),
+			UFortWeaponRangedItemDefinition::StaticClass(),
+			UFortConsumableItemDefinition::StaticClass(),
+			UFortAmmoItemDefinition::StaticClass()
+		};
+		
+		auto Location = PlayerController->MyFortPawn->K2_GetActorLocation();
+		bool bFoundMats = false;
+		
+		for (auto& entry : PlayerController->WorldInventory->Inventory.ReplicatedEntries) {
+			auto ItemDef = entry.ItemDefinition;
+			if (ItemDef->IsA(UFortWeaponMeleeItemDefinition::StaticClass())) continue;
+			
+			bool bAllowedType = false;
+			for (auto Type : Types) {
+				if (ItemDef->IsA(Type)) {
+					bAllowedType = true;
+					if (!bFoundMats && Type == UFortResourceItemDefinition::StaticClass())
+						bFoundMats = true;
+					break;
+				}
+			}
+			
+			if (bAllowedType)
+			{
+				FortKismetLibrary::SpawnPickup(Location, entry, 
+	EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, PlayerController->MyFortPawn, -1,
+	true, false, true);
+			}
+		}
+		
+		if (!bFoundMats) {
+			static auto Wood = StaticFindObject<UFortWorldItemDefinition>("/Game/Items/ResourcePickups/WoodItemData.WoodItemData");
+			static auto Stone = StaticFindObject<UFortWorldItemDefinition>("/Game/Items/ResourcePickups/StoneItemData.StoneItemData");
+			static auto Metal = StaticFindObject<UFortWorldItemDefinition>("/Game/Items/ResourcePickups/MetalItemData.MetalItemData");
+
+			FortKismetLibrary::SpawnPickup(Location, FortKismetLibrary::ConstructItemEntry(Wood, 50, 0), 
+EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, PlayerController->MyFortPawn, -1,
+true, false, true);
+
+			FortKismetLibrary::SpawnPickup(Location, FortKismetLibrary::ConstructItemEntry(Stone, 50, 0), 
+EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, PlayerController->MyFortPawn, -1,
+true, false, true);
+
+			FortKismetLibrary::SpawnPickup(Location, FortKismetLibrary::ConstructItemEntry(Metal, 50, 0), 
+EFortPickupSourceTypeFlag::Player, EFortPickupSpawnSource::PlayerElimination, PlayerController->MyFortPawn, -1,
+true, false, true);
+		}
+	}
+}
+
 void FortPlayerControllerAthena::Setup()
 {
     UHook* Hook = new UHook();
@@ -695,6 +707,11 @@ void FortPlayerControllerAthena::Setup()
 	Hook->Original = (void**)&OnPawnDiedOG;
 	Hook->Detour = OnPawnDied;
 	UKismetHookingLibrary::Hook(Hook, EHook::Address);
+
+	Hook->Address = 0x38B;
+	Hook->Class = AFortPlayerController::StaticClass();
+	Hook->Detour = DropItemsOnPawnDestruction;
+	UKismetHookingLibrary::Hook(Hook, EveryVFT);
 
 	free(Hook);
 }

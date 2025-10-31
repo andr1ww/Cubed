@@ -189,6 +189,9 @@ APawn* FortGameModeAthena::SpawnDefaultPawnFor(AFortGameModeAthena* GameMode, AF
 {
     FTransform T = StartSpot->GetTransform();
     T.Translation.Z += 250.f;
+    T.Translation.X += UKismetMathLibrary::RandomIntegerInRange(350, 1250); 
+    T.Translation.Y += UKismetMathLibrary::RandomIntegerInRange(350, 1250);
+    
     if (CustomMapsRuntime::IsPluginEnabled())
         T.Translation.Z += 20000.f;
 
