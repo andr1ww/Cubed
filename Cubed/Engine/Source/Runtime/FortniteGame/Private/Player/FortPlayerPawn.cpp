@@ -229,6 +229,49 @@ void FortPlayerPawn::UpdatePlayerDistanceTraveled(AFortPlayerPawn* Pawn, __int64
                           ContextTags, 1 /* idk what to put here yet */);
 }
 
+void FortPlayerPawn::ServerReviveFromDBNO(AFortPlayerPawn* Pawn, AFortPlayerController* EventInstigator)
+{
+	if (!Pawn || !EventInstigator) return;
+
+	auto PlayerState = reinterpret_cast<AFortPlayerStateAthena*>(Pawn->PlayerState);
+	auto Controller = reinterpret_cast<AFortPlayerControllerAthena*>(Pawn->Controller);
+
+	if (!PlayerState) return;
+
+	static UClass* Class = UGAB_AthenaDBNO_C::StaticClass();
+
+	if (!Class) return;
+
+	FGameplayEventData EventData{};
+	EventData.EventTag = Pawn->EventReviveTag; 
+	EventData.ContextHandle = PlayerState->AbilitySystemComponent->MakeEffectContext();
+	EventData.Instigator = EventInstigator;
+	EventData.InstigatorTags = ((AFortPlayerPawnAthena*)EventInstigator->Pawn)->GameplayTags;
+	EventData.Target = Pawn;
+	EventData.TargetData = UAbilitySystemBlueprintLibrary::AbilityTargetDataFromActor(Pawn);
+	EventData.TargetTags = Pawn->GameplayTags;
+	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Pawn, Pawn->EventReviveTag, EventData);
+
+	for (auto& Item : PlayerState->AbilitySystemComponent->ActivatableAbilities.Items)
+	{
+		if (!Item.Ability) continue; 
+		if (Item.Ability->Class == Class)
+		{
+			PlayerState->AbilitySystemComponent->ClientCancelAbility(Item.Handle, Item.ActivationInfo);
+			PlayerState->AbilitySystemComponent->ClientEndAbility(Item.Handle, Item.ActivationInfo);
+			PlayerState->AbilitySystemComponent->ServerEndAbility(Item.Handle, Item.ActivationInfo, Item.ActivationInfo.PredictionKeyWhenActivated);
+			PlayerState->AbilitySystemComponent->ServerCancelAbility(Item.Handle, Item.ActivationInfo);
+		}
+	}
+    
+	Pawn->bIsDBNO = false;
+	Pawn->OnRep_IsDBNO();
+	Pawn->SetHealth(30);
+	PlayerState->DeathInfo = {};
+	PlayerState->OnRep_DeathInfo();
+	Controller->ClientOnPawnRevived(EventInstigator);
+}
+
 void FortPlayerPawn::Setup()
 {
     UHook* Hook = new UHook();
@@ -243,6 +286,11 @@ void FortPlayerPawn::Setup()
     Hook->Class = AFortPlayerPawnAthena::StaticClass();
     Hook->Detour = ServerHandlePickupInfo;
     UKismetHookingLibrary::Hook(Hook, EHook::VFT);
+
+    Hook->Address = 0x1F3;
+    Hook->Class = AFortPlayerPawn::StaticClass();
+    Hook->Detour = ServerReviveFromDBNO;
+    UKismetHookingLibrary::Hook(Hook, EveryVFT);
 
     Hook->Address = ImageBase + 0x1B3426C;
     Hook->Detour = OnAboutToEnterBackpack;

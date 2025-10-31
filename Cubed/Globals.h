@@ -25,7 +25,7 @@ DEFINE_LOG_CATEGORY(LogGameState);
 DEFINE_LOG_CATEGORY(LogNet);
 
 inline bool bCreative = false;
-constexpr bool bGameSessions = false;
+constexpr bool bGameSessions = true;
 inline bool bImposters = false;
 inline bool bPlayEvent = false;
 namespace Creative

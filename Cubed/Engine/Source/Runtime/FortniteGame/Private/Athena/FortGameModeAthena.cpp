@@ -328,6 +328,10 @@ void FortGameModeAthena::HandleStartingNewPlayer(AFortGameModeAthena* GameMode, 
 
             PlayerState->SeasonLevelUIDisplay = NewPlayer->XPComponent->CurrentLevel;
             PlayerState->OnRep_SeasonLevelUIDisplay();
+
+            auto NotifyGameMemberAdded = (void(*)(AFortGameStateAthena*, uint8_t, uint8_t, FUniqueNetIdRepl*))(ImageBase + 0x13E64EC);
+            if (NotifyGameMemberAdded)
+                NotifyGameMemberAdded(GameState, Member.SquadId, Member.TeamIndex, &Member.MemberUniqueId);
         }
 
         if (CustomMapsRuntime::IsPluginEnabled() && CustomMapsRuntime::GetEnabledMap() == "Test1v1")

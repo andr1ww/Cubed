@@ -40,6 +40,7 @@ using namespace std;
 #include "SDK/FortniteConversationRuntime_classes.hpp"
 #include "SDK/FortniteConversationUI_classes.hpp"
 #include "SDK/MoleGameRuntime_classes.hpp"
+#include "SDK/GAB_AthenaDBNO_classes.hpp"
 #include "SDK/MoleGame_MissionGen_classes.hpp"
 #include <set>
 using namespace SDK;

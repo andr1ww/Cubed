@@ -12,6 +12,7 @@ namespace FortPlayerPawn
     DefineOriginal(void, OnRep_IsInAnyStorm, AFortPlayerPawn* Pawn);
     DefineOriginal(void, EndSkydiving, AFortPlayerPawn* Pawn);
     DefineOriginal(void, UpdatePlayerDistanceTraveled, AFortPlayerPawn* Pawn, __int64 a2);
-
+    void ServerReviveFromDBNO(AFortPlayerPawn* Pawn, AFortPlayerController* EventInstigator);
+    
     void Setup();
 }
