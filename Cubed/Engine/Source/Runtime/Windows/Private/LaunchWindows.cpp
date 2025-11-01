@@ -149,7 +149,7 @@ DWORD WINAPI Startup(LPVOID)
     FortPlayerPawn::Setup();
     FortQuestManager::Setup();
     BuildingSMActor::Setup();
-    AthenaAIServicePlayerBots::Setup();
+    // AthenaAIServicePlayerBots::Setup();
     BuildingContainer::Setup();
     FortAthenaCreativePortal::Setup();
     FortMinigameSettingsBuilding::Setup();
@@ -245,6 +245,9 @@ DWORD WINAPI Startup(LPVOID)
     Hook->Address = Memcury::Scanner::FindPattern("75 02 33 F6 41 BE ? ? ? ? 48 85 F6 74 17 48 8D 93").Get();
     Hook->Byte = 0x74;
    // UKismetHookingLibrary::Hook(Hook, Byte);
+
+    Hook->Address = ImageBase + 0x49D29A4;
+    UKismetHookingLibrary::Hook(Hook, RFalse);
     
     free(Hook);
 

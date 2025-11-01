@@ -14,7 +14,7 @@ void AthenaAIServicePlayerBots::InitializeMMRInfos()
     NewSpawningInfo.BotSpawningDataInfoTargetELO = 6700.f;
     NewSpawningInfo.BotSpawningDataInfoWeight = 100.f;
     NewSpawningInfo.AISpawnerData = AISpawnerData;
-    NewSpawningInfo.NumBotsToSpawn = 55;
+    NewSpawningInfo.NumBotsToSpawn = 67;
 
     AIServicePlayerBots->CachedMMRSpawningInfo.SpawningInfos.Add(NewSpawningInfo);
     AIServicePlayerBots->GamePhaseToStartSpawning = EAthenaGamePhase::Warmup;
