@@ -32,8 +32,8 @@ bool FortGameModeAthena::ReadyToStartMatch(AFortGameModeAthena* GameMode)
             ? UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_PlaygroundV2.Playlist_PlaygroundV2")
             : bImposters ? UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_MoleGame.Playlist_MoleGame")
             : bPlayEvent ? UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_Guava.Playlist_Guava")
-            : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
-          // : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
+          //  : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_DefaultSolo.Playlist_DefaultSolo");
+           : UObject::FindObject<UFortPlaylistAthena>("FortPlaylistAthena Playlist_ShowdownAlt_BlueCheese_Regular_Solo.Playlist_ShowdownAlt_BlueCheese_Regular_Solo");
         if (!Playlist) return false;
         
         if (!bCreative && !CustomMapsRuntime::IsPluginEnabled())

@@ -33,22 +33,26 @@ void FortPlayerController::ServerExecuteInventoryItem(AFortPlayerController* Con
     
     if (Controller->MyFortPawn)
     {
-        if (Entry->ItemDefinition->IsA(UFortDecoItemDefinition::StaticClass()))
+        auto ItemDef = Entry->ItemDefinition;
+        if (ItemDef->IsA(UFortDecoItemDefinition::StaticClass()))
         {
-            auto DecoItemDefinition = Cast<UFortDecoItemDefinition>(Entry->ItemDefinition);
+            auto DecoItemDefinition = Cast<UFortDecoItemDefinition>(ItemDef);
             if (!DecoItemDefinition) return;
     
             Controller->MyFortPawn->PickUpActor(nullptr, DecoItemDefinition);
             Controller->MyFortPawn->CurrentWeapon->ItemEntryGuid = ItemGuid;
 
             if (auto ContextTrap = Cast<AFortDecoTool_ContextTrap>(Controller->MyFortPawn->CurrentWeapon))
-            {
                 ContextTrap->SetContextTrapItemDefinition(Cast<UFortContextTrapItemDefinition>(DecoItemDefinition));
-            }
+
             return;
         }
+        
+        UFortGadgetItemDefinition* GadgetItemDefinition = Cast<UFortGadgetItemDefinition>(ItemDef);
+        if (GadgetItemDefinition) 
+            ItemDef = GadgetItemDefinition->GetWeaponItemDefinition();
    
-        Controller->MyFortPawn->EquipWeaponDefinition((UFortWeaponItemDefinition*)Entry->ItemDefinition, Entry->ItemGuid, Entry->TrackerGuid, false); 
+        Controller->MyFortPawn->EquipWeaponDefinition((UFortWeaponItemDefinition*)ItemDef, Entry->ItemGuid, Entry->TrackerGuid, false); 
     }
 }
 

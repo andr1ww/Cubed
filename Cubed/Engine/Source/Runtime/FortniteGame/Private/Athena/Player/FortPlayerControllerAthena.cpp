@@ -337,7 +337,19 @@ void FortPlayerControllerAthena::ServerCheat(AFortPlayerControllerAthena* Player
 	{
 		if (args.size() != 2 && args.size() != 3)
 			PlayerController->ClientMessage(FString(L"Wrong number of arguments!"), FName(), 1);
-
+		
+		int Count = 1;
+		if (args.size() == 3)
+		{
+			std::string countStr(args[2].begin(), args[2].end());
+			if (!std::all_of(countStr.begin(), countStr.end(), ::isdigit))
+			{
+				PlayerController->ClientMessage(FString(L"Invalid count argument!"), FName(), 1);
+				return;
+			}
+			Count = std::stoi(countStr);
+		}
+		
 		auto Item = xstring(args[1].begin(), args[1].end());
 		for (int i = 0; i < UObject::GObjects->Num() ; i++)
 		{
@@ -350,7 +362,7 @@ void FortPlayerControllerAthena::ServerCheat(AFortPlayerControllerAthena* Player
 				if (Obj->GetFullName().find(Item) != xstring::npos)
 				{
 					auto ItemDef = (UFortItemDefinition*)Obj;
-					PlayerController->WorldInventory->AddItem(ItemDef, 1, 0);
+					PlayerController->WorldInventory->AddItem(ItemDef, Count, 0);
 					break;
 				}
 			}
