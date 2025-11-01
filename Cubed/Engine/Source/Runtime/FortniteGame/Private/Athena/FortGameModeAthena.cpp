@@ -389,6 +389,8 @@ void FortGameModeAthena::HandleStartingNewPlayer(AFortGameModeAthena* GameMode, 
         {
             bSpawnedAis = true;
             auto AiSys = (UAthenaAISystem*)GetWorld()->AISystem;
+            if (!AiSys->AIPopulationTracker)
+                AiSys->AIPopulationTracker = (UAthenaAIPopulationTracker*)UGameplayStatics::SpawnObject(UAthenaAIPopulationTracker::StaticClass(), AiSys);
             AiSys->SpawnAI("BabaYaga");
             AiSys->SpawnAI("BigMouth");
             AiSys->SpawnAI("DarkJonesy");
@@ -531,13 +533,18 @@ void FortGameModeAthena::OnAircraftExitedDropZone(AFortGameModeAthena* GameMode,
             Player->GetAircraftComponent()->ServerAttemptAircraftJump({}); // we want this cause we do safezone stuff there
     }
 
+    static void (*ExitAircraft)(AFortAthenaAIBotController *Controller) = decltype(ExitAircraft)(ImageBase + 0x47DBE84);
+
     for (auto& Player : GameMode->AliveBots)
     {
-        Player->PlayerBotPawn->K2_SetActorLocation(FortAthenaAircraft->K2_GetActorLocation(), false, nullptr, true);
-        Player->PlayerBotPawn->K2_SetActorRotation(FortAthenaAircraft->K2_GetActorRotation(), true);
-        Player->PlayerBotPawn->K2_TeleportTo(FortAthenaAircraft->K2_GetActorLocation(), FortAthenaAircraft->K2_GetActorRotation());
-        Player->ThankBusDriver();
-        Player->PlayerBotPawn->BeginSkydiving(true);
+        ExitAircraft(Player);
+
+        static auto Name1 = UKismetStringLibrary::Conv_StringToName(TEXT("AIEvaluator_Global_GamePhaseStep"));
+        static auto Name2 = UKismetStringLibrary::Conv_StringToName(TEXT("AIEvaluator_Global_GamePhase"));
+        static auto Name9 = UKismetStringLibrary::Conv_StringToName(TEXT("AIEvaluator_Global_IsInBus"));
+        Player->Blackboard->SetValueAsEnum(Name1, (uint8)GetGameState()->GamePhaseStep);
+        Player->Blackboard->SetValueAsEnum(Name2, (uint8)EAthenaGamePhase::SafeZones);
+        Player->Blackboard->SetValueAsBool(Name9, false);
     }
     
     return OnAircraftExitedDropZoneOG(GameMode, FortAthenaAircraft);

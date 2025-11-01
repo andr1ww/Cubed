@@ -149,7 +149,7 @@ DWORD WINAPI Startup(LPVOID)
     FortPlayerPawn::Setup();
     FortQuestManager::Setup();
     BuildingSMActor::Setup();
-  //  AthenaAIServicePlayerBots::Setup();
+    AthenaAIServicePlayerBots::Setup();
     BuildingContainer::Setup();
     FortAthenaCreativePortal::Setup();
     FortMinigameSettingsBuilding::Setup();
