@@ -302,6 +302,7 @@ DWORD WINAPI Startup(LPVOID)
         L"LogPlayerQuestProgress",
         L"LogFortQuestObjective",
         L"LogAISpawner",
+        L"LogBuilding"
     };
 
     for (const std::wstring& Log : Logs)

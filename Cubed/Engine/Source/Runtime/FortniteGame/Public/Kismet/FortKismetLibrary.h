@@ -26,6 +26,11 @@ namespace FortKismetLibrary
 	TArray<FFortItemEntry> PickLootDrops(FName TierGroupName, int WorldLevel = 0);
 	static bool PickLootDropsHook(UObject*, FFrame&, bool*);
 	AFortPickupAthena* SpawnPickup(FVector Loc, FFortItemEntry Entry, EFortPickupSourceTypeFlag SourceTypeFlag, EFortPickupSpawnSource SpawnSource, class AFortPlayerPawn* Pawn, int OverrideCount, bool Toss, bool RandomRotation, bool bCombine);
-
+	static AFortPickupAthena* K2_SpawnPickupInWorld(UObject*, FFrame&, AFortPickupAthena**);
+	static void GiveItemToInventoryOwner(UObject*, FFrame&);
+	static int32 K2_RemoveItemFromPlayer(UObject*, FFrame&, int32*);
+	static int32 K2_RemoveItemFromPlayerByGuid(UObject*, FFrame&, int32*);
+	static AFortPickupAthena* SpawnItemVariantPickupInWorld(UObject*, FFrame&, AFortPickupAthena**);
+	
 	void Setup();
 }

@@ -460,6 +460,154 @@ AFortPickupAthena* FortKismetLibrary::SpawnPickup(FVector Loc, FFortItemEntry En
 	return NewPickup;
 }
 
+void FortKismetLibrary::GiveItemToInventoryOwner(UObject* Object, FFrame& Stack) {
+	TScriptInterface<class IFortInventoryOwnerInterface> InventoryOwner;
+	UFortWorldItemDefinition* ItemDefinition;
+	FGuid ItemVariantGuid;
+	int32 NumberToGive;
+	bool bNotifyPlayer;
+	int32 ItemLevel;
+	int32 PickupInstigatorHandle;
+	bool bUseItemPickupAnalyticEvent;
+	Stack.StepCompiledIn(&InventoryOwner);
+	Stack.StepCompiledIn(&ItemDefinition);
+	Stack.StepCompiledIn(&ItemVariantGuid);
+	Stack.StepCompiledIn(&NumberToGive);
+	Stack.StepCompiledIn(&bNotifyPlayer);
+	Stack.StepCompiledIn(&ItemLevel);
+	Stack.StepCompiledIn(&PickupInstigatorHandle);
+	Stack.StepCompiledIn(&bUseItemPickupAnalyticEvent);
+	Stack.IncrementCode();
+
+	auto PlayerController = (AFortPlayerControllerAthena*)InventoryOwner.ObjectPointer;
+	auto ItemEntry = ConstructItemEntry(ItemDefinition, NumberToGive, ItemLevel);
+	SpawnPickup(PlayerController->GetViewTarget()->K2_GetActorLocation(), ItemEntry,
+		EFortPickupSourceTypeFlag::Other, EFortPickupSpawnSource::Unset, nullptr, -1, true,
+		true, false);
+}
+
+int32 FortKismetLibrary::K2_RemoveItemFromPlayer(UObject* Context, FFrame& Stack, int32* Ret)
+{
+	AFortPlayerControllerAthena* PlayerController;
+	UFortWorldItemDefinition* ItemDefinition;
+	FGuid ItemVariantGuid;
+	int32 AmountToRemove;
+	bool bForceRemoval;
+	Stack.StepCompiledIn(&PlayerController);
+	Stack.StepCompiledIn(&ItemDefinition);
+	Stack.StepCompiledIn(&ItemVariantGuid);
+	Stack.StepCompiledIn(&AmountToRemove);
+	Stack.StepCompiledIn(&bForceRemoval);
+	Stack.IncrementCode();
+	if (!PlayerController) return *Ret = 0;
+
+	auto itemEntry = PlayerController->WorldInventory->Inventory.ReplicatedEntries.Search([&](FFortItemEntry& entry)
+	{ return entry.ItemDefinition == ItemDefinition; });
+	if (!itemEntry) return *Ret = 0;
+	auto RemoveCount = AmountToRemove;
+	itemEntry->Count -= AmountToRemove;
+	if (itemEntry->Count <= 0 || ItemDefinition->IsA(UFortGadgetItemDefinition::StaticClass())) {
+		RemoveCount += itemEntry->Count;
+		PlayerController->WorldInventory->Remove(itemEntry->ItemGuid);
+	}
+	else
+		PlayerController->WorldInventory->ReplaceEntry(*itemEntry);
+	return *Ret = RemoveCount;
+}
+
+int32 FortKismetLibrary::K2_RemoveItemFromPlayerByGuid(UObject* Context, FFrame& Stack, int32* Ret) 
+{
+	class AFortPlayerControllerAthena* PlayerController;
+	struct FGuid ItemGuid;
+	int32 AmountToRemove;
+	bool bForceRemoval;
+	Stack.StepCompiledIn(&PlayerController);
+	Stack.StepCompiledIn(&ItemGuid);
+	Stack.StepCompiledIn(&AmountToRemove);
+	Stack.StepCompiledIn(&bForceRemoval);
+	Stack.IncrementCode();
+	
+	auto itemEntry = PlayerController->WorldInventory->Inventory.ReplicatedEntries.Search([&](FFortItemEntry& entry)
+	{ return entry.ItemGuid == ItemGuid; });
+	if (!itemEntry) return *Ret = 0;
+	auto RemoveCount = AmountToRemove;
+	itemEntry->Count -= AmountToRemove;
+	if (itemEntry->Count <= 0 || itemEntry->ItemDefinition->IsA(UFortGadgetItemDefinition::StaticClass())) {
+		RemoveCount += itemEntry->Count;
+		PlayerController->WorldInventory->Remove(itemEntry->ItemGuid);
+	}
+	else
+		PlayerController->WorldInventory->ReplaceEntry(*itemEntry);
+	return *Ret = RemoveCount;
+}
+
+AFortPickupAthena* FortKismetLibrary::K2_SpawnPickupInWorld(UObject*, FFrame& Stack, AFortPickupAthena** Ret) 
+{
+	class UObject* WorldContextObject;
+	class UFortWorldItemDefinition* ItemDefinition;
+	int32 NumberToSpawn;
+	FVector Position;
+	FVector Direction;
+	int32 OverrideMaxStackCount;
+	bool bToss;
+	bool bRandomRotation;
+	bool bBlockedFromAutoPickup;
+	int32 PickupInstigatorHandle;
+	EFortPickupSourceTypeFlag SourceType;
+	EFortPickupSpawnSource Source;
+	class AFortPlayerController* OptionalOwnerPC;
+	bool bPickupOnlyRelevantToOwner;
+
+	Stack.StepCompiledIn(&WorldContextObject);
+	Stack.StepCompiledIn(&ItemDefinition);
+	Stack.StepCompiledIn(&NumberToSpawn);
+	Stack.StepCompiledIn(&Position);
+	Stack.StepCompiledIn(&Direction);
+	Stack.StepCompiledIn(&OverrideMaxStackCount);
+	Stack.StepCompiledIn(&bToss);
+	Stack.StepCompiledIn(&bRandomRotation);
+	Stack.StepCompiledIn(&bBlockedFromAutoPickup);
+	Stack.StepCompiledIn(&PickupInstigatorHandle);
+	Stack.StepCompiledIn(&SourceType);
+	Stack.StepCompiledIn(&Source);
+	Stack.StepCompiledIn(&OptionalOwnerPC);
+	Stack.StepCompiledIn(&bPickupOnlyRelevantToOwner);
+	Stack.IncrementCode();
+
+	return *Ret = SpawnPickup(
+		Position,
+		ConstructItemEntry(ItemDefinition, NumberToSpawn, 0),
+		SourceType,
+		Source,
+		nullptr,
+		-1,
+		bToss,
+		bRandomRotation,
+		false
+	);
+}
+
+AFortPickupAthena* FortKismetLibrary::SpawnItemVariantPickupInWorld(UObject*, FFrame& Stack, AFortPickupAthena** Ret) 
+{
+	UObject* WorldContextObject;
+	FSpawnItemVariantParams Params;
+	Stack.StepCompiledIn(&WorldContextObject);
+	Stack.StepCompiledIn(&Params);
+	Stack.IncrementCode();
+
+	return *Ret = SpawnPickup(
+		Params.Position,
+		ConstructItemEntry(Params.WorldItemDefinition, Params.NumberToSpawn, 0),
+		Params.SourceType,
+		Params.Source,
+		nullptr,
+		-1,
+		Params.bToss,
+		Params.bRandomRotation,
+		false
+	);
+}
+
 void FortKismetLibrary::Setup()
 {
 	UHook* Hook = new UHook();
@@ -467,6 +615,26 @@ void FortKismetLibrary::Setup()
 	Hook->Path = "/Script/FortniteGame.FortKismetLibrary.PickLootDrops";
 	Hook->Detour = PickLootDropsHook;
 	UKismetHookingLibrary::Hook(Hook, Exec);
+	
+	Hook->Path = "/Script/FortniteGame.FortKismetLibrary.GiveItemToInventoryOwner";
+	Hook->Detour = GiveItemToInventoryOwner;
+	UKismetHookingLibrary::Hook(Hook, Exec);
 
+	Hook->Path = "/Script/FortniteGame.FortKismetLibrary.K2_RemoveItemFromPlayer";
+	Hook->Detour = K2_RemoveItemFromPlayer;
+	UKismetHookingLibrary::Hook(Hook, Exec);
+
+	Hook->Path = "/Script/FortniteGame.FortKismetLibrary.K2_RemoveItemFromPlayerByGuid";
+	Hook->Detour = K2_RemoveItemFromPlayerByGuid;
+	UKismetHookingLibrary::Hook(Hook, Exec);
+	
+	Hook->Path = "/Script/FortniteGame.FortKismetLibrary.K2_SpawnPickupInWorld";
+	Hook->Detour = K2_SpawnPickupInWorld;
+	UKismetHookingLibrary::Hook(Hook, Exec);
+	
+	Hook->Path = "/Script/FortniteGame.FortKismetLibrary.SpawnItemVariantPickupInWorld";
+	Hook->Detour = SpawnItemVariantPickupInWorld;
+	UKismetHookingLibrary::Hook(Hook, Exec);
+	
 	delete Hook;
 }
