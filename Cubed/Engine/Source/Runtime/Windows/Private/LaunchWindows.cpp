@@ -28,6 +28,7 @@
 #include "Engine/Source/Runtime/FortniteGame/Public/Kismet/FortKismetLibrary.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Online/FortGameSessionDedicated.h"
 #include "Engine/Source/Runtime/FortniteGame/Public/Quests/FortQuestManager.h"
+#include "Engine/Source/Runtime/FortniteGame/Public/Weapons/FortDecoTool.h"
 
 inline const wchar_t* (*GetOG)();
 const wchar_t* Get()
@@ -159,6 +160,7 @@ DWORD WINAPI Startup(LPVOID)
     FortGameSessionDedicated::Setup();
     FortAthenaAISpawnerDataComponents::Setup();
     FortControllerComponent_IndicatedActorManagement::Setup();
+    FortDecoTool::Setup();
     
     UHook* Hook = new UHook();
     
