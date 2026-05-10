@@ -19,5 +19,5 @@ A Fortnite Gameserver for the version **18.40**, created by [andr1ww](https://gi
 
 ## Contributions
 If you would like to contribute, you can fork this repository and make a pull request.
-
-Please follow the license in this repository, and if you use this gameserver please give credit to me & mariki.
+<br></br>
+*Please follow the license in this repository, and if you use this gameserver please give credit to me & mariki.*
