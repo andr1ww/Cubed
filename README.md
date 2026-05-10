@@ -15,6 +15,7 @@ A Fortnite Gameserver for the version **18.40**, created by [andr1ww](https://gi
 - AFortGameSessionDedicatedAthena & Backfill
 - Proper Harvesting
 - Basic Creative Plots
+- Base Conversations
 - and more!
 
 ## Contributions
